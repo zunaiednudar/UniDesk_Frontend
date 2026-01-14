@@ -8,8 +8,9 @@
     font-style: normal;
 }
 
-.poppins {
-    font-family: "Poppins", sans-serif;
+.playfair{
+    font-family: "Playfair", serif;
+    font-optical-sizing: auto;
     font-style: normal;
 }
 
