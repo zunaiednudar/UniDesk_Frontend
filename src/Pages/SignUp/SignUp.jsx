@@ -4,14 +4,15 @@ import { Link, useNavigate } from "react-router";
 import { uploadToCloudinary } from '../../utils/uploadToCloudinary.js';
 import { AuthContext } from '../../Providers/AuthProvider.jsx';
 import { toast } from 'sonner';
+import { deleteUser } from 'firebase/auth';
 
 const SignUp = () => {
     const { signUp, updateUser, setUser, signInWithGoogle } = useContext(AuthContext);
 
     const [role, setRole] = useState("");
     const [error, setError] = useState("");
-    const navigate=useNavigate();
-    const [loading,setLoading]=useState(false);
+    const navigate = useNavigate();
+    const [loading, setLoading] = useState(false);
 
     // Signup
 
@@ -19,22 +20,29 @@ const SignUp = () => {
         e.preventDefault();
 
         const form = e.target;
+        const email = form.email.value;
         const imageFile = form.photo.files[0];
 
         const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>]).{6,}$/;
-        const password=form.password.value;
+        const password = form.password.value;
         if (!passwordRegex.test(password)) {
             setError("Password must be at least 6 characters long, and include at least one uppercase letter, one lowercase letter, one number and one special character.");
             return;
         }
         else
             setError("");
+
+        if (!email.endsWith("kuet.ac.bd")) {
+            toast.error("Please use a valid KUET email.");
+            return;
+        }
+
         setLoading(true);
         try {
             const imageData = await uploadToCloudinary(imageFile);
             const data = {
                 name: form.name.value,
-                email: form.email.value,
+                email,
                 role,
                 department: form.department.value,
                 studentID: form.studentID?.value || "",
@@ -46,16 +54,16 @@ const SignUp = () => {
                 createdAt: new Date().toISOString()
             };
             console.log(data);
-            
-            const result=await signUp(data.email,password);
-            const user=result.user
+
+            const result = await signUp(data.email, password);
+            const user = result.user
 
             await updateUser({
-                displayName:data.name,
-                photoURL:data.photoURL
+                displayName: data.name,
+                photoURL: data.photoURL
             });
 
-            setUser({...user,displayName:data.name,photoURL:data.photoURL});
+            setUser({ ...user, displayName: data.name, photoURL: data.photoURL });
             toast.success("Signed up successfully");
             navigate("/");
         } catch (error) {
@@ -66,8 +74,52 @@ const SignUp = () => {
 
     // Google Login
 
-    const handleGoogleLogin = () => {
+    const handleGoogleLogin = async () => {
+        try {
+            const res = await signInWithGoogle();
 
+            if (!res)
+                return;
+
+            const user = res.user;
+            const email = user.email;
+
+            if (!email.endsWith("kuet.ac.bd")) {
+                toast.error("Please use a valid KUET email.");
+
+                try {
+                    await deleteUser(user);
+                } catch (error) {
+                    throw new Error(error);
+                }
+                return;
+            }
+
+            const roleChecking = email.split("@")[1].split(".")[0];
+            
+            const userRole = roleChecking === "stud" ? "student" : "faculty";
+
+            const data = {
+                name: user.displayName,
+                email,
+                role:userRole,
+                department: "",
+                studentID: "",
+                batch: "",
+                designation: "",
+                photoURL: user.photoURL,
+                photoId: "",
+                status: "pending",
+                createdAt: new Date().toISOString()
+            };
+
+            // console.log(data);
+
+            toast.success("Logged in with Google");
+            navigate("/");
+        } catch (error) {
+            toast.error(error.message);
+        }
     }
 
     return (
@@ -249,8 +301,8 @@ const SignUp = () => {
                     <button type="submit"
                         className="btn w-full h-12 bg-blue-700 font-bold text-white cursor-pointer text-lg hover:bg-blue-900 ease-in-out duration-600"
                         disabled={loading}
-                        >{
-                            loading?"Creating Account":"Create Account"
+                    >{
+                            loading ? "Creating Account" : "Create Account"
                         }
                     </button>
                 </form>

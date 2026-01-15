@@ -1,12 +1,14 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import DotGrid from "../../Components/DotGrid/DotGrid.jsx";
 import { Link, useNavigate } from "react-router";
 import { AuthContext } from '../../Providers/AuthProvider.jsx';
 import { toast } from 'sonner';
+import { deleteUser } from 'firebase/auth';
 
 const Login = () => {
     const { login, signInWithGoogle, setLoading } = useContext(AuthContext);
-    const navigate=useNavigate();
+    const navigate = useNavigate();
+
     // Email Login
 
     const handleLogin = (e) => {
@@ -29,9 +31,54 @@ const Login = () => {
 
     // Google Login
 
-    const handleGoogleLogin = () => {
+    const handleGoogleLogin = async () => {
+        try {
+            const res = await signInWithGoogle();
 
+            if (!res)
+                return;
+
+            const user = res.user;
+            const email = user.email;
+
+            if (!email.endsWith("kuet.ac.bd")) {
+                toast.error("Please use a valid KUET email.");
+
+                try {
+                    await deleteUser(user);
+                } catch (error) {
+                    throw new Error(error);
+                }
+                return;
+            }
+
+            const roleChecking = email.split("@")[1].split(".")[0];
+
+            const role = roleChecking === "stud" ? "student" : "faculty";
+
+            const data = {
+                name: user.displayName,
+                email,
+                role,
+                department: "",
+                studentID: "",
+                batch: "",
+                designation: "",
+                photoURL: user.photoURL,
+                photoId: "",
+                status: "pending",
+                createdAt: new Date().toISOString()
+            };
+
+            console.log(data);
+
+            toast.success("Logged in with Google");
+            navigate("/");
+        } catch (error) {
+            toast.error(error.message);
+        }
     }
+
     return (
         <div className="w-full max-w-full flex inter">
             {/* Interactive Background */}
