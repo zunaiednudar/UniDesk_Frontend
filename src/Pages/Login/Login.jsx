@@ -1,18 +1,35 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import DotGrid from "../../Components/DotGrid/DotGrid.jsx";
-import {Link} from "react-router";
+import { Link, useNavigate } from "react-router";
+import { AuthContext } from '../../Providers/AuthProvider.jsx';
+import { toast } from 'sonner';
 
 const Login = () => {
-
+    const { login, signInWithGoogle, setLoading } = useContext(AuthContext);
+    const navigate=useNavigate();
     // Email Login
 
-    const handleLogin=(e)=>{
+    const handleLogin = (e) => {
         e.preventDefault();
+        const form = e.target;
+
+        const email = form.email.value;
+        const password = form.password.value;
+
+        login(email, password).then((res) => {
+            const user = res.user;
+            console.log(user);
+            toast.success("Logged In Successfully");
+            navigate("/");
+        }).catch((error) => {
+            toast.error("Wrong Credentials");
+            setLoading(false);
+        });
     }
 
     // Google Login
 
-    const handleGoogleLogin=()=>{
+    const handleGoogleLogin = () => {
 
     }
     return (
@@ -56,20 +73,20 @@ const Login = () => {
                     <div className="w-full bg-gray-400 h-[1px]"></div>
                 </div>
 
-                <form onSumbit={handleLogin} className="w-full max-w-[500px] mb-10">
+                <form onSubmit={handleLogin} className="w-full max-w-[500px] mb-10">
 
                     {/* Email Field */}
 
                     <fieldset className="fieldset">
                         <legend className="fieldset-legend">University Email</legend>
-                        <input type="email" name="email" className="input w-full" placeholder="email@kuet.ac.bd" required/>
+                        <input type="email" name="email" className="input w-full" placeholder="email@kuet.ac.bd" required />
                     </fieldset>
 
                     {/* Password Field */}
 
                     <fieldset className="fieldset mb-2">
                         <legend className="fieldset-legend">Password</legend>
-                        <input type="password" name="password" className="input w-full" placeholder="••••••" required/>
+                        <input type="password" name="password" className="input w-full" placeholder="••••••" required />
                     </fieldset>
                     <div className="w-full flex justify-end mb-5">
                         <button className="text-sm text-blue-500 font-medium">Forgot Password?</button>
