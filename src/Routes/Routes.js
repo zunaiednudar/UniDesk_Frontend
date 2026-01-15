@@ -14,7 +14,7 @@ export const router = createBrowserRouter([
                 Component: Home
             },
             {
-                path:"/",
+                path:"/home",
                 Component:Home
             },
             {
