@@ -52,7 +52,7 @@ const Login = () => {
                 </button>
                 <div className="w-full max-w-[500px] flex items-center gap-2 text-sm mb-5">
                     <div className="w-full bg-gray-400 h-[1px]"></div>
-                    <p className="w-full text-gray-400 font-medium text-[8px] md:text-[16px]">OR LOGIN WITH EMAIL</p>
+                    <p className="w-full text-gray-400 font-medium text-[8px] md:text-[12px] text-center">OR LOGIN WITH EMAIL</p>
                     <div className="w-full bg-gray-400 h-[1px]"></div>
                 </div>
 
