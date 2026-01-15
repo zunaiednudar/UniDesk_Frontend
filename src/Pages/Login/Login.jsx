@@ -4,9 +4,10 @@ import { Link, useNavigate } from "react-router";
 import { AuthContext } from '../../Providers/AuthProvider.jsx';
 import { toast } from 'sonner';
 import { deleteUser } from 'firebase/auth';
+import TextType from '../../Components/TextType/TextType.jsx';
 
 const Login = () => {
-    const { login, signInWithGoogle, setLoading,passwordReset } = useContext(AuthContext);
+    const { login, signInWithGoogle, setLoading, passwordReset } = useContext(AuthContext);
     const navigate = useNavigate();
 
     // Email Login
@@ -85,21 +86,21 @@ const Login = () => {
 
     const passwordResetModalClose = () => document.getElementById('my_modal_5').close();
 
-    const handleForgotPassword= (e)=>{
+    const handleForgotPassword = (e) => {
         e.preventDefault();
-        const form=e.target;
-        const email=form.forgotemail.value;
+        const form = e.target;
+        const email = form.forgotemail.value;
         // console.log(email);
-        passwordReset(email).then(()=>{
+        passwordReset(email).then(() => {
             form.reset();
             passwordResetModalClose();
             toast.success("If an account exists with this email, a password reset link has been sent.");
         })
-        .catch((error)=>{
-            form.reset();
-            passwordResetModalClose();
-            toast.error(error.message);
-        })
+            .catch((error) => {
+                form.reset();
+                passwordResetModalClose();
+                toast.error(error.message);
+            })
     }
 
     return (
@@ -120,9 +121,19 @@ const Login = () => {
                     returnDuration={1.5}
                 />
 
-                <div className="absolute h-auto inset-0 z-50 flex flex-col justify-center items-center gap-5">
-                    <p className="w-[70%] text-6xl font-extrabold playfair text-white">Welcome Back to Your Digital Campus</p>
-                    <p className="w-[70%] text-justify text-gray-300  text-lg">
+                <div className="absolute h-auto inset-0 z-50 flex flex-col mt-50 items-center gap-5">
+                    <div className="w-[70%] text-5xl font-extrabold playfair text-white min-h-25">
+                        <TextType
+                            text={"Welcome Back to Your Digital Campus"}
+                            typingSpeed={100}
+                            pauseDuration={1500}
+                            showCursor={false}
+                            startOnVisible={true}
+                            deletingSpeed={0}
+                            loop={false}
+                        />    
+                    </div>
+                    <p className="w-[70%] text-justify text-gray-300 text-lg">
                         Streamline your academic workflow. Access courses, submit assignments, and collaborate with peers in one unified platform.
                     </p>
                 </div>
@@ -178,7 +189,7 @@ const Login = () => {
                         <form onSubmit={handleForgotPassword} className='w-full'>
                             <fieldset className="fieldset mb-5">
                                 <legend className="fieldset-legend">Enter your email</legend>
-                                <input type="email" name="forgotemail" className="input w-full" placeholder="email@stud.kuet.ac.bd" required/>
+                                <input type="email" name="forgotemail" className="input w-full" placeholder="email@stud.kuet.ac.bd" required />
                             </fieldset>
                             <div className='flex gap-5 justify-end'>
                                 <button type="submit" className='btn'>Submit</button>

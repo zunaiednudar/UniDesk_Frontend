@@ -5,6 +5,7 @@ import { uploadToCloudinary } from '../../utils/uploadToCloudinary.js';
 import { AuthContext } from '../../Providers/AuthProvider.jsx';
 import { toast } from 'sonner';
 import { deleteUser } from 'firebase/auth';
+import TextType from '../../Components/TextType/TextType.jsx';
 
 const SignUp = () => {
     const { signUp, updateUser, setUser, signInWithGoogle } = useContext(AuthContext);
@@ -156,8 +157,18 @@ const SignUp = () => {
                     returnDuration={1.5}
                 />
 
-                <div className="absolute h-auto inset-0 z-50 flex flex-col justify-center items-center gap-5">
-                    <p className="w-[70%] text-6xl font-extrabold playfair text-white">Join the Digital Campus</p>
+                <div className="absolute h-auto inset-0 z-50 flex flex-col mt-50 items-center gap-5">
+                    <div className="w-[70%] text-5xl font-extrabold playfair text-white min-h-15">
+                        <TextType
+                            text={"Join the Digital Campus"}
+                            typingSpeed={100}
+                            pauseDuration={1500}
+                            showCursor={false}
+                            startOnVisible={true}
+                            deletingSpeed={0}
+                            loop={false}
+                        />    
+                    </div>
                     <p className="w-[70%] text-justify text-gray-300  text-lg">
                         Experience a smarter way to learn. Unified course management, institutional repository access,
                         and real-time collaboration start here. Join thousands of students and faculty members in
