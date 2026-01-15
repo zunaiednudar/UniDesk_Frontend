@@ -1,10 +1,17 @@
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import DotGrid from "../../Components/DotGrid/DotGrid.jsx";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { uploadToCloudinary } from '../../utils/uploadToCloudinary.js';
+import { AuthContext } from '../../Providers/AuthProvider.jsx';
+import { toast } from 'sonner';
 
 const SignUp = () => {
+    const { signUp, updateUser, setUser, signInWithGoogle } = useContext(AuthContext);
+
     const [role, setRole] = useState("");
+    const [error, setError] = useState("");
+    const navigate=useNavigate();
+    const [loading,setLoading]=useState(false);
 
     // Signup
 
@@ -14,6 +21,15 @@ const SignUp = () => {
         const form = e.target;
         const imageFile = form.photo.files[0];
 
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>]).{6,}$/;
+        const password=form.password.value;
+        if (!passwordRegex.test(password)) {
+            setError("Password must be at least 6 characters long, and include at least one uppercase letter, one lowercase letter, one number and one special character.");
+            return;
+        }
+        else
+            setError("");
+        setLoading(true);
         try {
             const imageData = await uploadToCloudinary(imageFile);
             const data = {
@@ -24,13 +40,28 @@ const SignUp = () => {
                 studentID: form.studentID?.value || "",
                 batch: form.batch?.value || "",
                 designation: form.designation?.value || "",
-                photoURL:imageData.url,
-                photoId:imageData.public_id
+                photoURL: imageData.url,
+                photoId: imageData.public_id,
+                status: "pending",
+                createdAt: new Date().toISOString()
             };
             console.log(data);
-        } catch(error){
+            
+            const result=await signUp(data.email,password);
+            const user=result.user
+
+            await updateUser({
+                displayName:data.name,
+                photoURL:data.photoURL
+            });
+
+            setUser({...user,displayName:data.name,photoURL:data.photoURL});
+            toast.success("Signed up successfully");
+            navigate("/");
+        } catch (error) {
             console.log(error);
         }
+        setLoading(false);
     }
 
     // Google Login
@@ -209,12 +240,18 @@ const SignUp = () => {
                         <legend className="fieldset-legend">Password</legend>
                         <input type="password" name="password" className="input w-full" placeholder="••••••" required />
                     </fieldset>
+                    {
+                        error && <p className='text-sm text-red-600 mb-5 text-justify'>{error}</p>
+                    }
 
                     {/* Submit Button */}
 
                     <button type="submit"
-                        className="btn w-full h-12 bg-blue-700 font-bold text-white cursor-pointer text-lg hover:bg-blue-900 ease-in-out duration-600">Create
-                        Account
+                        className="btn w-full h-12 bg-blue-700 font-bold text-white cursor-pointer text-lg hover:bg-blue-900 ease-in-out duration-600"
+                        disabled={loading}
+                        >{
+                            loading?"Creating Account":"Create Account"
+                        }
                     </button>
                 </form>
                 <div className="text-sm">Already have an account? <Link to="/login"

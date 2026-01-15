@@ -28,12 +28,8 @@ const AuthProvider = ({children}) => {
 
     // Google Authentication
 
-    const signInWithGoogle=async()=>{
-        try{
-            return await signInWithPopup(auth,googleProvider);
-        } catch(error){
-            throw error;
-        }
+    const signInWithGoogle=()=>{
+        return signInWithPopup(auth,googleProvider);
     };
 
     // Update User Profile
