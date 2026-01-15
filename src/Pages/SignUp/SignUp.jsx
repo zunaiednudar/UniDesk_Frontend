@@ -13,7 +13,7 @@ const SignUp = () => {
     const [error, setError] = useState("");
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
-
+    
     // Signup
 
     const handleSignup = async (e) => {
@@ -21,8 +21,8 @@ const SignUp = () => {
 
         const form = e.target;
         const email = form.email.value;
-        const password=form.password.value;
-        const confirmPassword=form.confirmPassword.value;
+        const password = form.password.value;
+        const confirmPassword = form.confirmPassword.value;
         const imageFile = form.photo.files[0];
 
         const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>]).{6,}$/;
@@ -41,12 +41,12 @@ const SignUp = () => {
 
         const roleChecking = email.split("@")[1].split(".")[0];
 
-        if((roleChecking==="stud" && role==="faculty") || (roleChecking!=="stud" && roleChecking==="" && role==="student")){
+        if ((roleChecking === "stud" && role === "faculty") || (roleChecking !== "stud" && roleChecking === "" && role === "student")) {
             toast.error("Selected role does not match with your KUET email");
             return;
         }
 
-        if(password!==confirmPassword){
+        if (password !== confirmPassword) {
             toast.error("Your password and confirmation do not match. Please try again.");
             return;
         }
@@ -110,13 +110,13 @@ const SignUp = () => {
             }
 
             const roleChecking = email.split("@")[1].split(".")[0];
-            
+
             const userRole = roleChecking === "stud" ? "student" : "faculty";
 
             const data = {
                 name: user.displayName,
                 email,
-                role:userRole,
+                role: userRole,
                 department: "",
                 studentID: "",
                 batch: "",
@@ -332,6 +332,8 @@ const SignUp = () => {
                 </div>
             </div>
         </div>
+
+
     )
         ;
 };
