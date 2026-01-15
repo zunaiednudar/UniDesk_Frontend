@@ -1,2 +1,16 @@
 @import "tailwindcss";
 @plugin "daisyui";
+
+
+.inter{
+    font-family: "Inter", sans-serif;
+    font-optical-sizing: auto;
+    font-style: normal;
+}
+
+.playfair{
+    font-family: "Playfair", serif;
+    font-optical-sizing: auto;
+    font-style: normal;
+}
+
