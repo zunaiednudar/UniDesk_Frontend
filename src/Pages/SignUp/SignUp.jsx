@@ -5,6 +5,7 @@ import { uploadToCloudinary } from '../../utils/uploadToCloudinary.js';
 import { AuthContext } from '../../Providers/AuthProvider.jsx';
 import { toast } from 'sonner';
 import { deleteUser } from 'firebase/auth';
+import TextType from '../../Components/TextType/TextType.jsx';
 
 const SignUp = () => {
     const { signUp, updateUser, setUser, signInWithGoogle } = useContext(AuthContext);
@@ -13,7 +14,7 @@ const SignUp = () => {
     const [error, setError] = useState("");
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
-
+    
     // Signup
 
     const handleSignup = async (e) => {
@@ -21,10 +22,12 @@ const SignUp = () => {
 
         const form = e.target;
         const email = form.email.value;
+        const password = form.password.value;
+        const confirmPassword = form.confirmPassword.value;
         const imageFile = form.photo.files[0];
 
         const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>]).{6,}$/;
-        const password = form.password.value;
+
         if (!passwordRegex.test(password)) {
             setError("Password must be at least 6 characters long, and include at least one uppercase letter, one lowercase letter, one number and one special character.");
             return;
@@ -32,8 +35,20 @@ const SignUp = () => {
         else
             setError("");
 
-        if (!email.endsWith("kuet.ac.bd")) {
+        if (!email.endsWith(".kuet.ac.bd")) {
             toast.error("Please use a valid KUET email.");
+            return;
+        }
+
+        const roleChecking = email.split("@")[1].split(".")[0];
+
+        if ((roleChecking === "stud" && role === "faculty") || (roleChecking !== "stud" && roleChecking === "" && role === "student")) {
+            toast.error("Selected role does not match with your KUET email");
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            toast.error("Your password and confirmation do not match. Please try again.");
             return;
         }
 
@@ -53,7 +68,7 @@ const SignUp = () => {
                 status: "pending",
                 createdAt: new Date().toISOString()
             };
-            console.log(data);
+            // console.log(data);
 
             const result = await signUp(data.email, password);
             const user = result.user
@@ -96,13 +111,13 @@ const SignUp = () => {
             }
 
             const roleChecking = email.split("@")[1].split(".")[0];
-            
+
             const userRole = roleChecking === "stud" ? "student" : "faculty";
 
             const data = {
                 name: user.displayName,
                 email,
-                role:userRole,
+                role: userRole,
                 department: "",
                 studentID: "",
                 batch: "",
@@ -142,8 +157,18 @@ const SignUp = () => {
                     returnDuration={1.5}
                 />
 
-                <div className="absolute h-auto inset-0 z-50 flex flex-col justify-center items-center gap-5">
-                    <p className="w-[70%] text-6xl font-extrabold playfair text-white">Join the Digital Campus</p>
+                <div className="absolute h-auto inset-0 z-50 flex flex-col mt-50 items-center gap-5">
+                    <div className="w-[70%] text-5xl font-extrabold playfair text-white min-h-15">
+                        <TextType
+                            text={"Join the Digital Campus"}
+                            typingSpeed={100}
+                            pauseDuration={1500}
+                            showCursor={false}
+                            startOnVisible={true}
+                            deletingSpeed={0}
+                            loop={false}
+                        />    
+                    </div>
                     <p className="w-[70%] text-justify text-gray-300  text-lg">
                         Experience a smarter way to learn. Unified course management, institutional repository access,
                         and real-time collaboration start here. Join thousands of students and faculty members in
@@ -192,7 +217,7 @@ const SignUp = () => {
 
                     <fieldset className="fieldset">
                         <legend className="fieldset-legend">University Email</legend>
-                        <input type="email" name="email" className="input w-full" placeholder="email@kuet.ac.bd"
+                        <input type="email" name="email" className="input w-full" placeholder="email@stud.kuet.ac.bd"
                             required />
                     </fieldset>
 
@@ -288,13 +313,20 @@ const SignUp = () => {
 
                     {/* Password Field */}
 
-                    <fieldset className="fieldset mb-5">
+                    <fieldset className="fieldset">
                         <legend className="fieldset-legend">Password</legend>
                         <input type="password" name="password" className="input w-full" placeholder="••••••" required />
                     </fieldset>
                     {
-                        error && <p className='text-sm text-red-600 mb-5 text-justify'>{error}</p>
+                        error && <p className='text-sm text-red-600 mb-1 text-justify'>{error}</p>
                     }
+
+                    {/* Confirm Password Field */}
+
+                    <fieldset className="fieldset mb-5">
+                        <legend className="fieldset-legend">Confirm Password</legend>
+                        <input type="password" name="confirmPassword" className="input w-full" placeholder="••••••" required />
+                    </fieldset>
 
                     {/* Submit Button */}
 
@@ -302,7 +334,7 @@ const SignUp = () => {
                         className="btn w-full h-12 bg-blue-700 font-bold text-white cursor-pointer text-lg hover:bg-blue-900 ease-in-out duration-600"
                         disabled={loading}
                     >{
-                            loading ? "Creating Account" : "Create Account"
+                            loading ? "Creating Account..." : "Create Account"
                         }
                     </button>
                 </form>
@@ -311,6 +343,8 @@ const SignUp = () => {
                 </div>
             </div>
         </div>
+
+
     )
         ;
 };

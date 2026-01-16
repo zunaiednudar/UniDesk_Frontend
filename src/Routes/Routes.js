@@ -3,6 +3,8 @@ import RootLayout from "../Layouts/RootLayout/RootLayout.jsx";
 import Home from "../Pages/Home/Home.jsx";
 import Login from "../Pages/Login/Login.jsx";
 import SignUp from "../Pages/SignUp/SignUp.jsx";
+import Repository from "../Pages/Repository/Repository.jsx";
+import NotFound from "../Pages/NotFound.jsx/NotFound.jsx";
 
 export const router = createBrowserRouter([
     {
@@ -14,7 +16,7 @@ export const router = createBrowserRouter([
                 Component: Home
             },
             {
-                path:"/",
+                path:"/home",
                 Component:Home
             },
             {
@@ -24,7 +26,16 @@ export const router = createBrowserRouter([
             {
                 path:"/signup",
                 Component:SignUp
-            }
+            },
+            {
+                path:"/repository",
+                Component:Repository
+            },
         ]
+
     },
+    {
+        path:"*",
+        Component:NotFound
+    }
 ]);
