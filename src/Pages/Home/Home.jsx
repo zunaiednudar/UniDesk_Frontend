@@ -1,15 +1,15 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import DotGrid from "../../Components/DotGrid/DotGrid.jsx";
 import TextType from "../../Components/TextType/TextType.jsx";
 import { ArrowRight, GraduationCap, MessageSquare, ClipboardCheck, BarChart3, Calendar, Users } from "lucide-react";
-import {Link, NavLink} from "react-router";
+import {Link} from "react-router";
 
 const Home = () => {
     const stats = [
         { number: '500+', label: 'Active Students' },
-        { number: '50+', label: 'Courses' },
-        { number: '100+', label: 'Instructors' },
-        { number: '1000+', label: 'Resources' }
+        { number: '50+', label: 'Faculties' },
+        { number: '100+', label: 'Courses Offered' },
+        { number: '1000+', label: 'Study Materials' }
     ];
 
     const features = [
@@ -45,6 +45,8 @@ const Home = () => {
         }
     ];
 
+    const featuresRef = useRef(null);
+
     const benefits = [
         { title: 'Streamlined Learning', description: 'Access to all courses, materials, and assignments in one place' },
         { title: 'Real-time Collaboration', description: 'Connect with teachers and peers through integrated messaging' },
@@ -72,9 +74,9 @@ const Home = () => {
                     />
                 </div>
 
-                <div className="relative z-10 max-w-7xl mx-auto px-6 py-20 flex flex-col justify-center h-[80vh]">
+                <div className="relative z-10 max-w-7xl mx-auto px-6 py-20 flex flex-col justify-center h-[85vh]">
                     <div className="text-center">
-                        <h1 className="playfair text-5xl md:text-6xl font-extrabold mb-2">
+                        <h1 className="playfair text-5xl md:text-6xl font-extrabold mb-6">
                             <TextType
                                 text="Welcome to UniDesk"
                                 typingSpeed={100}
@@ -95,21 +97,33 @@ const Home = () => {
                         </p>
 
                         <div className="flex gap-4 justify-center mb-16 mt-8">
-                            <button className="bg-white text-blue-900 px-4 py-2 rounded-lg font-semibold hover:bg-blue-50 transition transform hover:scale-105 flex items-center gap-2 cursor-pointer">
+                            <Link to="/login" className="bg-white text-blue-900 px-4 py-2 rounded-lg font-semibold hover:bg-blue-50 transition transform hover:scale-105 flex items-center gap-2">
                                 Get Started <ArrowRight className="w-5 h-5" />
-                            </button>
+                            </Link>
 
-                            <button className="border-2 border-white text-white px-4 py-2 rounded-lg font-semibold hover:bg-white hover:text-blue-900 transition transform hover:scale-105 cursor-pointer">
+                            <button onClick={() => featuresRef.current?.scrollIntoView({
+                                        behavior: "smooth",
+                                        block: "start",
+                                    })
+                                }
+                                className="border-2 border-white text-white px-4 py-2 rounded-lg font-semibold hover:bg-white hover:text-blue-900 transition transform hover:scale-105 cursor-pointer">
                                 Learn More
                             </button>
                         </div>
 
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-12 cursor-default">
+
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mt-10 md:mt-12 cursor-default">
                             {stats.map((stat, index) => (
-                                <div key={index} className="bg-white/10 backdrop-blur-sm rounded-lg p-6 hover:bg-white/20 transition">
-                                    <p className="text-4xl font-bold mb-1">{stat.number}</p>
-                                    <p className="text-gray-300 text-md">{stat.label}</p>
+                                <div key={index} className="bg-white/10 backdrop-blur-sm rounded-lg p-4 md:p-6 hover:bg-white/20 transition">
+                                    <p className="text-2xl md:text-4xl font-bold mb-1">
+                                        {stat.number}
+                                    </p>
+
+                                    <p className="text-xs md:text-md text-gray-300">
+                                        {stat.label}
+                                    </p>
                                 </div>
+
                             ))}
                         </div>
                     </div>
@@ -117,7 +131,7 @@ const Home = () => {
             </div>
 
             {/*Features Section*/}
-            <div className="max-w-360 mx-auto px-6 py-20">
+            <div ref={featuresRef} className="max-w-360 mx-auto px-6 py-20 scroll-mt-24">
                 <div className="text-center mb-16">
                     <h2 className="playfair text-4xl font-extrabold text-gray-900 mb-2">Powerful Features</h2>
 
@@ -189,18 +203,15 @@ const Home = () => {
                     </p>
 
                     <div className="flex gap-4 justify-center mb-8 mt-8">
-                        <Link to="/login">
-                            <button className="bg-white text-blue-900 px-4 py-2 rounded-lg font-semibold hover:bg-blue-50 transition transform hover:scale-105 flex items-center gap-2 cursor-pointer">
-                                Register Now <ArrowRight className="w-5 h-5" />
-                            </button>
+                        <Link to="/login" className="bg-white text-blue-900 px-4 py-2 rounded-lg font-semibold hover:bg-blue-50 transition transform hover:scale-105 flex items-center gap-2">
+                            Register Now <ArrowRight className="w-5 h-5" />
                         </Link>
 
-                        <Link to="/repository">
-                            <button className="border-2 border-white text-white px-4 py-2 rounded-lg font-semibold hover:bg-white hover:text-blue-900 transition transform hover:scale-105 cursor-pointer">
-                                Explore Repository
-                            </button>
+                        <Link to="/repository" className="border-2 border-white text-white px-4 py-2 rounded-lg font-semibold hover:bg-white hover:text-blue-900 transition transform hover:scale-105">
+                            Explore Repository
                         </Link>
                     </div>
+
                 </div>
             </div>
         </div>
