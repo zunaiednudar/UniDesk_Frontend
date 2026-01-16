@@ -2,6 +2,7 @@ import React from 'react';
 import DotGrid from "../../Components/DotGrid/DotGrid.jsx";
 import TextType from "../../Components/TextType/TextType.jsx";
 import { ArrowRight, GraduationCap, MessageSquare, ClipboardCheck, BarChart3, Calendar, Users } from "lucide-react";
+import {Link, NavLink} from "react-router";
 
 const Home = () => {
     const stats = [
@@ -174,6 +175,31 @@ const Home = () => {
                                 ))}
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            {/*CTA Section*/}
+            <div className="bg-gradient-to-r from-blue-900 via-blue-750 to-blue-500 text-white py-20">
+                <div className="max-w-4xl mx-auto px-6 text-center">
+                    <h2 className="playfair text-5xl text-white font-extrabold mb-2">Ready to Get Started?</h2>
+
+                    <p className="text-lg text-gray-100 mb-8">
+                        Join thousands of students and faculties already using UniDesk
+                    </p>
+
+                    <div className="flex gap-4 justify-center mb-8 mt-8">
+                        <Link to="/login">
+                            <button className="bg-white text-blue-900 px-4 py-2 rounded-lg font-semibold hover:bg-blue-50 transition transform hover:scale-105 flex items-center gap-2 cursor-pointer">
+                                Register Now <ArrowRight className="w-5 h-5" />
+                            </button>
+                        </Link>
+
+                        <Link to="/repository">
+                            <button className="border-2 border-white text-white px-4 py-2 rounded-lg font-semibold hover:bg-white hover:text-blue-900 transition transform hover:scale-105 cursor-pointer">
+                                Explore Repository
+                            </button>
+                        </Link>
                     </div>
                 </div>
             </div>
