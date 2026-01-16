@@ -44,6 +44,12 @@ const Home = () => {
         }
     ];
 
+    const benefits = [
+        { title: 'Streamlined Learning', description: 'Access to all courses, materials, and assignments in one place' },
+        { title: 'Real-time Collaboration', description: 'Connect with teachers and peers through integrated messaging' },
+        { title: 'Knowledge Repository', description: 'Contribute to and benefit from a vast library of study materials' }
+    ];
+
     return (
         <div className="inter bg-gray-100">
             {/*Hero Section*/}
@@ -127,6 +133,48 @@ const Home = () => {
                             <p className="text-sm text-gray-600 leading-relaxed">{feature.description}</p>
                         </div>
                     ))}
+                </div>
+            </div>
+
+            {/*About Section*/}
+            <div className="w-full bg-gray-50 py-20">
+                <div className="max-w-360 mx-auto px-6">
+                    <div className="grid md:grid-cols-2 gap-12 items-center">
+                        <div className="relative">
+                            <img
+                                src="src/assets/kuet.jpg?w=600&h=700&fit=crop"
+                                alt="Khulna University of Engineering and Technology Campus"
+                                className="rounded-2xl shadow-xl"
+                            />
+                        </div>
+
+                        <div>
+                            <h2 className="playfair text-5xl font-extrabold text-gray-900 mb-6">About UniDesk</h2>
+
+                            <p className="text-gray-600 mb-6 leading-relaxed">
+                                UniDesk is a comprehensive Learning Management System designed specifically for Khulna University of Engineering & Technology (KUET).
+                                Our platform bridges the gap between traditional education and modern technology, providing a seamless experience for students and faculties alike.
+                            </p>
+
+                            <div className="space-y-4">
+                                {benefits.map((benefit, index) => (
+                                    <div key={index} className="flex items-start gap-3">
+                                        <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0 mt-1">
+                                            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                            </svg>
+                                        </div>
+
+                                        <div>
+                                            <h4 className="playfair text-xl font-extrabold text-gray-900">{benefit.title}</h4>
+
+                                            <p className="text-gray-500">{benefit.description}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
