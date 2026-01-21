@@ -65,8 +65,7 @@ const SignUp = () => {
                 designation: form.designation?.value || "",
                 photoURL: imageData.url,
                 photoId: imageData.public_id,
-                status: "pending",
-                createdAt: new Date().toISOString()
+                status: "pending"
             };
             // console.log(data);
 

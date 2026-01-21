@@ -10,7 +10,7 @@ const Footer = () => {
     const link_website = "https://www.kuet.ac.bd/";
 
     return (
-        <footer className="bg-gray-900 py-12">
+        <footer className="bg-gray-900 py-12 inter">
             <div className="w-full max-w-360 mx-auto px-5">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-4">
                     {/*Information Section*/}
