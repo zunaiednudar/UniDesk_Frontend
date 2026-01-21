@@ -6,6 +6,7 @@ import { AuthContext } from '../../Providers/AuthProvider.jsx';
 import { toast } from 'sonner';
 import { deleteUser } from 'firebase/auth';
 import TextType from '../../Components/TextType/TextType.jsx';
+import axios from 'axios';
 
 const SignUp = () => {
     const { signUp, updateUser, setUser, signInWithGoogle } = useContext(AuthContext);
@@ -70,7 +71,18 @@ const SignUp = () => {
             // console.log(data);
 
             const result = await signUp(data.email, password);
-            const user = result.user
+            const user = result.user;
+
+            // User Information storing in database
+            
+            axios.post("http://localhost:3000/api/users",data)
+            .then(res=>{
+                if(res.data.insertedId)
+                    console.log("User created in the database");
+            })
+            .catch(error=>{
+                console.log(error);
+            });
 
             await updateUser({
                 displayName: data.name,
