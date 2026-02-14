@@ -6,6 +6,9 @@ import SignUp from "../Pages/SignUp/SignUp.jsx";
 import Repository from "../Pages/Repository/Repository.jsx";
 import NotFound from "../Pages/NotFound.jsx/NotFound.jsx";
 
+import DashboardLayout from "../Layouts/DashboardLayout/DashboardLayout.jsx";
+import StudentDashboard from "../Pages/StudentDashboard/StudentDashboard.jsx";
+
 export const router = createBrowserRouter([
     {
         path: "/",
@@ -13,7 +16,7 @@ export const router = createBrowserRouter([
         children:[
             {
                 index:true,
-                Component: Home
+                Component:Home
             },
             {
                 path:"/home",
@@ -32,7 +35,16 @@ export const router = createBrowserRouter([
                 Component:Repository
             },
         ]
-
+    },
+    {
+        path: "/dashboard/student",
+        Component:StudentDashboard,
+        children: [
+            // {
+            //     index:true,
+            //     Component:MyActivity
+            // },
+        ]
     },
     {
         path:"*",
