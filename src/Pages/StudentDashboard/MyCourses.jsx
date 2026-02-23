@@ -1,12 +1,5 @@
 import React, { useState } from 'react';
-import {
-    BookOpen,
-    Search,
-    Clock,
-    Users,
-    Award,
-    TrendingUp
-} from 'lucide-react';
+import { BookOpen, Search, Clock, Users, Award, TrendingUp } from 'lucide-react';
 
 const MyCourses = () => {
     const [searchQuery, setSearchQuery] = useState('');
@@ -114,9 +107,7 @@ const MyCourses = () => {
         const matchesSearch = course.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             course.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
             course.instructor.toLowerCase().includes(searchQuery.toLowerCase());
-
         const matchesStatus = statusFilter === 'all' || course.status === statusFilter;
-
         return matchesSearch && matchesStatus;
     });
 
@@ -126,7 +117,6 @@ const MyCourses = () => {
             completed: 'bg-blue-100 text-blue-700',
             upcoming: 'bg-orange-100 text-orange-700'
         };
-
         return classes[status] || 'bg-gray-100 text-gray-700';
     };
 
@@ -193,16 +183,17 @@ const MyCourses = () => {
                         <Search className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
                         <input
                             type="text"
-                            placeholder="Search Courses"
+                            placeholder="Search courses..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
                     </div>
-
                     <select
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value)}
-                        className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
                         <option value="all">All Status</option>
                         <option value="active">Active</option>
                         <option value="completed">Completed</option>
@@ -214,16 +205,18 @@ const MyCourses = () => {
             {/* Courses Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredCourses.map((course) => (
-                    <div key={course.id}
-                        className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition cursor-pointer">
+                    <div
+                        key={course.id}
+                        className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition cursor-pointer"
+                    >
                         <div className="flex items-start justify-between mb-4">
                             <div>
                                 <h3 className="text-lg font-bold text-gray-900">{course.code}</h3>
                                 <p className="text-sm text-gray-600 mt-1">{course.name}</p>
                             </div>
                             <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(course.status)}`}>
-                                {course.status}
-                            </span>
+                {course.status}
+              </span>
                         </div>
 
                         <div className="space-y-3 mb-4">
@@ -254,7 +247,7 @@ const MyCourses = () => {
                             </div>
                         </div>
                     </div>
-                ))};
+                ))}
             </div>
         </div>
     );
