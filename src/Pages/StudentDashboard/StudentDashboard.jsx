@@ -14,31 +14,31 @@ const StudentDashboard = () => {
             id: 'activity',
             icon: <Activity className="w-5 h-5" />,
             label: 'My Activity',
-            path: '/dashboard/activity'
+            path: '/dashboard/student/activity'
         },
         {
             id: 'courses',
             icon: <BookOpen className="w-5 h-5" />,
             label: 'My Courses',
-            path: '/dashboard/courses'
+            path: '/dashboard/student/courses'
         },
         {
             id: 'projects',
             icon: <FolderKanban className="w-5 h-5" />,
             label: 'My Projects',
-            path: '/dashboard/projects'
+            path: '/dashboard/student/projects'
         },
         {
             id: 'assignments',
             icon: <ClipboardCheck className="w-5 h-5" />,
             label: 'My Assignments',
-            path: '/dashboard/assignments'
+            path: '/dashboard/student/assignments'
         },
         {
             id: 'mentor',
             icon: <MessageCircleQuestion className="w-5 h-5" />,
             label: 'Ask Mentor',
-            path: '/dashboard/mentor'
+            path: '/dashboard/student/mentor'
         }
     ];
 

@@ -8,42 +8,47 @@ import NotFound from "../Pages/NotFound.jsx/NotFound.jsx";
 
 import DashboardLayout from "../Layouts/DashboardLayout/DashboardLayout.jsx";
 import StudentDashboard from "../Pages/StudentDashboard/StudentDashboard.jsx";
+import MyActivity from "../Pages/StudentDashboard/MyActivity.jsx";
 
 export const router = createBrowserRouter([
     {
         path: "/",
-        Component:RootLayout,
+        Component: RootLayout,
         children:[
             {
-                index:true,
-                Component:Home
+                index: true,
+                Component: Home
             },
             {
-                path:"/home",
-                Component:Home
+                path: "/home",
+                Component: Home
             },
             {
-                path:"/login",
-                Component:Login
+                path: "/login",
+                Component: Login
             },
             {
-                path:"/signup",
-                Component:SignUp
+                path: "/signup",
+                Component: SignUp
             },
             {
-                path:"/repository",
-                Component:Repository
+                path: "/repository",
+                Component: Repository
             },
         ]
     },
     {
         path: "/dashboard/student",
-        Component:StudentDashboard,
+        Component: StudentDashboard,
         children: [
-            // {
-            //     index:true,
-            //     Component:MyActivity
-            // },
+            {
+                index: true,
+                Component: MyActivity
+            },
+            {
+                path: "activity",
+                Component: MyActivity
+            }
         ]
     },
     {
