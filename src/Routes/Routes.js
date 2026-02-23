@@ -11,6 +11,7 @@ import StudentDashboard from "../Pages/StudentDashboard/StudentDashboard.jsx";
 import MyActivity from "../Pages/StudentDashboard/MyActivity.jsx";
 import MyCourses from "../Pages/StudentDashboard/MyCourses.jsx";
 import MyProjects from "../Pages/StudentDashboard/MyProjects.jsx";
+import MyAssignments from "../Pages/StudentDashboard/MyAssignments.jsx";
 
 export const router = createBrowserRouter([
     {
@@ -58,6 +59,10 @@ export const router = createBrowserRouter([
             {
                 path: "projects",
                 Component: MyProjects
+            },
+            {
+                path: "assignments",
+                Component: MyAssignments
             }
         ]
     },
