@@ -7,7 +7,7 @@ import {
     Bell,
     TrendingUp,
     AlertCircle,
-    CheckCircle,
+    CheckCircle2,
     Clock,
     Users
 } from 'lucide-react';
@@ -30,7 +30,7 @@ const MyActivity = () => {
         },
         {
             id: 2,
-            title: 'Campus WiFi Maintenance this Weekend',
+            title: 'Campus WiFi Maintenance This Weekend',
             time: '3 days ago',
             category: 'IT',
             icon: <AlertCircle className="w-4 h-4" />
@@ -41,6 +41,20 @@ const MyActivity = () => {
             time: '3 days ago',
             category: 'Academic',
             icon: <BookOpen className="w-4 h-4" />
+        },
+        {
+            id: 4,
+            title: 'Career Fair - January 16th, 2026',
+            time: '4 days ago',
+            category: 'Event',
+            icon: <Users className="w-4 h-4" />
+        },
+        {
+            id: 5,
+            title: 'Scholarship Applications Now Open',
+            time: '5 days ago',
+            category: 'Financial',
+            icon: <Award className="w-4 h-4" />
         }
     ];
 
@@ -147,7 +161,6 @@ const MyActivity = () => {
             fair: 'bg-yellow-100 text-yellow-700',
             warning: 'bg-orange-100 text-orange-700'
         };
-
         return classes[status] || 'bg-gray-100 text-gray-700';
     };
 
@@ -157,7 +170,6 @@ const MyActivity = () => {
             'in-progress': 'bg-orange-100 text-orange-700 border-l-4 border-orange-500',
             pending: 'bg-yellow-100 text-yellow-700 border-l-4 border-yellow-500'
         };
-
         return classes[status] || 'bg-gray-100 text-gray-700';
     };
 
@@ -426,6 +438,6 @@ const MyActivity = () => {
             </div>
         </div>
     );
-}
+};
 
 export default MyActivity;
