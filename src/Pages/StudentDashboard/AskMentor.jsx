@@ -262,7 +262,7 @@ const AskMentor = () => {
                         </div>
 
                         {/* Action Buttons */}
-                        <div className="flex gap-3 mt-4">
+                        <div className="flex flex-col md:flex-row gap-3 mt-4">
                             <button className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center justify-center gap-2 font-medium">
                                 <Mail className="w-4 h-4" />
                                 Message
