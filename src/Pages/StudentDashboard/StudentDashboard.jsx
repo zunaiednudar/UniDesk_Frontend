@@ -38,7 +38,7 @@ const StudentDashboard = () => {
             id: 'mentor',
             icon: <MessageCircleQuestion className="w-5 h-5" />,
             label: 'Ask Mentor',
-            path: '/dashboard/student/mentor'
+            path: '/dashboard/student/ask-mentor'
         }
     ];
 
