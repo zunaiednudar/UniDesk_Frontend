@@ -12,6 +12,7 @@ import MyActivity from "../Pages/StudentDashboard/MyActivity.jsx";
 import MyCourses from "../Pages/StudentDashboard/MyCourses.jsx";
 import MyProjects from "../Pages/StudentDashboard/MyProjects.jsx";
 import MyAssignments from "../Pages/StudentDashboard/MyAssignments.jsx";
+import AskMentor from "../Pages/StudentDashboard/AskMentor.jsx";
 
 export const router = createBrowserRouter([
     {
@@ -63,7 +64,11 @@ export const router = createBrowserRouter([
             {
                 path: "assignments",
                 Component: MyAssignments
-            }
+            },
+            {
+                path: "ask-mentor",
+                Component: AskMentor
+            },
         ]
     },
     {
