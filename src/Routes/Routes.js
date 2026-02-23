@@ -10,6 +10,7 @@ import DashboardLayout from "../Layouts/DashboardLayout/DashboardLayout.jsx";
 import StudentDashboard from "../Pages/StudentDashboard/StudentDashboard.jsx";
 import MyActivity from "../Pages/StudentDashboard/MyActivity.jsx";
 import MyCourses from "../Pages/StudentDashboard/MyCourses.jsx";
+import MyProjects from "../Pages/StudentDashboard/MyProjects.jsx";
 
 export const router = createBrowserRouter([
     {
@@ -53,6 +54,10 @@ export const router = createBrowserRouter([
             {
                 path: "courses",
                 Component: MyCourses
+            },
+            {
+                path: "projects",
+                Component: MyProjects
             }
         ]
     },
