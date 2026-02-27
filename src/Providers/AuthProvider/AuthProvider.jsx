@@ -1,6 +1,7 @@
 import React, {createContext, useEffect, useState} from 'react';
 import {auth} from "../../Firebase/firebase.init.js";
 import {signInWithEmailAndPassword, createUserWithEmailAndPassword,signOut,GoogleAuthProvider,signInWithPopup,updateProfile,onAuthStateChanged, sendPasswordResetEmail, deleteUser } from "firebase/auth";
+import { fetchUserData } from '../../utils/fetchUserData.js';
 
 export const AuthContext = createContext();
 
@@ -8,8 +9,9 @@ const googleProvider=new GoogleAuthProvider();
 
 const AuthProvider = ({children}) => {
     const [user, setUser] = useState(null);
-    const [loading,setLoading]=useState(false);
+    const [loading,setLoading]=useState(true);
     const [token,setToken]=useState(null);
+    const [userData,setUserData]=useState(null);
 
     // Sign Up
 
@@ -30,7 +32,6 @@ const AuthProvider = ({children}) => {
     // Google Authentication
 
     const signInWithGoogle=async ()=>{
-        setLoading(true);
         try{
             return await signInWithPopup(auth,googleProvider);
         }catch(error){
@@ -71,11 +72,15 @@ const AuthProvider = ({children}) => {
                 const idToken=await currentUser.getIdToken();
                 setToken(idToken);
                 localStorage.setItem("access-token",idToken);
+                const res=await fetchUserData(currentUser);
+                setUserData(res);
             }
             else{
+                setUserData(null);
                 setToken(null);
                 localStorage.removeItem("access-token");
             }
+            setLoading(false);
         });
         return ()=>unsubscribe();
     }, []);
@@ -95,7 +100,9 @@ const AuthProvider = ({children}) => {
         setLoading,
         passwordReset,
         removeUser,
-        token
+        token,
+        userData,
+        setUserData
     };
 
     return <AuthContext value={authData}>{children}</AuthContext>

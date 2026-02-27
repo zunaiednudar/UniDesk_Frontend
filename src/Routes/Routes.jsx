@@ -9,6 +9,7 @@ import NotFound from "../Pages/NotFound.jsx/NotFound.jsx";
 import DashboardLayout from "../Layouts/DashboardLayout/DashboardLayout.jsx";
 import StudentDashboard from "../Pages/StudentDashboard/StudentDashboard.jsx";
 import PublicRoute from "../Providers/PublicRoute/PublicRoute.jsx";
+import StudentRoute from "../Providers/RoleWiseRoutes/StudentRoute/StudentRoute.jsx";
 
 export const router = createBrowserRouter([
     {
@@ -47,12 +48,18 @@ export const router = createBrowserRouter([
     },
     {
         path: "/dashboard/student",
-        Component: StudentDashboard,
+        element:<StudentRoute>
+            <DashboardLayout></DashboardLayout>
+        </StudentRoute>,
         children: [
-            // {
-            //     index:true,
-            //     Component:MyActivity
-            // },
+            {
+                index:true,
+                Component:StudentDashboard
+            },
+            {
+                path:"my-activity",
+                Component:StudentDashboard
+            }
         ]
     },
     {

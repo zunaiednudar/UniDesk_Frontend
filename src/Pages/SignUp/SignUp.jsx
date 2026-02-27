@@ -2,7 +2,7 @@ import React, { useContext, useState } from 'react';
 import DotGrid from "../../Components/DotGrid/DotGrid.jsx";
 import { Link, useNavigate } from "react-router";
 import { uploadToCloudinary } from '../../utils/uploadToCloudinary.js';
-import { AuthContext } from '../../Providers/AuthProvider.jsx';
+import { AuthContext } from '../../Providers/AuthProvider/AuthProvider.jsx';
 import { toast } from 'sonner';
 import TextType from '../../Components/TextType/TextType.jsx';
 import axiosSecure from '../../utils/axiosSecure.js';

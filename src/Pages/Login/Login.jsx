@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 import DotGrid from "../../Components/DotGrid/DotGrid.jsx";
 import { Link, useNavigate } from "react-router";
-import { AuthContext } from '../../Providers/AuthProvider.jsx';
+import { AuthContext } from '../../Providers/AuthProvider/AuthProvider.jsx';
 import { toast } from 'sonner';
 import TextType from '../../Components/TextType/TextType.jsx';
 import { handleGoogleLogin } from '../../utils/handleGoogleLogin.js';
