@@ -1,6 +1,6 @@
 import React, {createContext, useEffect, useState} from 'react';
 import {auth} from "../Firebase/firebase.init.js";
-import {signInWithEmailAndPassword, createUserWithEmailAndPassword,signOut,GoogleAuthProvider,signInWithPopup,updateProfile,onAuthStateChanged, sendPasswordResetEmail } from "firebase/auth";
+import {signInWithEmailAndPassword, createUserWithEmailAndPassword,signOut,GoogleAuthProvider,signInWithPopup,updateProfile,onAuthStateChanged, sendPasswordResetEmail, deleteUser } from "firebase/auth";
 
 export const AuthContext = createContext();
 
@@ -9,6 +9,7 @@ const googleProvider=new GoogleAuthProvider();
 const AuthProvider = ({children}) => {
     const [user, setUser] = useState(null);
     const [loading,setLoading]=useState(false);
+    const [token,setToken]=useState(null);
 
     // Sign Up
 
@@ -54,11 +55,27 @@ const AuthProvider = ({children}) => {
         return sendPasswordResetEmail(auth,email);
     }
 
+    // Delete user
+
+    const removeUser=()=>{
+        return deleteUser(auth.currentUser);
+    }
+
     // User Data
 
     useEffect(() => {
         const unsubscribe=onAuthStateChanged(auth,async (currentUser)=>{
             setUser(currentUser);
+
+            if(currentUser){
+                const idToken=await currentUser.getIdToken();
+                setToken(idToken);
+                localStorage.setItem("access-token",idToken);
+            }
+            else{
+                setToken(null);
+                localStorage.removeItem("access-token");
+            }
         });
         return ()=>unsubscribe();
     }, []);
@@ -76,7 +93,9 @@ const AuthProvider = ({children}) => {
         setUser,
         loading,
         setLoading,
-        passwordReset
+        passwordReset,
+        removeUser,
+        token
     };
 
     return <AuthContext value={authData}>{children}</AuthContext>

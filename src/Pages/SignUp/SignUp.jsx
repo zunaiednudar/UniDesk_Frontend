@@ -6,16 +6,18 @@ import { AuthContext } from '../../Providers/AuthProvider.jsx';
 import { toast } from 'sonner';
 import { deleteUser } from 'firebase/auth';
 import TextType from '../../Components/TextType/TextType.jsx';
-import axios from 'axios';
+import axiosSecure from '../../utils/axiosSecure.js';
 
 const SignUp = () => {
-    const { signUp, updateUser, setUser, signInWithGoogle } = useContext(AuthContext);
+    const { signUp, updateUser, setUser, signInWithGoogle, removeUser } = useContext(AuthContext);
 
     const [role, setRole] = useState("");
     const [error, setError] = useState("");
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
-    
+
+    const departments = ["mte", "che", "te", "le", "ese", "iem", "me", "mse", "bme", "ece", "eee", "cse", "hum", "chem", "phy", "math", "arch", "becm", "urp", "ce"];
+
     // Signup
 
     const handleSignup = async (e) => {
@@ -43,7 +45,12 @@ const SignUp = () => {
 
         const roleChecking = email.split("@")[1].split(".")[0];
 
-        if ((roleChecking === "stud" && role === "faculty") || (roleChecking !== "stud" && roleChecking === "" && role === "student")) {
+        if (roleChecking !== "stud" && !departments.includes(roleChecking)) {
+            toast.error("Email is not a valid KUET email");
+            return;
+        }
+
+        if ((role === "faculty" && roleChecking === "stud") || (role === "student" && departments.includes(roleChecking)) || (role === "faculty" && !departments.includes(roleChecking))) {
             toast.error("Selected role does not match with your KUET email");
             return;
         }
@@ -64,39 +71,40 @@ const SignUp = () => {
                 studentID: form.studentID?.value || "",
                 batch: form.batch?.value || "",
                 designation: form.designation?.value || "",
+                room:form.room?.value || "",
                 photoURL: imageData.url,
                 photoId: imageData.public_id,
-                status: "pending"
+                method: "email"
             };
-            // console.log(data);
 
             const result = await signUp(data.email, password);
             const user = result.user;
 
             // User Information storing in database
-            
-            axios.post("http://localhost:3000/api/users",data)
-            .then(res=>{
-                if(res.data.insertedId)
-                    console.log("User created in the database");
-            })
-            .catch(error=>{
-                console.log(error);
-            });
 
-            await updateUser({
-                displayName: data.name,
-                photoURL: data.photoURL
-            });
+            try {
+                const res = await axiosSecure.post("/users", data);
 
-            setUser({ ...user, displayName: data.name, photoURL: data.photoURL });
-            toast.success("Signed up successfully");
-            navigate("/");
+                await updateUser({
+                    displayName: data.name,
+                    photoURL: data.photoURL
+                });
+
+                setUser({ ...user, displayName: data.name, photoURL: data.photoURL });
+                toast.success("Signed up successfully");
+                navigate("/");
+            } catch (dbError) {
+                await removeUser();
+                toast.error(
+                    dbError.response?.data?.message ||
+                    "Signup failed. Please try again."
+                );
+            }
         } catch (error) {
             console.log(error);
         }
         setLoading(false);
-    }
+    };
 
     // Google Login
 
@@ -114,7 +122,7 @@ const SignUp = () => {
                 toast.error("Please use a valid KUET email.");
 
                 try {
-                    await deleteUser(user);
+                    await removeUser();
                 } catch (error) {
                     throw new Error(error);
                 }
@@ -135,7 +143,6 @@ const SignUp = () => {
                 designation: "",
                 photoURL: user.photoURL,
                 photoId: "",
-                status: "pending",
                 createdAt: new Date().toISOString()
             };
 
@@ -146,7 +153,7 @@ const SignUp = () => {
         } catch (error) {
             toast.error(error.message);
         }
-    }
+    };
 
     return (
         <div className="w-full max-w-full flex inter">
@@ -178,7 +185,7 @@ const SignUp = () => {
                             startOnVisible={true}
                             deletingSpeed={0}
                             loop={false}
-                        />    
+                        />
                     </div>
                     <p className="w-[70%] text-justify text-gray-300  text-lg">
                         Experience a smarter way to learn. Unified course management, institutional repository access,
@@ -282,10 +289,15 @@ const SignUp = () => {
                     {
                         role === "faculty" &&
                         (
+
+                            
+                            <>
+                            {/* Faculty Designation */}
+
                             <fieldset className="fieldset">
                                 <legend className="fieldset-legend">Designation</legend>
-                                <select defaultValue="Select Designation" name="designation" className="w-full select" required>
-                                    <option disabled={true}>
+                                <select defaultValue="" name="designation" className="w-full select" required>
+                                    <option value="" disabled>
                                         Select Designation
                                     </option>
                                     <option value="professor">Professor</option>
@@ -294,6 +306,15 @@ const SignUp = () => {
                                     <option value="lecturer">Lecturer</option>
                                 </select>
                             </fieldset>
+
+                            {/* Faculty Room no */}
+
+                            <fieldset className="fieldset">
+                                    <legend className="fieldset-legend">Room No</legend>
+                                    <input type="text" name="room" className="input w-full" placeholder="CSE 201, B-Block, Academic Building"
+                                        required />
+                                </fieldset>
+                            </>
                         )
                     }
 
@@ -301,8 +322,8 @@ const SignUp = () => {
 
                     <fieldset className="fieldset">
                         <legend className="fieldset-legend">Department</legend>
-                        <select defaultValue="Select Department" name="department" className="w-full select" required>
-                            <option disabled={true}>Select Department</option>
+                        <select defaultValue="" name="department" className="w-full select" required>
+                            <option value="" disabled>Select Department</option>
                             <option value="arch">Architecture</option>
                             <option value="bme">Biomedical Engineering</option>
                             <option value="becm">Building Engineering and Construction Management</option>
