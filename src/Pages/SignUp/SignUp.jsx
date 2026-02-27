@@ -4,9 +4,9 @@ import { Link, useNavigate } from "react-router";
 import { uploadToCloudinary } from '../../utils/uploadToCloudinary.js';
 import { AuthContext } from '../../Providers/AuthProvider.jsx';
 import { toast } from 'sonner';
-import { deleteUser } from 'firebase/auth';
 import TextType from '../../Components/TextType/TextType.jsx';
 import axiosSecure from '../../utils/axiosSecure.js';
+import { handleGoogleLogin } from '../../utils/handleGoogleLogin.js';
 
 const SignUp = () => {
     const { signUp, updateUser, setUser, signInWithGoogle, removeUser } = useContext(AuthContext);
@@ -106,55 +106,6 @@ const SignUp = () => {
         setLoading(false);
     };
 
-    // Google Login
-
-    const handleGoogleLogin = async () => {
-        try {
-            const res = await signInWithGoogle();
-
-            if (!res)
-                return;
-
-            const user = res.user;
-            const email = user.email;
-
-            if (!email.endsWith("kuet.ac.bd")) {
-                toast.error("Please use a valid KUET email.");
-
-                try {
-                    await removeUser();
-                } catch (error) {
-                    throw new Error(error);
-                }
-                return;
-            }
-
-            const roleChecking = email.split("@")[1].split(".")[0];
-
-            const userRole = roleChecking === "stud" ? "student" : "faculty";
-
-            const data = {
-                name: user.displayName,
-                email,
-                role: userRole,
-                department: "",
-                studentID: "",
-                batch: "",
-                designation: "",
-                photoURL: user.photoURL,
-                photoId: "",
-                createdAt: new Date().toISOString()
-            };
-
-            // console.log(data);
-
-            toast.success("Logged in with Google");
-            navigate("/");
-        } catch (error) {
-            toast.error(error.message);
-        }
-    };
-
     return (
         <div className="w-full max-w-full flex inter">
             {/* Interactive Background */}
@@ -201,7 +152,7 @@ const SignUp = () => {
                 className="w-full max-w-full lg:max-w-[50%] min-h-screen flex flex-col items-center justify-center p-10">
                 <p className="playfair font-extrabold text-black text-3xl md:text-5xl mb-5">Create Account</p>
                 <p className="text-gray-400 mb-10 text-sm md:text-[16px]">Join the UniDesk Community today</p>
-                <button onClick={handleGoogleLogin}
+                <button onClick={()=>handleGoogleLogin(signInWithGoogle, removeUser,navigate)}
                     className="w-full max-w-[500px] h-12 btn bg-white text-black border-[#e5e5e5] mb-5 cursor-pointer">
                     <svg aria-label="Google logo" width="16" height="16" xmlns="http://www.w3.org/2000/svg"
                         viewBox="0 0 512 512">
@@ -375,10 +326,7 @@ const SignUp = () => {
                 </div>
             </div>
         </div>
-
-
-    )
-        ;
+    );
 };
 
 export default SignUp;
