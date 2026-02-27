@@ -8,37 +8,46 @@ import NotFound from "../Pages/NotFound.jsx/NotFound.jsx";
 
 import DashboardLayout from "../Layouts/DashboardLayout/DashboardLayout.jsx";
 import StudentDashboard from "../Pages/StudentDashboard/StudentDashboard.jsx";
+import PublicRoute from "../Providers/PublicRoute/PublicRoute.jsx";
 
 export const router = createBrowserRouter([
     {
         path: "/",
-        Component:RootLayout,
-        children:[
+        Component: RootLayout,
+        children: [
             {
-                index:true,
-                Component:Home
+                index: true,
+                element: <PublicRoute>
+                    <Home></Home>
+                </PublicRoute>
             },
             {
-                path:"/home",
-                Component:Home
+                path: "/home",
+                element: <PublicRoute>
+                    <Home></Home>
+                </PublicRoute>
             },
             {
-                path:"/login",
-                Component:Login
+                path: "/login",
+                element: <PublicRoute>
+                    <Login></Login>
+                </PublicRoute>
             },
             {
-                path:"/signup",
-                Component:SignUp
+                path: "/signup",
+                element: <PublicRoute>
+                    <SignUp></SignUp>
+                </PublicRoute>
             },
             {
-                path:"/repository",
-                Component:Repository
+                path: "/repository",
+                Component: Repository
             },
         ]
     },
     {
         path: "/dashboard/student",
-        Component:StudentDashboard,
+        Component: StudentDashboard,
         children: [
             // {
             //     index:true,
@@ -47,7 +56,7 @@ export const router = createBrowserRouter([
         ]
     },
     {
-        path:"*",
-        Component:NotFound
+        path: "*",
+        Component: NotFound
     }
 ]);
