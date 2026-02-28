@@ -5,9 +5,10 @@ import { AuthContext } from '../../Providers/AuthProvider/AuthProvider.jsx';
 import { toast } from 'sonner';
 import TextType from '../../Components/TextType/TextType.jsx';
 import { handleGoogleLogin } from '../../utils/handleGoogleLogin.js';
+import { formatErrorMessage } from '../../utils/formatErrorMessages.js';
 
 const Login = () => {
-    const { login, signInWithGoogle, setLoading, passwordReset,removeUser } = useContext(AuthContext);
+    const { login, signInWithGoogle, setLoading, passwordReset, removeUser, logout,setUserData } = useContext(AuthContext);
     const navigate = useNavigate();
 
     // Email Login
@@ -25,7 +26,7 @@ const Login = () => {
             toast.success("Logged In Successfully");
             navigate("/");
         }).catch((error) => {
-            toast.error("Wrong Credentials");
+            toast.error(formatErrorMessage(error));
             setLoading(false);
         });
     }
@@ -81,7 +82,7 @@ const Login = () => {
                             startOnVisible={true}
                             deletingSpeed={0}
                             loop={false}
-                        />    
+                        />
                     </div>
                     <p className="w-[70%] text-justify text-gray-300 text-lg">
                         Streamline your academic workflow. Access courses, submit assignments, and collaborate with peers in one unified platform.
@@ -94,7 +95,7 @@ const Login = () => {
             <div className="w-full max-w-full lg:max-w-[50%] min-h-screen flex flex-col items-center justify-center px-10">
                 <p className="playfair font-extrabold text-black text-3xl md:text-5xl mb-5">Sign In</p>
                 <p className="text-gray-400 mb-10 text-sm md:text-[16px]">Please enter your university credentials</p>
-                <button onClick={()=>handleGoogleLogin(signInWithGoogle, removeUser,navigate)} className="w-full max-w-[500px] h-12 btn bg-white text-black border-[#e5e5e5] mb-5 cursor-pointer">
+                <button onClick={() => handleGoogleLogin(signInWithGoogle, removeUser, logout, navigate,setUserData)} className="w-full max-w-[500px] h-12 btn bg-white text-black border-[#e5e5e5] mb-5 cursor-pointer">
                     <svg aria-label="Google logo" width="16" height="16" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><g><path d="m0 0H512V512H0" fill="#fff"></path><path fill="#34a853" d="M153 292c30 82 118 95 171 60h62v48A192 192 0 0190 341"></path><path fill="#4285f4" d="m386 400a140 175 0 0053-179H260v74h102q-7 37-38 57"></path><path fill="#fbbc02" d="m90 341a208 200 0 010-171l63 49q-12 37 0 73"></path><path fill="#ea4335" d="m153 219c22-69 116-109 179-50l55-54c-78-75-230-72-297 55"></path></g></svg>
                     Sign In with Google
                 </button>

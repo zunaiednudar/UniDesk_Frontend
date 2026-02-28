@@ -11,6 +11,10 @@ createRoot(document.getElementById('root')).render(
     </RouterProvider>
     <Toaster
       position="top-center"
+      richColors
+      expand={true}
+      invert={false}
+      duration={5000}
     />
   </AuthProvider>
 

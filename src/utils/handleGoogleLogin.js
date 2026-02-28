@@ -1,7 +1,7 @@
 import { toast } from "sonner";
 import axiosSecure from "./axiosSecure.js";
 
-export const handleGoogleLogin = async (signInWithGoogle, removeUser, navigate) => {
+export const handleGoogleLogin = async (signInWithGoogle, removeUser, logout,navigate,setUserData) => {
     try {
         const res = await signInWithGoogle();
 
@@ -10,10 +10,14 @@ export const handleGoogleLogin = async (signInWithGoogle, removeUser, navigate) 
 
         const user = res.user;
         const email = user.email;
+        const isNewUser = res._tokenResponse?.isNewUser;
 
         if (!email.endsWith(".kuet.ac.bd")) {
             toast.error("Please use a valid KUET email.");
-            await removeUser();
+            if (isNewUser) 
+                await removeUser();
+            else 
+                await logout();
             return;
         }
 
@@ -36,13 +40,29 @@ export const handleGoogleLogin = async (signInWithGoogle, removeUser, navigate) 
 
         try {
             const res = await axiosSecure.post("/users", data);
+
+            setUserData(res.data.user); 
+
             toast.success("Logged in with Google");
-            navigate("/");
+
+            toast.info("You can now use Google to login anytime. Password login may require password reset once.");
+
+            if (userRole === "student")
+                navigate("/dashboard/student");
+            else if (userRole === "faculty")
+                navigate("/dashboard/faculty");
+            else
+                navigate("/dashboard/admin");
+
         } catch (dbError) {
-            await removeUser();
+            if (isNewUser) 
+                await removeUser();
+            else 
+                await logout();
+
             toast.error(dbError.response?.data?.message || "Login failed");
         }
     } catch (error) {
-        toast.error(error.message);
+        toast.error(formatErrorMessage(error));
     }
 };

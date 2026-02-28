@@ -1,17 +1,17 @@
-import React, {createContext, useEffect, useState} from 'react';
-import {auth} from "../../Firebase/firebase.init.js";
-import {signInWithEmailAndPassword, createUserWithEmailAndPassword,signOut,GoogleAuthProvider,signInWithPopup,updateProfile,onAuthStateChanged, sendPasswordResetEmail, deleteUser } from "firebase/auth";
+import React, { createContext, useEffect, useState } from 'react';
+import { auth } from "../../Firebase/firebase.init.js";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup, updateProfile, onAuthStateChanged, sendPasswordResetEmail, deleteUser } from "firebase/auth";
 import { fetchUserData } from '../../utils/fetchUserData.js';
 
 export const AuthContext = createContext();
 
-const googleProvider=new GoogleAuthProvider();
+const googleProvider = new GoogleAuthProvider();
 
-const AuthProvider = ({children}) => {
+const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
-    const [loading,setLoading]=useState(true);
-    const [token,setToken]=useState(null);
-    const [userData,setUserData]=useState(null);
+    const [loading, setLoading] = useState(true);
+    const [token, setToken] = useState(null);
+    const [userData, setUserData] = useState(null);
 
     // Sign Up
 
@@ -25,70 +25,78 @@ const AuthProvider = ({children}) => {
         return signInWithEmailAndPassword(auth, email, password);
     };
 
-    const logout=()=>{
+    const logout = () => {
         return signOut(auth);
     };
 
     // Google Authentication
 
-    const signInWithGoogle=async ()=>{
-        try{
-            return await signInWithPopup(auth,googleProvider);
-        }catch(error){
+    const signInWithGoogle = async () => {
+        try {
+            return await signInWithPopup(auth, googleProvider);
+        } catch (error) {
             if (error.code === "auth/popup-closed-by-user") {
                 setLoading(false);
                 return null;
             }
             setLoading(false);
             throw error;
-        }  
+        }
     };
 
     // Update User Profile
 
-    const updateUser=(updatedData)=>{
-        return updateProfile(auth.currentUser,updatedData);
+    const updateUser = (updatedData) => {
+        return updateProfile(auth.currentUser, updatedData);
     };
 
     // Password Reset
 
-    const passwordReset=(email)=>{
-        return sendPasswordResetEmail(auth,email);
+    const passwordReset = (email) => {
+        return sendPasswordResetEmail(auth, email);
     }
 
     // Delete user
 
-    const removeUser=()=>{
+    const removeUser = () => {
         return deleteUser(auth.currentUser);
     }
 
     // User Data
 
     useEffect(() => {
-        const unsubscribe=onAuthStateChanged(auth,async (currentUser)=>{
+        const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
             setUser(currentUser);
 
-            if(currentUser){
-                const idToken=await currentUser.getIdToken();
+            if (!currentUser) {
+                setUserData(null);
+                setToken(null);
+                localStorage.removeItem("access-token");
+                setLoading(false);
+                return;
+            }
+
+            if (currentUser) {
+                const idToken = await currentUser.getIdToken();
                 setToken(idToken);
-                localStorage.setItem("access-token",idToken);
-                const res=await fetchUserData(currentUser);
+                localStorage.setItem("access-token", idToken);
+                const res = await fetchUserData(currentUser);
                 setUserData(res);
             }
-            else{
+            else {
                 setUserData(null);
                 setToken(null);
                 localStorage.removeItem("access-token");
             }
             setLoading(false);
         });
-        return ()=>unsubscribe();
+        return () => unsubscribe();
     }, []);
 
 
     // Authentication Data
 
-    const authData={
+    const authData = {
         signUp,
         login,
         logout,

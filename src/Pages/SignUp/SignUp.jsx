@@ -7,9 +7,10 @@ import { toast } from 'sonner';
 import TextType from '../../Components/TextType/TextType.jsx';
 import axiosSecure from '../../utils/axiosSecure.js';
 import { handleGoogleLogin } from '../../utils/handleGoogleLogin.js';
+import { formatErrorMessage } from '../../utils/formatErrorMessages.js';
 
 const SignUp = () => {
-    const { signUp, updateUser, setUser, signInWithGoogle, removeUser } = useContext(AuthContext);
+    const { signUp, updateUser, setUser, signInWithGoogle, removeUser,logout,setUserData } = useContext(AuthContext);
 
     const [role, setRole] = useState("");
     const [error, setError] = useState("");
@@ -71,7 +72,7 @@ const SignUp = () => {
                 studentID: form.studentID?.value || "",
                 batch: form.batch?.value || "",
                 designation: form.designation?.value || "",
-                room:form.room?.value || "",
+                room: form.room?.value || "",
                 photoURL: imageData.url,
                 photoId: imageData.public_id,
                 method: "email"
@@ -85,14 +86,22 @@ const SignUp = () => {
             try {
                 const res = await axiosSecure.post("/users", data);
 
+                setUserData(res.data.user);
+
                 await updateUser({
                     displayName: data.name,
                     photoURL: data.photoURL
                 });
 
                 setUser({ ...user, displayName: data.name, photoURL: data.photoURL });
+
                 toast.success("Signed up successfully");
-                navigate("/");
+                if (role === "student")
+                    navigate("/dashboard/student");
+                else if (role === "faculty")
+                    navigate("/dashboard/faculty");
+                else
+                    navigate("/dashboard/admin");
             } catch (dbError) {
                 await removeUser();
                 toast.error(
@@ -101,7 +110,7 @@ const SignUp = () => {
                 );
             }
         } catch (error) {
-            console.log(error);
+            toast.error(formatErrorMessage(error));
         }
         setLoading(false);
     };
@@ -152,7 +161,7 @@ const SignUp = () => {
                 className="w-full max-w-full lg:max-w-[50%] min-h-screen flex flex-col items-center justify-center p-10">
                 <p className="playfair font-extrabold text-black text-3xl md:text-5xl mb-5">Create Account</p>
                 <p className="text-gray-400 mb-10 text-sm md:text-[16px]">Join the UniDesk Community today</p>
-                <button onClick={()=>handleGoogleLogin(signInWithGoogle, removeUser,navigate)}
+                <button onClick={() => handleGoogleLogin(signInWithGoogle, removeUser, logout, navigate,setUserData)}
                     className="w-full max-w-[500px] h-12 btn bg-white text-black border-[#e5e5e5] mb-5 cursor-pointer">
                     <svg aria-label="Google logo" width="16" height="16" xmlns="http://www.w3.org/2000/svg"
                         viewBox="0 0 512 512">
@@ -240,27 +249,25 @@ const SignUp = () => {
                     {
                         role === "faculty" &&
                         (
-
-                            
                             <>
-                            {/* Faculty Designation */}
+                                {/* Faculty Designation */}
 
-                            <fieldset className="fieldset">
-                                <legend className="fieldset-legend">Designation</legend>
-                                <select defaultValue="" name="designation" className="w-full select" required>
-                                    <option value="" disabled>
-                                        Select Designation
-                                    </option>
-                                    <option value="professor">Professor</option>
-                                    <option value="associate-professor">Associate Professor</option>
-                                    <option value="assistant-professor">Assistant Professor</option>
-                                    <option value="lecturer">Lecturer</option>
-                                </select>
-                            </fieldset>
+                                <fieldset className="fieldset">
+                                    <legend className="fieldset-legend">Designation</legend>
+                                    <select defaultValue="" name="designation" className="w-full select" required>
+                                        <option value="" disabled>
+                                            Select Designation
+                                        </option>
+                                        <option value="professor">Professor</option>
+                                        <option value="associate-professor">Associate Professor</option>
+                                        <option value="assistant-professor">Assistant Professor</option>
+                                        <option value="lecturer">Lecturer</option>
+                                    </select>
+                                </fieldset>
 
-                            {/* Faculty Room no */}
+                                {/* Faculty Room no */}
 
-                            <fieldset className="fieldset">
+                                <fieldset className="fieldset">
                                     <legend className="fieldset-legend">Room No</legend>
                                     <input type="text" name="room" className="input w-full" placeholder="CSE 201, B-Block, Academic Building"
                                         required />
