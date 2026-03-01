@@ -18,7 +18,7 @@ const DashboardLayout = ({ menuItems, userRole = 'student' }) => {
                 <div className="flex">
                     {/* Sidebar */}
 
-                    <SidebarDashboard menuItems={menuItems} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} toggleSidebar={toggleSidebar} />
+                    {/* <SidebarDashboard menuItems={menuItems} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} toggleSidebar={toggleSidebar} /> */}
 
                     {/* Main Content */}
 

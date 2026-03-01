@@ -1,83 +1,42 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext } from 'react';
 import DotGrid from "../../Components/DotGrid/DotGrid.jsx";
 import { Link, useNavigate } from "react-router";
-import { AuthContext } from '../../Providers/AuthProvider.jsx';
+import { AuthContext } from '../../Providers/AuthProvider/AuthProvider.jsx';
 import { toast } from 'sonner';
-import { deleteUser } from 'firebase/auth';
 import TextType from '../../Components/TextType/TextType.jsx';
+import { handleGoogleLogin } from '../../utils/handleGoogleLogin.js';
+import { formatErrorMessage } from '../../utils/formatErrorMessages.js';
+import axiosSecure from '../../utils/axiosSecure.js';
 
 const Login = () => {
-    const { login, signInWithGoogle, setLoading, passwordReset } = useContext(AuthContext);
+    const { login, signInWithGoogle, setLoading, passwordReset, removeUser, logout, userData,setUserData } = useContext(AuthContext);
     const navigate = useNavigate();
 
     // Email Login
 
-    const handleLogin = (e) => {
+    const handleLogin =async (e) => {
         e.preventDefault();
         const form = e.target;
 
         const email = form.email.value;
         const password = form.password.value;
 
-        login(email, password).then((res) => {
+        login(email, password).then(async (res) => {
             const user = res.user;
             console.log(user);
             toast.success("Logged In Successfully");
-            navigate("/");
+            const dbData=await axiosSecure.get(`/users/${user.email}`);
+            console.log(dbData);
+            if (dbData.data.user.role === "student")
+                navigate("/dashboard/student");
+            else if (dbData.data.user.role === "faculty")
+                navigate("/dashboard/faculty");
+            else
+                navigate("/dashboard/admin");
         }).catch((error) => {
-            toast.error("Wrong Credentials");
+            toast.error(formatErrorMessage(error));
             setLoading(false);
         });
-    }
-
-    // Google Login
-
-    const handleGoogleLogin = async () => {
-        try {
-            const res = await signInWithGoogle();
-
-            if (!res)
-                return;
-
-            const user = res.user;
-            const email = user.email;
-
-            if (!email.endsWith("kuet.ac.bd")) {
-                toast.error("Please use a valid KUET email.");
-
-                try {
-                    await deleteUser(user);
-                } catch (error) {
-                    throw new Error(error);
-                }
-                return;
-            }
-
-            const roleChecking = email.split("@")[1].split(".")[0];
-
-            const role = roleChecking === "stud" ? "student" : "faculty";
-
-            const data = {
-                name: user.displayName,
-                email,
-                role,
-                department: "",
-                studentID: "",
-                batch: "",
-                designation: "",
-                photoURL: user.photoURL,
-                photoId: "",
-                status: "pending",
-                createdAt: new Date().toISOString()
-            };
-
-            console.log(data);
-
-            toast.success("Logged in with Google");
-            navigate("/");
-        } catch (error) {
-            toast.error(error.message);
-        }
     }
 
     // Forgot Password
@@ -89,7 +48,7 @@ const Login = () => {
     const handleForgotPassword = (e) => {
         e.preventDefault();
         const form = e.target;
-        const email = form.forgotemail.value;
+        const email = form.forgotEmail.value;
         // console.log(email);
         passwordReset(email).then(() => {
             form.reset();
@@ -131,7 +90,7 @@ const Login = () => {
                             startOnVisible={true}
                             deletingSpeed={0}
                             loop={false}
-                        />    
+                        />
                     </div>
                     <p className="w-[70%] text-justify text-gray-300 text-lg">
                         Streamline your academic workflow. Access courses, submit assignments, and collaborate with peers in one unified platform.
@@ -144,7 +103,7 @@ const Login = () => {
             <div className="w-full max-w-full lg:max-w-[50%] min-h-screen flex flex-col items-center justify-center px-10">
                 <p className="playfair font-extrabold text-black text-3xl md:text-5xl mb-5">Sign In</p>
                 <p className="text-gray-400 mb-10 text-sm md:text-[16px]">Please enter your university credentials</p>
-                <button onClick={handleGoogleLogin} className="w-full max-w-[500px] h-12 btn bg-white text-black border-[#e5e5e5] mb-5 cursor-pointer">
+                <button onClick={() => handleGoogleLogin(signInWithGoogle, removeUser, logout, navigate, setUserData)} className="w-full max-w-[500px] h-12 btn bg-white text-black border-[#e5e5e5] mb-5 cursor-pointer">
                     <svg aria-label="Google logo" width="16" height="16" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><g><path d="m0 0H512V512H0" fill="#fff"></path><path fill="#34a853" d="M153 292c30 82 118 95 171 60h62v48A192 192 0 0190 341"></path><path fill="#4285f4" d="m386 400a140 175 0 0053-179H260v74h102q-7 37-38 57"></path><path fill="#fbbc02" d="m90 341a208 200 0 010-171l63 49q-12 37 0 73"></path><path fill="#ea4335" d="m153 219c22-69 116-109 179-50l55-54c-78-75-230-72-297 55"></path></g></svg>
                     Sign In with Google
                 </button>
@@ -177,7 +136,7 @@ const Login = () => {
 
                     <button type="submit" className="btn w-full h-12 bg-blue-700 font-bold text-white cursor-pointer text-lg hover:bg-blue-900 ease-in-out duration-600">Sign In</button>
                 </form>
-                <div className="text-sm">Dont have an account? <Link to="/signup" className="text-blue-500 font-medium">Create Account</Link></div>
+                <div className="text-sm">Don't have an account? <Link to="/signup" className="text-blue-500 font-medium">Create Account</Link></div>
             </div>
 
             {/* Forgot Password Modal */}
@@ -189,7 +148,7 @@ const Login = () => {
                         <form onSubmit={handleForgotPassword} className='w-full'>
                             <fieldset className="fieldset mb-5">
                                 <legend className="fieldset-legend">Enter your email</legend>
-                                <input type="email" name="forgotemail" className="input w-full" placeholder="email@stud.kuet.ac.bd" required />
+                                <input type="email" name="forgotEmail" className="input w-full" placeholder="email@stud.kuet.ac.bd" required />
                             </fieldset>
                             <div className='flex gap-5 justify-end'>
                                 <button type="submit" className='btn'>Submit</button>
