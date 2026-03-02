@@ -58,15 +58,15 @@ const MyActivity = () => {
         }
     ];
 
-    const topContributors = [
-        { id: 1, name: 'Sarah Ahmed', contributions: 2847, points: 2847, avatar: 'SA', rank: 1 },
-        { id: 2, name: 'Karim Rahman', contributions: 2435, points: 2435, avatar: 'KR', rank: 2 },
-        { id: 3, name: 'Nadia Khan', contributions: 2198, points: 2198, avatar: 'NK', rank: 3 },
-        { id: 4, name: 'Ahmed Ali', contributions: 1876, points: 1876, avatar: 'AA', rank: 4 },
-        { id: 5, name: 'Fatima Hasan', contributions: 1654, points: 1654, avatar: 'FH', rank: 5 },
-        { id: 6, name: 'Rahim Islam', contributions: 1432, points: 1432, avatar: 'RI', rank: 6 },
-        { id: 7, name: 'Ayesha Begum', contributions: 1247, points: 1247, avatar: 'AB', rank: 7 }
-    ];
+    // const topContributors = [
+    //     { id: 1, name: 'Sarah Ahmed', contributions: 2847, points: 2847, avatar: 'SA', rank: 1 },
+    //     { id: 2, name: 'Karim Rahman', contributions: 2435, points: 2435, avatar: 'KR', rank: 2 },
+    //     { id: 3, name: 'Nadia Khan', contributions: 2198, points: 2198, avatar: 'NK', rank: 3 },
+    //     { id: 4, name: 'Ahmed Ali', contributions: 1876, points: 1876, avatar: 'AA', rank: 4 },
+    //     { id: 5, name: 'Fatima Hasan', contributions: 1654, points: 1654, avatar: 'FH', rank: 5 },
+    //     { id: 6, name: 'Rahim Islam', contributions: 1432, points: 1432, avatar: 'RI', rank: 6 },
+    //     { id: 7, name: 'Ayesha Begum', contributions: 1247, points: 1247, avatar: 'AB', rank: 7 }
+    // ];
 
     const appointments = [
         {
@@ -136,11 +136,11 @@ const MyActivity = () => {
         }
     ];
 
-    const contributionData = {
-        onTime: 45,
-        late: 12,
-        missed: 3
-    };
+    // const contributionData = {
+    //     onTime: 45,
+    //     late: 12,
+    //     missed: 3
+    // };
 
     const plagiarismSummary = [
         { subject: 'Software Engineering', code: 'CSE 3220', detected: 4, total: 8, status: 'fair' },
@@ -150,10 +150,10 @@ const MyActivity = () => {
         { subject: 'Algorithm Analysis', code: 'CSE 3250', detected: 1, total: 9, status: 'warning' }
     ];
 
-    const getRankIcon = (rank) => {
-        const icons = { 1: '🥇', 2: '🥈', 3: '🥉' };
-        return icons[rank] || rank;
-    };
+    // const getRankIcon = (rank) => {
+    //     const icons = { 1: '🥇', 2: '🥈', 3: '🥉' };
+    //     return icons[rank] || rank;
+    // };
 
     const getStatusBadgeClass = (status) => {
         const classes = {
@@ -176,7 +176,7 @@ const MyActivity = () => {
     return (
         <div className="space-y-6">
             {/* Header Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
                     <div className="flex items-center justify-between mb-3">
                         <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -207,15 +207,15 @@ const MyActivity = () => {
                     <div className="text-sm text-gray-600">Upcoming Appointments</div>
                 </div>
 
-                <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                    <div className="flex items-center justify-between mb-3">
-                        <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                            <Award className="w-6 h-6 text-purple-600" />
-                        </div>
-                    </div>
-                    <div className="text-3xl font-bold text-gray-900 mb-1">{stats.contributionPoints}</div>
-                    <div className="text-sm text-gray-600">Contribution Points</div>
-                </div>
+                {/*<div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">*/}
+                {/*    <div className="flex items-center justify-between mb-3">*/}
+                {/*        <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">*/}
+                {/*            <Award className="w-6 h-6 text-purple-600" />*/}
+                {/*        </div>*/}
+                {/*    </div>*/}
+                {/*    <div className="text-3xl font-bold text-gray-900 mb-1">{stats.contributionPoints}</div>*/}
+                {/*    <div className="text-sm text-gray-600">Contribution Points</div>*/}
+                {/*</div>*/}
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -249,60 +249,60 @@ const MyActivity = () => {
                     </div>
 
                     {/* Performance Overview */}
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                        <h2 className="text-xl font-bold text-gray-900 mb-6">Performance Overview</h2>
-                        <div className="flex items-center justify-center mb-8">
-                            <div className="relative w-64 h-64">
-                                <svg className="w-full h-full -rotate-90">
-                                    <circle cx="128" cy="128" r="100" stroke="#E5E7EB" strokeWidth="20" fill="none" />
-                                    <circle
-                                        cx="128" cy="128" r="100" stroke="#10B981" strokeWidth="20" fill="none"
-                                        strokeDasharray={`${(contributionData.onTime / 60) * 628} 628`}
-                                        strokeLinecap="round"
-                                    />
-                                    <circle
-                                        cx="128" cy="128" r="100" stroke="#F59E0B" strokeWidth="20" fill="none"
-                                        strokeDasharray={`${(contributionData.late / 60) * 628} 628`}
-                                        strokeDashoffset={`-${(contributionData.onTime / 60) * 628}`}
-                                        strokeLinecap="round"
-                                    />
-                                    <circle
-                                        cx="128" cy="128" r="100" stroke="#EF4444" strokeWidth="20" fill="none"
-                                        strokeDasharray={`${(contributionData.missed / 60) * 628} 628`}
-                                        strokeDashoffset={`-${((contributionData.onTime + contributionData.late) / 60) * 628}`}
-                                        strokeLinecap="round"
-                                    />
-                                </svg>
-                                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                    <div className="text-4xl font-bold text-gray-900">75%</div>
-                                    <div className="text-sm text-gray-600">On-time Submissions</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="flex justify-center gap-8">
-                            <div className="text-center">
-                                <div className="flex items-center gap-2 mb-1">
-                                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                                    <span className="text-sm text-gray-600">On-time</span>
-                                </div>
-                                <div className="text-2xl font-bold text-gray-900">{contributionData.onTime}</div>
-                            </div>
-                            <div className="text-center">
-                                <div className="flex items-center gap-2 mb-1">
-                                    <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-                                    <span className="text-sm text-gray-600">Late</span>
-                                </div>
-                                <div className="text-2xl font-bold text-gray-900">{contributionData.late}</div>
-                            </div>
-                            <div className="text-center">
-                                <div className="flex items-center gap-2 mb-1">
-                                    <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                                    <span className="text-sm text-gray-600">Missed</span>
-                                </div>
-                                <div className="text-2xl font-bold text-gray-900">{contributionData.missed}</div>
-                            </div>
-                        </div>
-                    </div>
+                    {/*<div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">*/}
+                    {/*    <h2 className="text-xl font-bold text-gray-900 mb-6">Performance Overview</h2>*/}
+                    {/*    <div className="flex items-center justify-center mb-8">*/}
+                    {/*        <div className="relative w-64 h-64">*/}
+                    {/*            <svg className="w-full h-full -rotate-90">*/}
+                    {/*                <circle cx="128" cy="128" r="100" stroke="#E5E7EB" strokeWidth="20" fill="none" />*/}
+                    {/*                <circle*/}
+                    {/*                    cx="128" cy="128" r="100" stroke="#10B981" strokeWidth="20" fill="none"*/}
+                    {/*                    strokeDasharray={`${(contributionData.onTime / 60) * 628} 628`}*/}
+                    {/*                    strokeLinecap="round"*/}
+                    {/*                />*/}
+                    {/*                <circle*/}
+                    {/*                    cx="128" cy="128" r="100" stroke="#F59E0B" strokeWidth="20" fill="none"*/}
+                    {/*                    strokeDasharray={`${(contributionData.late / 60) * 628} 628`}*/}
+                    {/*                    strokeDashoffset={`-${(contributionData.onTime / 60) * 628}`}*/}
+                    {/*                    strokeLinecap="round"*/}
+                    {/*                />*/}
+                    {/*                <circle*/}
+                    {/*                    cx="128" cy="128" r="100" stroke="#EF4444" strokeWidth="20" fill="none"*/}
+                    {/*                    strokeDasharray={`${(contributionData.missed / 60) * 628} 628`}*/}
+                    {/*                    strokeDashoffset={`-${((contributionData.onTime + contributionData.late) / 60) * 628}`}*/}
+                    {/*                    strokeLinecap="round"*/}
+                    {/*                />*/}
+                    {/*            </svg>*/}
+                    {/*            <div className="absolute inset-0 flex flex-col items-center justify-center">*/}
+                    {/*                <div className="text-4xl font-bold text-gray-900">75%</div>*/}
+                    {/*                <div className="text-sm text-gray-600">On-time Submissions</div>*/}
+                    {/*            </div>*/}
+                    {/*        </div>*/}
+                    {/*    </div>*/}
+                    {/*    <div className="flex justify-center gap-8">*/}
+                    {/*        <div className="text-center">*/}
+                    {/*            <div className="flex items-center gap-2 mb-1">*/}
+                    {/*                <div className="w-3 h-3 bg-green-500 rounded-full"></div>*/}
+                    {/*                <span className="text-sm text-gray-600">On-time</span>*/}
+                    {/*            </div>*/}
+                    {/*            <div className="text-2xl font-bold text-gray-900">{contributionData.onTime}</div>*/}
+                    {/*        </div>*/}
+                    {/*        <div className="text-center">*/}
+                    {/*            <div className="flex items-center gap-2 mb-1">*/}
+                    {/*                <div className="w-3 h-3 bg-orange-500 rounded-full"></div>*/}
+                    {/*                <span className="text-sm text-gray-600">Late</span>*/}
+                    {/*            </div>*/}
+                    {/*            <div className="text-2xl font-bold text-gray-900">{contributionData.late}</div>*/}
+                    {/*        </div>*/}
+                    {/*        <div className="text-center">*/}
+                    {/*            <div className="flex items-center gap-2 mb-1">*/}
+                    {/*                <div className="w-3 h-3 bg-red-500 rounded-full"></div>*/}
+                    {/*                <span className="text-sm text-gray-600">Missed</span>*/}
+                    {/*            </div>*/}
+                    {/*            <div className="text-2xl font-bold text-gray-900">{contributionData.missed}</div>*/}
+                    {/*        </div>*/}
+                    {/*    </div>*/}
+                    {/*</div>*/}
 
                     {/* Plagiarism Detection Summary */}
                     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
@@ -366,35 +366,35 @@ const MyActivity = () => {
                 </div>
 
                 {/* Right Column - Sidebar Content */}
-                <div className="space-y-6">
-                    {/* Top Contributors */}
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                        <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-                            <Award className="w-5 h-5 text-yellow-600" />
-                            Top Contributors
-                        </h2>
-                        <div className="space-y-3">
-                            {topContributors.map((contributor) => (
-                                <div
-                                    key={contributor.id}
-                                    className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition"
-                                >
-                                    <div className="text-xl">{getRankIcon(contributor.rank)}</div>
-                                    <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
-                                        {contributor.avatar}
-                                    </div>
-                                    <div className="flex-1">
-                                        <h3 className="font-medium text-gray-900 text-sm">{contributor.name}</h3>
-                                        <p className="text-xs text-gray-600">{contributor.contributions} contributions</p>
-                                    </div>
-                                    <div className="text-right">
-                                        <div className="text-sm font-bold text-gray-900">{contributor.points}</div>
-                                        <div className="text-xs text-gray-600">points</div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
+                {/*<div className="space-y-6">*/}
+                {/*    /!* Top Contributors *!/*/}
+                {/*    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">*/}
+                {/*        <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">*/}
+                {/*            <Award className="w-5 h-5 text-yellow-600" />*/}
+                {/*            Top Contributors*/}
+                {/*        </h2>*/}
+                {/*        <div className="space-y-3">*/}
+                {/*            {topContributors.map((contributor) => (*/}
+                {/*                <div*/}
+                {/*                    key={contributor.id}*/}
+                {/*                    className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition"*/}
+                {/*                >*/}
+                {/*                    <div className="text-xl">{getRankIcon(contributor.rank)}</div>*/}
+                {/*                    <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold">*/}
+                {/*                        {contributor.avatar}*/}
+                {/*                    </div>*/}
+                {/*                    <div className="flex-1">*/}
+                {/*                        <h3 className="font-medium text-gray-900 text-sm">{contributor.name}</h3>*/}
+                {/*                        <p className="text-xs text-gray-600">{contributor.contributions} contributions</p>*/}
+                {/*                    </div>*/}
+                {/*                    <div className="text-right">*/}
+                {/*                        <div className="text-sm font-bold text-gray-900">{contributor.points}</div>*/}
+                {/*                        <div className="text-xs text-gray-600">points</div>*/}
+                {/*                    </div>*/}
+                {/*                </div>*/}
+                {/*            ))}*/}
+                {/*        </div>*/}
+                {/*    </div>*/}
 
                     {/* Appointments */}
                     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
@@ -434,7 +434,7 @@ const MyActivity = () => {
                             ))}
                         </div>
                     </div>
-                </div>
+                {/*</div>*/}
             </div>
         </div>
     );
