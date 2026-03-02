@@ -1,4 +1,4 @@
-import React from 'react';
+import {useContext, useEffect, useState} from 'react';
 import {
     BookOpen,
     ClipboardCheck,
@@ -11,52 +11,89 @@ import {
     Clock,
     Users
 } from 'lucide-react';
+import axiosSecure from "../../utils/axiosSecure.js";
+import {AuthContext} from "../../Providers/AuthProvider/AuthProvider.jsx";
 
 const MyActivity = () => {
-    const stats = {
-        enrolledCourses: 8,
-        pendingAssignments: 5,
-        upcomingAppointments: 3,
-        contributionPoints: 1247
-    };
+    const { userData } = useContext(AuthContext);
+    console.log("User data: ", userData);
 
-    const recentNotices = [
-        {
-            id: 1,
-            title: 'Registration for Next Semester Starts Monday',
-            time: '2 days ago',
-            category: 'Registration',
-            icon: <Calendar className="w-4 h-4" />
-        },
-        {
-            id: 2,
-            title: 'Campus WiFi Maintenance This Weekend',
-            time: '3 days ago',
-            category: 'IT',
-            icon: <AlertCircle className="w-4 h-4" />
-        },
-        {
-            id: 3,
-            title: 'Project Submission Guidelines Updated',
-            time: '3 days ago',
-            category: 'Academic',
-            icon: <BookOpen className="w-4 h-4" />
-        },
-        {
-            id: 4,
-            title: 'Career Fair - January 16th, 2026',
-            time: '4 days ago',
-            category: 'Event',
-            icon: <Users className="w-4 h-4" />
-        },
-        {
-            id: 5,
-            title: 'Scholarship Applications Now Open',
-            time: '5 days ago',
-            category: 'Financial',
-            icon: <Award className="w-4 h-4" />
-        }
-    ];
+    const [stats, setStats] = useState({});
+
+    useEffect(() => {
+        const fetchData = async () => {
+            if (!userData?._id) return; // Wait until userData is ready
+
+            try {
+                const appointmentsRes = await axiosSecure.get(`/appointment/student/${userData._id}`);
+                console.log("Appointments data:",appointmentsRes);
+                const upcomingAppointments = appointmentsRes.data.count || 0;
+
+                const coursesRes = await axiosSecure.get(`/courses/my-courses`);
+                console.log("Courses data: ", coursesRes);
+                const courses = coursesRes.data.courses;
+
+                const assignmentRequests = courses.map(course => axiosSecure.get(`/course/${course._id}/assignments`));
+                console.log("Assignment Requests: ", assignmentRequests);
+                const assignmentResponses = await Promise.all(assignmentRequests);
+
+                let totalPendingAssignments = 0;
+
+                assignmentResponses.forEach(res => {
+                    console.log("Assignment Response: ", res);
+                    totalPendingAssignments += res.data.assignments.length;
+                });
+
+                setStats({
+                    enrolledCourses: courses.length,
+                    pendingAssignments: totalPendingAssignments,
+                    upcomingAppointments: upcomingAppointments
+                });
+            } catch (error) {
+                console.error(error);
+            }
+        };
+
+        fetchData();
+    }, [userData]);
+
+    // const recentNotices = [
+    //     {
+    //         id: 1,
+    //         title: 'Registration for Next Semester Starts Monday',
+    //         time: '2 days ago',
+    //         category: 'Registration',
+    //         icon: <Calendar className="w-4 h-4" />
+    //     },
+    //     {
+    //         id: 2,
+    //         title: 'Campus WiFi Maintenance This Weekend',
+    //         time: '3 days ago',
+    //         category: 'IT',
+    //         icon: <AlertCircle className="w-4 h-4" />
+    //     },
+    //     {
+    //         id: 3,
+    //         title: 'Project Submission Guidelines Updated',
+    //         time: '3 days ago',
+    //         category: 'Academic',
+    //         icon: <BookOpen className="w-4 h-4" />
+    //     },
+    //     {
+    //         id: 4,
+    //         title: 'Career Fair - January 16th, 2026',
+    //         time: '4 days ago',
+    //         category: 'Event',
+    //         icon: <Users className="w-4 h-4" />
+    //     },
+    //     {
+    //         id: 5,
+    //         title: 'Scholarship Applications Now Open',
+    //         time: '5 days ago',
+    //         category: 'Financial',
+    //         icon: <Award className="w-4 h-4" />
+    //     }
+    // ];
 
     // const topContributors = [
     //     { id: 1, name: 'Sarah Ahmed', contributions: 2847, points: 2847, avatar: 'SA', rank: 1 },
@@ -142,27 +179,27 @@ const MyActivity = () => {
     //     missed: 3
     // };
 
-    const plagiarismSummary = [
-        { subject: 'Software Engineering', code: 'CSE 3220', detected: 4, total: 8, status: 'fair' },
-        { subject: 'Database Systems', code: 'CSE 3210', detected: 0, total: 6, status: 'clean' },
-        { subject: 'Computer Networks', code: 'CSE 3230', detected: 1, total: 7, status: 'fair' },
-        { subject: 'Operating Systems', code: 'CSE 3240', detected: 0, total: 5, status: 'clean' },
-        { subject: 'Algorithm Analysis', code: 'CSE 3250', detected: 1, total: 9, status: 'warning' }
-    ];
+    // const plagiarismSummary = [
+    //     { subject: 'Software Engineering', code: 'CSE 3220', detected: 4, total: 8, status: 'fair' },
+    //     { subject: 'Database Systems', code: 'CSE 3210', detected: 0, total: 6, status: 'clean' },
+    //     { subject: 'Computer Networks', code: 'CSE 3230', detected: 1, total: 7, status: 'fair' },
+    //     { subject: 'Operating Systems', code: 'CSE 3240', detected: 0, total: 5, status: 'clean' },
+    //     { subject: 'Algorithm Analysis', code: 'CSE 3250', detected: 1, total: 9, status: 'warning' }
+    // ];
 
     // const getRankIcon = (rank) => {
     //     const icons = { 1: '🥇', 2: '🥈', 3: '🥉' };
     //     return icons[rank] || rank;
     // };
 
-    const getStatusBadgeClass = (status) => {
-        const classes = {
-            clean: 'bg-green-100 text-green-700',
-            fair: 'bg-yellow-100 text-yellow-700',
-            warning: 'bg-orange-100 text-orange-700'
-        };
-        return classes[status] || 'bg-gray-100 text-gray-700';
-    };
+    // const getStatusBadgeClass = (status) => {
+    //     const classes = {
+    //         clean: 'bg-green-100 text-green-700',
+    //         fair: 'bg-yellow-100 text-yellow-700',
+    //         warning: 'bg-orange-100 text-orange-700'
+    //     };
+    //     return classes[status] || 'bg-gray-100 text-gray-700';
+    // };
 
     const getTaskStatusClass = (status) => {
         const classes = {
@@ -222,31 +259,31 @@ const MyActivity = () => {
                 {/* Left Column - Main Content */}
                 <div className="lg:col-span-2 space-y-6">
                     {/* Recent Notices */}
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                        <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-                            <Bell className="w-5 h-5 text-blue-600" />
-                            Recent Notices
-                        </h2>
-                        <div className="space-y-3">
-                            {recentNotices.map((notice) => (
-                                <div
-                                    key={notice.id}
-                                    className="flex items-start gap-4 p-4 rounded-lg hover:bg-gray-50 transition cursor-pointer border border-gray-100"
-                                >
-                                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                        {notice.icon}
-                                    </div>
-                                    <div className="flex-1">
-                                        <h3 className="font-medium text-gray-900 mb-1">{notice.title}</h3>
-                                        <div className="flex items-center gap-3 text-xs text-gray-500">
-                                            <span>{notice.time}</span>
-                                            <span className="px-2 py-1 bg-gray-100 rounded">{notice.category}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
+                    {/*<div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">*/}
+                    {/*    <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">*/}
+                    {/*        <Bell className="w-5 h-5 text-blue-600" />*/}
+                    {/*        Recent Notices*/}
+                    {/*    </h2>*/}
+                    {/*    <div className="space-y-3">*/}
+                    {/*        {recentNotices.map((notice) => (*/}
+                    {/*            <div*/}
+                    {/*                key={notice.id}*/}
+                    {/*                className="flex items-start gap-4 p-4 rounded-lg hover:bg-gray-50 transition cursor-pointer border border-gray-100"*/}
+                    {/*            >*/}
+                    {/*                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">*/}
+                    {/*                    {notice.icon}*/}
+                    {/*                </div>*/}
+                    {/*                <div className="flex-1">*/}
+                    {/*                    <h3 className="font-medium text-gray-900 mb-1">{notice.title}</h3>*/}
+                    {/*                    <div className="flex items-center gap-3 text-xs text-gray-500">*/}
+                    {/*                        <span>{notice.time}</span>*/}
+                    {/*                        <span className="px-2 py-1 bg-gray-100 rounded">{notice.category}</span>*/}
+                    {/*                    </div>*/}
+                    {/*                </div>*/}
+                    {/*            </div>*/}
+                    {/*        ))}*/}
+                    {/*    </div>*/}
+                    {/*</div>*/}
 
                     {/* Performance Overview */}
                     {/*<div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">*/}
@@ -305,40 +342,40 @@ const MyActivity = () => {
                     {/*</div>*/}
 
                     {/* Plagiarism Detection Summary */}
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                        <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-                            <AlertCircle className="w-5 h-5 text-orange-600" />
-                            Plagiarism Detection Summary
-                        </h2>
-                        <div className="overflow-x-auto">
-                            <table className="w-full">
-                                <thead>
-                                <tr className="border-b border-gray-200">
-                                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Subject</th>
-                                    <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Code</th>
-                                    <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700">Detected</th>
-                                    <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700">Total</th>
-                                    <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700">Status</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                {plagiarismSummary.map((item, index) => (
-                                    <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
-                                        <td className="py-3 px-4 text-sm text-gray-900">{item.subject}</td>
-                                        <td className="py-3 px-4 text-sm text-gray-600">{item.code}</td>
-                                        <td className="py-3 px-4 text-sm text-gray-900 text-center">{item.detected}</td>
-                                        <td className="py-3 px-4 text-sm text-gray-900 text-center">{item.total}</td>
-                                        <td className="py-3 px-4 text-center">
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(item.status)}`}>
-                          {item.status}
-                        </span>
-                                        </td>
-                                    </tr>
-                                ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                    {/*<div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">*/}
+                    {/*    <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">*/}
+                    {/*        <AlertCircle className="w-5 h-5 text-orange-600" />*/}
+                    {/*        Plagiarism Detection Summary*/}
+                    {/*    </h2>*/}
+                    {/*    <div className="overflow-x-auto">*/}
+                    {/*        <table className="w-full">*/}
+                    {/*            <thead>*/}
+                    {/*            <tr className="border-b border-gray-200">*/}
+                    {/*                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Subject</th>*/}
+                    {/*                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Code</th>*/}
+                    {/*                <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700">Detected</th>*/}
+                    {/*                <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700">Total</th>*/}
+                    {/*                <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700">Status</th>*/}
+                    {/*            </tr>*/}
+                    {/*            </thead>*/}
+                    {/*            <tbody>*/}
+                    {/*            {plagiarismSummary.map((item, index) => (*/}
+                    {/*                <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">*/}
+                    {/*                    <td className="py-3 px-4 text-sm text-gray-900">{item.subject}</td>*/}
+                    {/*                    <td className="py-3 px-4 text-sm text-gray-600">{item.code}</td>*/}
+                    {/*                    <td className="py-3 px-4 text-sm text-gray-900 text-center">{item.detected}</td>*/}
+                    {/*                    <td className="py-3 px-4 text-sm text-gray-900 text-center">{item.total}</td>*/}
+                    {/*                    <td className="py-3 px-4 text-center">*/}
+                    {/*    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(item.status)}`}>*/}
+                    {/*      {item.status}*/}
+                    {/*    </span>*/}
+                    {/*                    </td>*/}
+                    {/*                </tr>*/}
+                    {/*            ))}*/}
+                    {/*            </tbody>*/}
+                    {/*        </table>*/}
+                    {/*    </div>*/}
+                    {/*</div>*/}
 
                     {/* Task List */}
                     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
