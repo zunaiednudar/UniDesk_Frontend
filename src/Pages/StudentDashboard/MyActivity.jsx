@@ -1,477 +1,395 @@
-import {useContext, useEffect, useState} from 'react';
+import { useContext, useEffect, useState } from 'react';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import {
     BookOpen,
     ClipboardCheck,
     Calendar,
-    Award,
-    Bell,
-    TrendingUp,
-    AlertCircle,
-    CheckCircle2,
     Clock,
-    Users
+    AlertCircle,
 } from 'lucide-react';
 import axiosSecure from "../../utils/axiosSecure.js";
-import {AuthContext} from "../../Providers/AuthProvider/AuthProvider.jsx";
+import { AuthContext } from "../../Providers/AuthProvider/AuthProvider.jsx";
+
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
+const getDueDateClasses = (dateStr, isCompleted) => {
+    if (isCompleted) return 'text-gray-400';
+    if (!dateStr) return 'text-gray-400';
+    const diff = (new Date(dateStr) - new Date()) / (1000 * 60 * 60 * 24);
+    if (diff < 0)  return 'text-red-500';
+    if (diff <= 2) return 'text-orange-500';
+    if (diff <= 5) return 'text-yellow-500';
+    return 'text-gray-500';
+};
+
+// Maps every possible task status to a checkbox border/fill colour
+const getCheckboxClasses = (status) => {
+    switch (status) {
+        case 'completed': return 'border-green-500 bg-green-500';
+        case 'late':      return 'border-orange-400 bg-transparent';
+        case 'missed':    return 'border-red-400 bg-transparent';
+        default:          return 'border-yellow-400 bg-transparent'; // pending / in-progress
+    }
+};
+
+const appointmentStatusConfig = {
+    approved:  { badge: 'bg-green-50 border border-green-200',   dot: 'bg-green-500',  label: 'Approved'  },
+    pending:   { badge: 'bg-yellow-50 border border-yellow-200', dot: 'bg-yellow-400', label: 'Pending'   },
+    cancelled: { badge: 'bg-red-50 border border-red-200',       dot: 'bg-red-500',    label: 'Cancelled' },
+};
+
+const PIE_COLORS = ['#10B981', '#F59E0B', '#EF4444'];
+
+// ─── Sub-components ──────────────────────────────────────────────────────────
+
+const StatCard = ({ icon: Icon, value, label, iconBg, iconColor }) => (
+    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center gap-5 hover:shadow-md transition-shadow duration-200">
+        <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${iconBg}`}>
+            <Icon size={22} className={iconColor} strokeWidth={1.75} />
+        </div>
+        <div>
+            <div className="text-3xl font-bold text-gray-900 leading-tight">{value ?? '—'}</div>
+            <div className="text-sm text-gray-400 mt-0.5 font-medium">{label}</div>
+        </div>
+    </div>
+);
+
+const SectionHeader = ({ icon: Icon, title, iconBg, iconColor, count }) => (
+    <div className="flex items-center gap-2.5 mb-5">
+        <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${iconBg}`}>
+            <Icon size={16} className={iconColor} strokeWidth={2} />
+        </div>
+        <h2 className="text-base font-bold text-gray-900">{title}</h2>
+        {count !== undefined && (
+            <span className="ml-1 text-xs font-semibold text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">
+                {count}
+            </span>
+        )}
+    </div>
+);
+
+const TaskItem = ({ task, onToggle }) => {
+    const isCompleted = task.status === 'completed';
+    const dateClasses = getDueDateClasses(task.dueDate, isCompleted);
+    const checkboxClasses = getCheckboxClasses(task.status);
+
+    return (
+        <div
+            role="button"
+            tabIndex={0}
+            onClick={() => onToggle?.(task.id)}
+            onKeyDown={e => e.key === 'Enter' && onToggle?.(task.id)}
+            className="flex items-center gap-3 py-2.5 px-1 border-b border-gray-100 last:border-b-0 rounded-md cursor-pointer hover:bg-gray-50 transition-colors duration-100 outline-none"
+        >
+            {/* Checkbox */}
+            <div className={`w-[18px] h-[18px] rounded-full flex-shrink-0 border-2 flex items-center justify-center transition-all duration-150 ${checkboxClasses}`}>
+                {isCompleted && (
+                    <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                        <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                )}
+            </div>
+
+            {/* Title + course */}
+            <div className="flex-1 min-w-0">
+                <p className={`text-sm font-medium truncate leading-snug transition-colors ${isCompleted ? 'line-through text-gray-400' : 'text-gray-900'}`}>
+                    {task.title}
+                </p>
+                {task.course && (
+                    <p className="text-xs text-gray-400 mt-0.5 truncate">{task.course}</p>
+                )}
+            </div>
+
+            {/* Due date */}
+            {task.dueDate && (
+                <div className={`flex-shrink-0 flex items-center gap-1 text-xs font-medium ${dateClasses}`}>
+                    <Calendar size={11} strokeWidth={2} />
+                    <span>{task.dueDate}</span>
+                </div>
+            )}
+        </div>
+    );
+};
+
+const AppointmentCard = ({ appointment }) => {
+    const cfg = appointmentStatusConfig[appointment.status?.toLowerCase()] || appointmentStatusConfig.pending;
+
+    return (
+        <div className="p-4 rounded-xl border border-gray-100 bg-white hover:border-orange-200 hover:shadow-sm transition-all duration-200">
+            <div className="flex items-start justify-between mb-3">
+                <div>
+                    <h3 className="text-sm font-bold text-gray-900">{appointment.faculty}</h3>
+                    {appointment.room && (
+                        <p className="text-xs text-gray-400 mt-0.5">Room {appointment.room}</p>
+                    )}
+                </div>
+                <div className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 ${cfg.badge}`}>
+                    <div className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+                    <span className="text-xs font-semibold text-gray-600 capitalize">{cfg.label}</span>
+                </div>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs font-medium text-gray-500 bg-gray-50 rounded-lg px-3 py-2">
+                <Clock size={13} className="text-orange-400" strokeWidth={2} />
+                <span>{appointment.startTime} – {appointment.endTime}</span>
+            </div>
+        </div>
+    );
+};
+
+const SkeletonBlock = ({ className }) => (
+    <div className={`rounded-xl bg-gray-100 animate-pulse ${className}`} />
+);
+
+const EmptyState = ({ message }) => (
+    <div className="flex flex-col items-center py-8 text-gray-400 text-sm">
+        <AlertCircle size={28} className="text-gray-200 mb-2" />
+        {message}
+    </div>
+);
+
+// ─── Main Component ──────────────────────────────────────────────────────────
 
 const MyActivity = () => {
     const { userData } = useContext(AuthContext);
     console.log("User data: ", userData);
 
     const [stats, setStats] = useState({});
+    const [appointments, setAppointments] = useState([]);
+    const [taskList, setTaskList] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [submissionStats, setSubmissionStats] = useState({ onTime: 0, late: 0, missed: 0 });
 
     useEffect(() => {
         const fetchData = async () => {
-            if (!userData?._id) return; // Wait until userData is ready
-
+            if (!userData?._id) return;
+            setLoading(true);
             try {
+                // ── Appointments ──────────────────────────────────────────
                 const appointmentsRes = await axiosSecure.get(`/appointment/student/${userData._id}`);
-                console.log("Appointments data:",appointmentsRes);
-                const upcomingAppointments = appointmentsRes.data.count || 0;
+                console.log("Appointments data:", appointmentsRes);
 
+                const upcomingAppointments = (appointmentsRes.data.appointments || []).map((appointment, index) => ({
+                    id: index + 1,
+                    faculty: appointment.faculty.name,
+                    startTime: new Date(appointment.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                    endTime: new Date(appointment.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                    room: appointment.faculty.room,
+                    status: appointment.status,
+                }));
+                setAppointments(upcomingAppointments);
+
+                // ── Courses & Assignments ─────────────────────────────────
                 const coursesRes = await axiosSecure.get(`/courses/my-courses`);
                 console.log("Courses data: ", coursesRes);
                 const courses = coursesRes.data.courses;
 
                 const assignmentRequests = courses.map(course => axiosSecure.get(`/course/${course._id}/assignments`));
-                console.log("Assignment Requests: ", assignmentRequests);
                 const assignmentResponses = await Promise.all(assignmentRequests);
+                const allAssignments = assignmentResponses.flatMap(res => res.data.assignments);
 
-                let totalPendingAssignments = 0;
+                // ── Build task list with submission status ────────────────
+                const userTasks = await Promise.all(
+                    allAssignments.map(async (assignment, idx) => {
+                        const courseRes = await axiosSecure.get(`/courses/${assignment.course}`);
 
-                assignmentResponses.forEach(res => {
-                    console.log("Assignment Response: ", res);
-                    totalPendingAssignments += res.data.assignments.length;
-                });
+                        // Guard: submissions may not exist on the object
+                        const submissions = Array.isArray(assignment.submissions) ? assignment.submissions : [];
+                        const userSubmission = submissions.find(s => s.student === userData._id);  // ← fixed: was undefined USER_ID
+
+                        let status = 'missed';
+                        if (userSubmission) {
+                            const diffHrs = (new Date(userSubmission.submittedAt) - new Date(assignment.dueDate)) / (1000 * 60 * 60);
+                            status = diffHrs <= 0 ? 'completed' : 'late';
+                        }
+
+                        return {
+                            id: idx + 1,
+                            title: assignment.title,
+                            description: assignment.description,
+                            course: courseRes.data.name,
+                            dueDate: new Date(assignment.dueDate).toLocaleDateString(),
+                            status,
+                        };
+                    })
+                );
+
+                // ── Submission stats for pie chart ────────────────────────
+                const onTime = userTasks.filter(t => t.status === 'completed').length;
+                const late   = userTasks.filter(t => t.status === 'late').length;
+                const missed = userTasks.filter(t => t.status === 'missed').length;
+
+                setTaskList(userTasks);
+                setSubmissionStats({ onTime, late, missed });
 
                 setStats({
                     enrolledCourses: courses.length,
-                    pendingAssignments: totalPendingAssignments,
-                    upcomingAppointments: upcomingAppointments
+                    pendingAssignments: userTasks.filter(t => t.status !== 'completed').length,
+                    upcomingAppointments: upcomingAppointments.length,
                 });
             } catch (error) {
                 console.error(error);
+            } finally {
+                setLoading(false);
             }
         };
-
         fetchData();
     }, [userData]);
 
-    // const recentNotices = [
-    //     {
-    //         id: 1,
-    //         title: 'Registration for Next Semester Starts Monday',
-    //         time: '2 days ago',
-    //         category: 'Registration',
-    //         icon: <Calendar className="w-4 h-4" />
-    //     },
-    //     {
-    //         id: 2,
-    //         title: 'Campus WiFi Maintenance This Weekend',
-    //         time: '3 days ago',
-    //         category: 'IT',
-    //         icon: <AlertCircle className="w-4 h-4" />
-    //     },
-    //     {
-    //         id: 3,
-    //         title: 'Project Submission Guidelines Updated',
-    //         time: '3 days ago',
-    //         category: 'Academic',
-    //         icon: <BookOpen className="w-4 h-4" />
-    //     },
-    //     {
-    //         id: 4,
-    //         title: 'Career Fair - January 16th, 2026',
-    //         time: '4 days ago',
-    //         category: 'Event',
-    //         icon: <Users className="w-4 h-4" />
-    //     },
-    //     {
-    //         id: 5,
-    //         title: 'Scholarship Applications Now Open',
-    //         time: '5 days ago',
-    //         category: 'Financial',
-    //         icon: <Award className="w-4 h-4" />
-    //     }
-    // ];
+    const pendingCount = taskList.filter(t => t.status !== 'completed').length;
 
-    // const topContributors = [
-    //     { id: 1, name: 'Sarah Ahmed', contributions: 2847, points: 2847, avatar: 'SA', rank: 1 },
-    //     { id: 2, name: 'Karim Rahman', contributions: 2435, points: 2435, avatar: 'KR', rank: 2 },
-    //     { id: 3, name: 'Nadia Khan', contributions: 2198, points: 2198, avatar: 'NK', rank: 3 },
-    //     { id: 4, name: 'Ahmed Ali', contributions: 1876, points: 1876, avatar: 'AA', rank: 4 },
-    //     { id: 5, name: 'Fatima Hasan', contributions: 1654, points: 1654, avatar: 'FH', rank: 5 },
-    //     { id: 6, name: 'Rahim Islam', contributions: 1432, points: 1432, avatar: 'RI', rank: 6 },
-    //     { id: 7, name: 'Ayesha Begum', contributions: 1247, points: 1247, avatar: 'AB', rank: 7 }
-    // ];
-
-    const appointments = [
-        {
-            id: 1,
-            faculty: 'Dr. Rahman',
-            course: 'Software Engineering (CSE 3220)',
-            date: 'Jan 8, 2026',
-            time: '10:00 AM',
-            room: '302',
-            status: 'upcoming'
-        },
-        {
-            id: 2,
-            faculty: 'Prof. Ahmed',
-            course: 'Database Systems (CSE 3210)',
-            date: 'Jan 9, 2026',
-            time: '2:00 PM',
-            room: '205',
-            status: 'upcoming'
-        },
-        {
-            id: 3,
-            faculty: 'Dr. Khan',
-            course: 'Computer Networks (CSE 3230)',
-            date: 'Jan 10, 2026',
-            time: '11:30 AM',
-            room: '401',
-            status: 'upcoming'
-        }
+    const pieData = [
+        { name: 'On-time', value: submissionStats.onTime },
+        { name: 'Late',    value: submissionStats.late   },
+        { name: 'Missed',  value: submissionStats.missed },
     ];
-
-    const taskList = [
-        {
-            id: 1,
-            title: 'Database Design Project',
-            course: 'CSE 3210',
-            dueDate: 'Jan 5, 2026',
-            status: 'in-progress'
-        },
-        {
-            id: 2,
-            title: 'UML Diagram Assignment',
-            course: 'CSE 3220',
-            dueDate: 'Jan 10, 2026',
-            status: 'pending'
-        },
-        {
-            id: 3,
-            title: 'Network Protocol Analysis',
-            course: 'CSE 3230',
-            dueDate: 'Jan 12, 2026',
-            status: 'pending'
-        },
-        {
-            id: 4,
-            title: 'OS Scheduling Algorithm',
-            course: 'CSE 3240',
-            dueDate: 'Jan 15, 2026',
-            status: 'pending'
-        },
-        {
-            id: 5,
-            title: 'Algorithm Complexity Report',
-            course: 'CSE 3250',
-            dueDate: 'Jan 18, 2026',
-            status: 'completed'
-        }
-    ];
-
-    // const contributionData = {
-    //     onTime: 45,
-    //     late: 12,
-    //     missed: 3
-    // };
-
-    // const plagiarismSummary = [
-    //     { subject: 'Software Engineering', code: 'CSE 3220', detected: 4, total: 8, status: 'fair' },
-    //     { subject: 'Database Systems', code: 'CSE 3210', detected: 0, total: 6, status: 'clean' },
-    //     { subject: 'Computer Networks', code: 'CSE 3230', detected: 1, total: 7, status: 'fair' },
-    //     { subject: 'Operating Systems', code: 'CSE 3240', detected: 0, total: 5, status: 'clean' },
-    //     { subject: 'Algorithm Analysis', code: 'CSE 3250', detected: 1, total: 9, status: 'warning' }
-    // ];
-
-    // const getRankIcon = (rank) => {
-    //     const icons = { 1: '🥇', 2: '🥈', 3: '🥉' };
-    //     return icons[rank] || rank;
-    // };
-
-    // const getStatusBadgeClass = (status) => {
-    //     const classes = {
-    //         clean: 'bg-green-100 text-green-700',
-    //         fair: 'bg-yellow-100 text-yellow-700',
-    //         warning: 'bg-orange-100 text-orange-700'
-    //     };
-    //     return classes[status] || 'bg-gray-100 text-gray-700';
-    // };
-
-    const getTaskStatusClass = (status) => {
-        const classes = {
-            completed: 'bg-green-100 text-green-700 border-l-4 border-green-500',
-            'in-progress': 'bg-orange-100 text-orange-700 border-l-4 border-orange-500',
-            pending: 'bg-yellow-100 text-yellow-700 border-l-4 border-yellow-500'
-        };
-        return classes[status] || 'bg-gray-100 text-gray-700';
-    };
 
     return (
         <div className="space-y-6">
-            {/* Header Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                    <div className="flex items-center justify-between mb-3">
-                        <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                            <BookOpen className="w-6 h-6 text-blue-600" />
-                        </div>
-                    </div>
-                    <div className="text-3xl font-bold text-gray-900 mb-1">{stats.enrolledCourses}</div>
-                    <div className="text-sm text-gray-600">Enrolled Courses</div>
-                </div>
 
-                <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                    <div className="flex items-center justify-between mb-3">
-                        <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                            <ClipboardCheck className="w-6 h-6 text-orange-600" />
-                        </div>
-                    </div>
-                    <div className="text-3xl font-bold text-gray-900 mb-1">{stats.pendingAssignments}</div>
-                    <div className="text-sm text-gray-600">Pending Assignments</div>
-                </div>
-
-                <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                    <div className="flex items-center justify-between mb-3">
-                        <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                            <Calendar className="w-6 h-6 text-green-600" />
-                        </div>
-                    </div>
-                    <div className="text-3xl font-bold text-gray-900 mb-1">{stats.upcomingAppointments}</div>
-                    <div className="text-sm text-gray-600">Upcoming Appointments</div>
-                </div>
-
-                {/*<div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">*/}
-                {/*    <div className="flex items-center justify-between mb-3">*/}
-                {/*        <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">*/}
-                {/*            <Award className="w-6 h-6 text-purple-600" />*/}
-                {/*        </div>*/}
-                {/*    </div>*/}
-                {/*    <div className="text-3xl font-bold text-gray-900 mb-1">{stats.contributionPoints}</div>*/}
-                {/*    <div className="text-sm text-gray-600">Contribution Points</div>*/}
-                {/*</div>*/}
+            {/* Page Title */}
+            <div>
+                <h1 className="text-xl font-bold text-gray-900">My Activity</h1>
+                <p className="text-sm text-gray-400 mt-1">Track your courses, assignments, and upcoming appointments</p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Left Column - Main Content */}
-                <div className="lg:col-span-2 space-y-6">
-                    {/* Recent Notices */}
-                    {/*<div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">*/}
-                    {/*    <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">*/}
-                    {/*        <Bell className="w-5 h-5 text-blue-600" />*/}
-                    {/*        Recent Notices*/}
-                    {/*    </h2>*/}
-                    {/*    <div className="space-y-3">*/}
-                    {/*        {recentNotices.map((notice) => (*/}
-                    {/*            <div*/}
-                    {/*                key={notice.id}*/}
-                    {/*                className="flex items-start gap-4 p-4 rounded-lg hover:bg-gray-50 transition cursor-pointer border border-gray-100"*/}
-                    {/*            >*/}
-                    {/*                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">*/}
-                    {/*                    {notice.icon}*/}
-                    {/*                </div>*/}
-                    {/*                <div className="flex-1">*/}
-                    {/*                    <h3 className="font-medium text-gray-900 mb-1">{notice.title}</h3>*/}
-                    {/*                    <div className="flex items-center gap-3 text-xs text-gray-500">*/}
-                    {/*                        <span>{notice.time}</span>*/}
-                    {/*                        <span className="px-2 py-1 bg-gray-100 rounded">{notice.category}</span>*/}
-                    {/*                    </div>*/}
-                    {/*                </div>*/}
-                    {/*            </div>*/}
-                    {/*        ))}*/}
-                    {/*    </div>*/}
-                    {/*</div>*/}
+            {/* Header Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <StatCard
+                    icon={BookOpen}
+                    value={stats.enrolledCourses}
+                    label="Enrolled Courses"
+                    iconBg="bg-blue-50"
+                    iconColor="text-blue-500"
+                />
+                <StatCard
+                    icon={ClipboardCheck}
+                    value={stats.pendingAssignments}
+                    label="Pending Assignments"
+                    iconBg="bg-orange-50"
+                    iconColor="text-orange-500"
+                />
+                <StatCard
+                    icon={Calendar}
+                    value={stats.upcomingAppointments}
+                    label="Upcoming Appointments"
+                    iconBg="bg-green-50"
+                    iconColor="text-green-500"
+                />
+            </div>
 
-                    {/* Performance Overview */}
-                    {/*<div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">*/}
-                    {/*    <h2 className="text-xl font-bold text-gray-900 mb-6">Performance Overview</h2>*/}
-                    {/*    <div className="flex items-center justify-center mb-8">*/}
-                    {/*        <div className="relative w-64 h-64">*/}
-                    {/*            <svg className="w-full h-full -rotate-90">*/}
-                    {/*                <circle cx="128" cy="128" r="100" stroke="#E5E7EB" strokeWidth="20" fill="none" />*/}
-                    {/*                <circle*/}
-                    {/*                    cx="128" cy="128" r="100" stroke="#10B981" strokeWidth="20" fill="none"*/}
-                    {/*                    strokeDasharray={`${(contributionData.onTime / 60) * 628} 628`}*/}
-                    {/*                    strokeLinecap="round"*/}
-                    {/*                />*/}
-                    {/*                <circle*/}
-                    {/*                    cx="128" cy="128" r="100" stroke="#F59E0B" strokeWidth="20" fill="none"*/}
-                    {/*                    strokeDasharray={`${(contributionData.late / 60) * 628} 628`}*/}
-                    {/*                    strokeDashoffset={`-${(contributionData.onTime / 60) * 628}`}*/}
-                    {/*                    strokeLinecap="round"*/}
-                    {/*                />*/}
-                    {/*                <circle*/}
-                    {/*                    cx="128" cy="128" r="100" stroke="#EF4444" strokeWidth="20" fill="none"*/}
-                    {/*                    strokeDasharray={`${(contributionData.missed / 60) * 628} 628`}*/}
-                    {/*                    strokeDashoffset={`-${((contributionData.onTime + contributionData.late) / 60) * 628}`}*/}
-                    {/*                    strokeLinecap="round"*/}
-                    {/*                />*/}
-                    {/*            </svg>*/}
-                    {/*            <div className="absolute inset-0 flex flex-col items-center justify-center">*/}
-                    {/*                <div className="text-4xl font-bold text-gray-900">75%</div>*/}
-                    {/*                <div className="text-sm text-gray-600">On-time Submissions</div>*/}
-                    {/*            </div>*/}
-                    {/*        </div>*/}
-                    {/*    </div>*/}
-                    {/*    <div className="flex justify-center gap-8">*/}
-                    {/*        <div className="text-center">*/}
-                    {/*            <div className="flex items-center gap-2 mb-1">*/}
-                    {/*                <div className="w-3 h-3 bg-green-500 rounded-full"></div>*/}
-                    {/*                <span className="text-sm text-gray-600">On-time</span>*/}
-                    {/*            </div>*/}
-                    {/*            <div className="text-2xl font-bold text-gray-900">{contributionData.onTime}</div>*/}
-                    {/*        </div>*/}
-                    {/*        <div className="text-center">*/}
-                    {/*            <div className="flex items-center gap-2 mb-1">*/}
-                    {/*                <div className="w-3 h-3 bg-orange-500 rounded-full"></div>*/}
-                    {/*                <span className="text-sm text-gray-600">Late</span>*/}
-                    {/*            </div>*/}
-                    {/*            <div className="text-2xl font-bold text-gray-900">{contributionData.late}</div>*/}
-                    {/*        </div>*/}
-                    {/*        <div className="text-center">*/}
-                    {/*            <div className="flex items-center gap-2 mb-1">*/}
-                    {/*                <div className="w-3 h-3 bg-red-500 rounded-full"></div>*/}
-                    {/*                <span className="text-sm text-gray-600">Missed</span>*/}
-                    {/*            </div>*/}
-                    {/*            <div className="text-2xl font-bold text-gray-900">{contributionData.missed}</div>*/}
-                    {/*        </div>*/}
-                    {/*    </div>*/}
-                    {/*</div>*/}
+            {/* Main Grid — task list takes 2 cols, sidebar takes 1 */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
 
-                    {/* Plagiarism Detection Summary */}
-                    {/*<div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">*/}
-                    {/*    <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">*/}
-                    {/*        <AlertCircle className="w-5 h-5 text-orange-600" />*/}
-                    {/*        Plagiarism Detection Summary*/}
-                    {/*    </h2>*/}
-                    {/*    <div className="overflow-x-auto">*/}
-                    {/*        <table className="w-full">*/}
-                    {/*            <thead>*/}
-                    {/*            <tr className="border-b border-gray-200">*/}
-                    {/*                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Subject</th>*/}
-                    {/*                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Code</th>*/}
-                    {/*                <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700">Detected</th>*/}
-                    {/*                <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700">Total</th>*/}
-                    {/*                <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700">Status</th>*/}
-                    {/*            </tr>*/}
-                    {/*            </thead>*/}
-                    {/*            <tbody>*/}
-                    {/*            {plagiarismSummary.map((item, index) => (*/}
-                    {/*                <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">*/}
-                    {/*                    <td className="py-3 px-4 text-sm text-gray-900">{item.subject}</td>*/}
-                    {/*                    <td className="py-3 px-4 text-sm text-gray-600">{item.code}</td>*/}
-                    {/*                    <td className="py-3 px-4 text-sm text-gray-900 text-center">{item.detected}</td>*/}
-                    {/*                    <td className="py-3 px-4 text-sm text-gray-900 text-center">{item.total}</td>*/}
-                    {/*                    <td className="py-3 px-4 text-center">*/}
-                    {/*    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusBadgeClass(item.status)}`}>*/}
-                    {/*      {item.status}*/}
-                    {/*    </span>*/}
-                    {/*                    </td>*/}
-                    {/*                </tr>*/}
-                    {/*            ))}*/}
-                    {/*            </tbody>*/}
-                    {/*        </table>*/}
-                    {/*    </div>*/}
-                    {/*</div>*/}
-
-                    {/* Task List */}
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                        <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-                            <ClipboardCheck className="w-5 h-5 text-green-600" />
-                            Task List
-                        </h2>
+                {/* Task List */}
+                <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                    <SectionHeader
+                        icon={ClipboardCheck}
+                        title="Task List"
+                        iconBg="bg-orange-50"
+                        iconColor="text-orange-500"
+                        count={loading ? undefined : pendingCount}
+                    />
+                    {loading ? (
                         <div className="space-y-3">
-                            {taskList.map((task) => (
-                                <div key={task.id} className={`p-4 rounded-lg ${getTaskStatusClass(task.status)}`}>
-                                    <div className="flex items-start justify-between">
-                                        <div>
-                                            <h3 className="font-medium text-gray-900 mb-1">{task.title}</h3>
-                                            <p className="text-sm text-gray-600">{task.course}</p>
-                                        </div>
-                                        <div className="text-right">
-                                            <div className="text-sm text-gray-600">{task.dueDate}</div>
-                                            <div className="text-xs mt-1 capitalize">{task.status.replace('-', ' ')}</div>
-                                        </div>
-                                    </div>
-                                </div>
+                            {[1, 2, 3].map(i => <SkeletonBlock key={i} className="h-12" />)}
+                        </div>
+                    ) : taskList.length === 0 ? (
+                        <EmptyState message="No assignments found." />
+                    ) : (
+                        <div>
+                            {taskList.map(task => (
+                                <TaskItem
+                                    key={task.id}
+                                    task={task}
+                                    onToggle={(id) => setTaskList(prev =>
+                                        prev.map(t => t.id === id
+                                            ? { ...t, status: t.status === 'completed' ? 'missed' : 'completed' }
+                                            : t
+                                        )
+                                    )}
+                                />
                             ))}
                         </div>
-                    </div>
+                    )}
                 </div>
 
-                {/* Right Column - Sidebar Content */}
-                {/*<div className="space-y-6">*/}
-                {/*    /!* Top Contributors *!/*/}
-                {/*    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">*/}
-                {/*        <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">*/}
-                {/*            <Award className="w-5 h-5 text-yellow-600" />*/}
-                {/*            Top Contributors*/}
-                {/*        </h2>*/}
-                {/*        <div className="space-y-3">*/}
-                {/*            {topContributors.map((contributor) => (*/}
-                {/*                <div*/}
-                {/*                    key={contributor.id}*/}
-                {/*                    className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition"*/}
-                {/*                >*/}
-                {/*                    <div className="text-xl">{getRankIcon(contributor.rank)}</div>*/}
-                {/*                    <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold">*/}
-                {/*                        {contributor.avatar}*/}
-                {/*                    </div>*/}
-                {/*                    <div className="flex-1">*/}
-                {/*                        <h3 className="font-medium text-gray-900 text-sm">{contributor.name}</h3>*/}
-                {/*                        <p className="text-xs text-gray-600">{contributor.contributions} contributions</p>*/}
-                {/*                    </div>*/}
-                {/*                    <div className="text-right">*/}
-                {/*                        <div className="text-sm font-bold text-gray-900">{contributor.points}</div>*/}
-                {/*                        <div className="text-xs text-gray-600">points</div>*/}
-                {/*                    </div>*/}
-                {/*                </div>*/}
-                {/*            ))}*/}
-                {/*        </div>*/}
-                {/*    </div>*/}
+                {/* Right sidebar — stacks submission overview above appointments */}
+                <div className="flex flex-col gap-6">
+
+                    {/* Submission Overview */}
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                        <SectionHeader
+                            icon={ClipboardCheck}
+                            title="Submission Overview"
+                            iconBg="bg-green-50"
+                            iconColor="text-green-500"
+                        />
+                        {loading ? (
+                            <SkeletonBlock className="h-48" />
+                        ) : (
+                            <>
+                                <ResponsiveContainer width="100%" height={180}>
+                                    <PieChart>
+                                        <Pie
+                                            data={pieData}
+                                            dataKey="value"
+                                            nameKey="name"
+                                            outerRadius={70}
+                                            innerRadius={40}
+                                            paddingAngle={3}
+                                            label={({ name, percent }) =>
+                                                percent > 0 ? `${(percent * 100).toFixed(0)}%` : ''
+                                            }
+                                            labelLine={false}
+                                        >
+                                            {pieData.map((_, idx) => (
+                                                <Cell key={idx} fill={PIE_COLORS[idx]} />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip formatter={(value, name) => [value, name]} />
+                                    </PieChart>
+                                </ResponsiveContainer>
+
+                                {/* Legend */}
+                                <div className="flex justify-around mt-2">
+                                    {pieData.map((entry, idx) => (
+                                        <div key={idx} className="flex flex-col items-center gap-1">
+                                            <div className="flex items-center gap-1.5">
+                                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: PIE_COLORS[idx] }} />
+                                                <span className="text-xs text-gray-500">{entry.name}</span>
+                                            </div>
+                                            <span className="text-sm font-bold text-gray-900">{entry.value}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </>
+                        )}
+                    </div>
 
                     {/* Appointments */}
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                        <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-                            <Calendar className="w-5 h-5 text-purple-600" />
-                            Appointments
-                        </h2>
-                        <div className="space-y-4">
-                            {appointments.map((appointment) => (
-                                <div
-                                    key={appointment.id}
-                                    className="p-4 rounded-lg border border-gray-200 hover:border-blue-300 transition"
-                                >
-                                    <div className="flex items-start justify-between mb-3">
-                                        <div>
-                                            <h3 className="font-semibold text-gray-900">{appointment.faculty}</h3>
-                                            <p className="text-sm text-gray-600">{appointment.course}</p>
-                                        </div>
-                                        <span className="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
-                      {appointment.status}
-                    </span>
-                                    </div>
-                                    <div className="flex items-center gap-4 text-sm text-gray-600">
-                                        <div className="flex items-center gap-1">
-                                            <Calendar className="w-4 h-4" />
-                                            {appointment.date}
-                                        </div>
-                                        <div className="flex items-center gap-1">
-                                            <Clock className="w-4 h-4" />
-                                            {appointment.time}
-                                        </div>
-                                    </div>
-                                    <div className="mt-2 text-sm text-gray-600">
-                                        Room: {appointment.room}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                        <SectionHeader
+                            icon={Calendar}
+                            title="Appointments"
+                            iconBg="bg-purple-50"
+                            iconColor="text-purple-500"
+                        />
+                        {loading ? (
+                            <div className="space-y-3">
+                                {[1, 2].map(i => <SkeletonBlock key={i} className="h-20" />)}
+                            </div>
+                        ) : appointments.length === 0 ? (
+                            <EmptyState message="No upcoming appointments scheduled." />
+                        ) : (
+                            <div className="space-y-3">
+                                {appointments.map(appointment => (
+                                    <AppointmentCard key={appointment.id} appointment={appointment} />
+                                ))}
+                            </div>
+                        )}
                     </div>
-                {/*</div>*/}
+
+                </div>
             </div>
         </div>
     );
