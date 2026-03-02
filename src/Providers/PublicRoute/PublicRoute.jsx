@@ -11,13 +11,12 @@ const PublicRoute = ({ children }) => {
 
     if (user && user.email) {
         if (userData?.role === "student") 
-            return <Navigate to="/dashboard/student"></Navigate>;
+            return <Navigate to="/dashboard/student" replace></Navigate>;
         if (userData?.role === "faculty") 
-            return <Navigate to="/dashboard/faculty"></Navigate>;
+            return <Navigate to="/dashboard/faculty" replace></Navigate>;
         if (userData?.role === "admin") 
-            return <Navigate to="/dashboard/admin"></Navigate>;
+            return <Navigate to="/dashboard/admin" replace></Navigate>;
     }
-
     return children;
 };
 

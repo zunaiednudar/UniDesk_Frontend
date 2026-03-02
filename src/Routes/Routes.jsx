@@ -13,6 +13,11 @@ import PublicRoute from "../Providers/PublicRoute/PublicRoute.jsx";
 import StudentRoute from "../Providers/RoleWiseRoutes/StudentRoute/StudentRoute.jsx";
 import FacultyRoute from "../Providers/RoleWiseRoutes/FacultyRoute/FacultyRoute.jsx";
 import FacultyDashboard from "../Pages/FacultyDashboard/FacultyDashboard.jsx";
+import FacultyMyProfile from "../Pages/FacultyMyProfile/FacultyMyProfile.jsx";
+import FacultyMyCourses from "../Pages/FacultyMyCourses/FacultyMyCourses.jsx";
+import FacultyMySupervises from "../Pages/FacultyMySupervises/FacultyMySupervises.jsx";
+import FacultyMyAppointments from "../Pages/FacultyMyAppointments/FacultyMyAppointments.jsx";
+import FacultyMySchedule from "../Pages/FacultyMySchedule/FacultyMySchedule.jsx";
 
 export const router = createBrowserRouter([
     {
@@ -78,6 +83,26 @@ export const router = createBrowserRouter([
             {
                 path:"my-dashboard",
                 Component:FacultyDashboard
+            },
+            {
+                path:"my-profile",
+                Component:FacultyMyProfile
+            },
+            {
+                path:"my-courses",
+                Component:FacultyMyCourses
+            },
+            {
+                path:"my-supervises",
+                Component:FacultyMySupervises
+            },
+            {
+                path:"my-appointments",
+                Component:FacultyMyAppointments
+            },
+            {
+                path:"my-schedule",
+                Component:FacultyMySchedule
             }
         ]
     },

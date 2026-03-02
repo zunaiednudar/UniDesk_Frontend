@@ -6,7 +6,7 @@ import { AuthContext } from '../../Providers/AuthProvider/AuthProvider';
 
 const FacultyDashboardLayout = () => {
     const {userData,logout}=useContext(AuthContext);
-    console.log(userData);
+    // console.log(userData);
     return (
         <div className="drawer lg:drawer-open bg-white">
             <input id="my-drawer-4" type="checkbox" className="drawer-toggle" />
@@ -16,10 +16,8 @@ const FacultyDashboardLayout = () => {
                 <div className='p-6'>
                     <Outlet></Outlet>
                 </div>
-                
             </div>
-            <Sidebar></Sidebar>
-            
+            <Sidebar logout={logout}></Sidebar>
         </div>
     );
 };
