@@ -13,27 +13,37 @@ import MyCourses from "../Pages/StudentDashboard/MyCourses.jsx";
 import MyProjects from "../Pages/StudentDashboard/MyProjects.jsx";
 import MyAssignments from "../Pages/StudentDashboard/MyAssignments.jsx";
 import AskMentor from "../Pages/StudentDashboard/AskMentor.jsx";
+import PublicRoute from "../Providers/PublicRoute/PublicRoute.jsx";
+import StudentRoute from "../Providers/RoleWiseRoutes/StudentRoute/StudentRoute.jsx";
 
 export const router = createBrowserRouter([
     {
         path: "/",
         Component: RootLayout,
-        children:[
+        children: [
             {
                 index: true,
-                Component: Home
+                element: <PublicRoute>
+                    <Home></Home>
+                </PublicRoute>
             },
             {
                 path: "/home",
-                Component: Home
+                element: <PublicRoute>
+                    <Home></Home>
+                </PublicRoute>
             },
             {
                 path: "/login",
-                Component: Login
+                element: <PublicRoute>
+                    <Login></Login>
+                </PublicRoute>
             },
             {
                 path: "/signup",
-                Component: SignUp
+                element: <PublicRoute>
+                    <SignUp></SignUp>
+                </PublicRoute>
             },
             {
                 path: "/repository",
@@ -72,7 +82,7 @@ export const router = createBrowserRouter([
         ]
     },
     {
-        path:"*",
-        Component:NotFound
+        path: "*",
+        Component: NotFound
     }
 ]);

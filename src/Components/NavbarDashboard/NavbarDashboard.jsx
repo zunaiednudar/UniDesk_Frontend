@@ -11,6 +11,9 @@ import {Bell,
 } from "lucide-react";
 
 const NavbarDashboard = ({ isSidebarOpen, toggleSidebar }) => {
+    const activeClass = "text-[#1E40AF]";
+    const normalClass = "text-gray-500 hover:text-[#1E40AF] transitions-colors ease";
+
     return (
         <div className="sticky top-0 z-50 shadow-lg bg-white">
             <div className="w-full mx-auto px-6 py-4 flex flex-col lg:flex-row items-center justify-between gap-4">
@@ -31,14 +34,9 @@ const NavbarDashboard = ({ isSidebarOpen, toggleSidebar }) => {
                     </div>
 
                     {/* Desktop Navigation */}
-                    <div className="flex justify-center items-center gap-4 lg:ml-8">
-                        <NavLink to="/dashboard" className={({ isActive }) => `font-semibold transition ${isActive ? 'text-[#1E40AF]' : 'text-black hover:text-[#1E40AF]'}`}>
-                            Dashboard
-                        </NavLink>
-
-                        <NavLink to="/repository" className={({ isActive }) => `font-semibold transition ${isActive ? 'text-[#1E40AF]' : 'text-black hover:text-[#1E40AF]'}`}>
-                            Repository
-                        </NavLink>
+                    <div className="flex justify-center items-center gap-5 font-bold lg:ml-8">
+                        <NavLink to="/dashboard" className={({ isActive }) => `${isActive ? activeClass : normalClass}`}>Dashboard</NavLink>
+                        <NavLink to="/repository" className={({ isActive }) => `${isActive ? activeClass : normalClass}`}>Repository</NavLink>
                     </div>
                 </div>
 

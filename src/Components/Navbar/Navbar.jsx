@@ -24,7 +24,7 @@ const Navbar = () => {
                 </NavLink>
 
                 <div className='hidden lg:flex gap-5 font-bold items-center'>
-                    <NavLink to="/home" className={({ isActive }) => `${isActive ? activeClass : normalClass}`}>Home</NavLink>
+                    <NavLink to="/" className={({ isActive }) => `${isActive ? activeClass : normalClass}`}>Home</NavLink>
                     <NavLink to="/repository" className={({ isActive }) => `${isActive ? activeClass : normalClass}`}>Repository</NavLink>
                 </div>
                 <div className='hidden lg:flex gap-5 items-center font-bold'>
@@ -50,7 +50,7 @@ const Navbar = () => {
 
                 <div className={`absolute font-bold top-[100px] left-0 w-full bg-white flex flex-col items-center py-[24px] shadow-lg lg:hidden gap-[24px] z-51 transform transition-all duration-300 ease-in-out
                         ${isOpen ? "translate-y-0 opacity-100 max-h-[500px]" : "-translate-y-10 opacity-0 max-h-0 overflow-hidden"}`}>
-                    <NavLink onClick={toggleMenu} to="/home" className={({ isActive }) => `${isActive ? activeClass : normalClass}`}>Home</NavLink>
+                    <NavLink onClick={toggleMenu} to="/" className={({ isActive }) => `${isActive ? activeClass : normalClass}`}>Home</NavLink>
                     <NavLink onClick={toggleMenu} to="/repository"  className={({ isActive }) => `${isActive ? activeClass : normalClass}`}>Repository</NavLink>
                     <NavLink onClick={toggleMenu} to="/login" className={({ isActive }) => `${isActive ? activeClass : normalClass}`}>Login</NavLink>
                     <button onClick={() => {
