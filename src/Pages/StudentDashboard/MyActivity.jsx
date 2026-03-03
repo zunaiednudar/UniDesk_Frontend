@@ -10,7 +10,7 @@ import {
 import axiosSecure from "../../utils/axiosSecure.js";
 import { AuthContext } from "../../Providers/AuthProvider/AuthProvider.jsx";
 
-// ─── Helpers ────────────────────────────────────────────────────────────────
+// Helpers
 
 const getDueDateClasses = (dateStr, isCompleted) => {
     if (isCompleted) return 'text-gray-400';

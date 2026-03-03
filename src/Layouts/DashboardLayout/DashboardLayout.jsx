@@ -1,35 +1,53 @@
-import React, { useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import { NavLink, Outlet } from 'react-router';
 import Footer from "../../Components/Footer/Footer.jsx";
 import NavbarDashboard from "../../Components/NavbarDashboard/NavbarDashboard.jsx";
 import SidebarDashboard from "../../Components/SidebarDashboard/SidebarDashboard.jsx";
+import { PanelLeft } from "lucide-react";
 
-const DashboardLayout = ({ menuItems, userRole = 'student' }) => {
-    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+const DashboardLayout = ({ menuItems }) => {
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+
+    const [isSidebarOpen, setIsSidebarOpen] = useState(
+        window.matchMedia("(min-width: 1024px)").matches
+    );
+
+    useEffect(() => {
+        const mediaQuery = window.matchMedia("(min-width: 1024px)");
+
+        const handleResize = (e) => {
+            setIsMobile(!e.matches);
+            setIsSidebarOpen(e.matches);
+        };
+
+        mediaQuery.addEventListener("change", handleResize);
+
+        return () => {
+            mediaQuery.removeEventListener("change", handleResize);
+        }
+    }, []);
+
     const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
     return (
-        <>
-            <div className="inter min-h-screen bg-gray-50">
-                {/* Top Navigation Bar */}
+        <div className="flex h-dvh">
+            {/* Sidebar */}
+             <SidebarDashboard menuItems={menuItems} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} toggleSidebar={toggleSidebar} isMobile={isMobile} />
 
-                <NavbarDashboard isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
+            {/* Main Content */}
+            <main className="flex items-start gap-5 p-2.5 w-full overflow-y-scroll">
+                {/* Mobile Overlay */}
+                {!isSidebarOpen && (
+                    <button onClick={toggleSidebar} className="hover:bg-gray-200 p-2 rounded-lg transition cursor-pointer">
+                        <PanelLeft className="w-6 h-6 text-gray-500" />
+                    </button>
+                )}
 
-                <div className="flex">
-                    {/* Sidebar */}
-
-                     <SidebarDashboard menuItems={menuItems} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} toggleSidebar={toggleSidebar} />
-
-                    {/* Main Content */}
-
-                    <main className="flex-1 p-8 w-full">
-                        <div className="max-w-7xl mx-auto">
-                            <Outlet />
-                        </div>
-                    </main>
+                <div className="flex-1 p-1">
+                    <Outlet />
                 </div>
-            </div>
-        </>
+            </main>
+        </div>
     );
 };
 
