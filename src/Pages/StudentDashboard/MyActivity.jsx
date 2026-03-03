@@ -196,7 +196,7 @@ const MyActivity = () => {
                         const submissions = Array.isArray(assignment.submissions) ? assignment.submissions : [];
                         const userSubmission = submissions.find(s => s.student === userData._id);  // ← fixed: was undefined USER_ID
 
-                        let status = 'missed';
+                        // let status = 'missed';
                         if (userSubmission) {
                             const diffHrs = (new Date(userSubmission.submittedAt) - new Date(assignment.dueDate)) / (1000 * 60 * 60);
                             status = diffHrs <= 0 ? 'completed' : 'late';
@@ -328,7 +328,7 @@ const MyActivity = () => {
                             <SkeletonBlock className="h-48" />
                         ) : (
                             <>
-                                <ResponsiveContainer width="100%" height={180}>
+                                <ResponsiveContainer width="100%" height={240}>
                                     <PieChart>
                                         <Pie
                                             data={pieData}

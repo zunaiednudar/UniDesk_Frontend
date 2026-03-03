@@ -1,298 +1,736 @@
-import React, { useState } from 'react';
-import { MessageCircleQuestion, Search, Mail, Calendar, Phone, MapPin, Award, BookOpen } from 'lucide-react';
+import { useContext, useEffect, useState } from 'react';
+import {
+    Search, Mail, Calendar, MapPin, BookOpen,
+    AlertCircle, Users, Clock, CheckCircle2,
+    XCircle, X, Loader2
+} from 'lucide-react';
+// Note: Mail is kept for the "Message" mailto link on instructor cards
+import axiosSecure from "../../utils/axiosSecure.js";
+import { AuthContext } from "../../Providers/AuthProvider/AuthProvider.jsx";
+
+// ─── Config ───────────────────────────────────────────────────────────────────
+
+const availabilityConfig = {
+    verified:  { dot: 'bg-green-400',  badge: 'bg-green-100 text-green-700',   label: 'Available'   },
+    pending:   { dot: 'bg-yellow-400', badge: 'bg-yellow-100 text-yellow-700', label: 'Pending'     },
+    suspended: { dot: 'bg-red-400',    badge: 'bg-red-100 text-red-700',       label: 'Unavailable' },
+};
+
+const appointmentStatusConfig = {
+    pending:   { badge: 'bg-yellow-50 border border-yellow-200', dot: 'bg-yellow-400', text: 'text-yellow-700', label: 'Pending',   icon: Clock        },
+    approved:  { badge: 'bg-green-50 border border-green-200',   dot: 'bg-green-500',  text: 'text-green-700',  label: 'Approved',  icon: CheckCircle2 },
+    rejected:  { badge: 'bg-red-50 border border-red-200',       dot: 'bg-red-400',    text: 'text-red-600',    label: 'Rejected',  icon: XCircle      },
+    cancelled: { badge: 'bg-gray-50 border border-gray-200',     dot: 'bg-gray-400',   text: 'text-gray-600',   label: 'Cancelled', icon: X            },
+};
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const getInitials = (name = '') =>
+    name.split(' ').filter(Boolean).map(w => w[0]).join('').toUpperCase().slice(0, 2);
+
+const formatDateTime = (dateStr) => {
+    if (!dateStr) return '—';
+    const d = new Date(dateStr);
+    return d.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+};
+
+const formatTime = (dateStr) => {
+    if (!dateStr) return '—';
+    return new Date(dateStr).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+};
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+const Avatar = ({ photoURL, name, size = 'lg' }) => {
+    const sz = size === 'lg' ? 'w-16 h-16 text-lg' : size === 'md' ? 'w-10 h-10 text-sm' : 'w-8 h-8 text-xs';
+    return photoURL ? (
+        <img src={photoURL} alt={name}
+             className={`${sz} rounded-full object-cover flex-shrink-0 ring-2 ring-white shadow-sm`} />
+    ) : (
+        <div className={`${sz} rounded-full bg-gradient-to-br from-blue-500 to-blue-700 text-white flex items-center justify-center font-bold flex-shrink-0 ring-2 ring-white shadow-sm`}>
+            {getInitials(name)}
+        </div>
+    );
+};
+
+const MetaRow = ({ icon: Icon, children, href, linkClass = '' }) => (
+    <div className="flex items-start gap-2.5 text-sm text-gray-600">
+        <Icon size={14} className="text-gray-400 flex-shrink-0 mt-0.5" />
+        {href ? (
+            <a href={href} className={`hover:underline truncate ${linkClass}`}>{children}</a>
+        ) : (
+            <span className="truncate">{children}</span>
+        )}
+    </div>
+);
+
+const SkeletonCard = () => (
+    <div className="bg-white rounded-2xl border border-gray-100 p-6 animate-pulse">
+        <div className="flex items-start gap-4 mb-4 pb-4 border-b border-gray-100">
+            <div className="w-16 h-16 rounded-full bg-gray-200 flex-shrink-0" />
+            <div className="flex-1 space-y-2">
+                <div className="h-4 w-36 bg-gray-200 rounded" />
+                <div className="h-3 w-28 bg-gray-100 rounded" />
+                <div className="h-5 w-20 bg-gray-100 rounded-full mt-2" />
+            </div>
+        </div>
+        <div className="space-y-2 mb-4">
+            <div className="h-3 w-48 bg-gray-100 rounded" />
+            <div className="h-3 w-36 bg-gray-100 rounded" />
+        </div>
+        <div className="flex gap-3">
+            <div className="flex-1 h-10 bg-gray-100 rounded-xl" />
+            <div className="flex-1 h-10 bg-gray-100 rounded-xl" />
+        </div>
+    </div>
+);
+
+const EmptyState = ({ message, onClear }) => (
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center col-span-full">
+        <div className="w-14 h-14 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Search size={24} className="text-gray-300" />
+        </div>
+        <h3 className="text-base font-semibold text-gray-900 mb-1">{message ?? 'No instructors found'}</h3>
+        {onClear && (
+            <>
+                <p className="text-sm text-gray-400 mb-4">Try adjusting your search or clear it to see all instructors.</p>
+                <button onClick={onClear}
+                        className="px-5 py-2 text-sm font-semibold bg-orange-500 text-white rounded-xl hover:bg-orange-600 transition">
+                    Clear Search
+                </button>
+            </>
+        )}
+    </div>
+);
+
+// ─── Booking Modal ────────────────────────────────────────────────────────────
+
+const MEETING_TYPES = [
+    { value: '',          label: 'General (default)' },
+    { value: 'academic',  label: 'Academic'           },
+    { value: 'thesis',    label: 'Thesis'             },
+    { value: 'project',   label: 'Project'            },
+];
+
+const BookingModal = ({ instructor, onClose, onBooked }) => {
+    // Natural, human-readable keys — API field names only appear in handleSubmit payload
+    const emptyForm = {
+        date:        '',   // "YYYY-MM-DD"
+        from:        '',   // "HH:mm" → maps to startTime
+        to:          '',   // "HH:mm" → maps to endTime
+        topic:       '',   // → maps to purpose
+        format:      '',   // "online" | "in-person" → maps to mode
+        meetingType: '',   // optional, sent as-is
+    };
+
+    const [form, setForm]             = useState(emptyForm);
+    const [submitting, setSubmitting] = useState(false);
+    const [formError, setFormError]   = useState('');
+    const [success, setSuccess]       = useState(false);
+
+    const handleChange = (e) => {
+        setSuccess(false);
+        setFormError('');
+        setForm(f => ({ ...f, [e.target.name]: e.target.value }));
+    };
+
+    const handleSubmit = async () => {
+        const { date, from, to, topic, format } = form;
+
+        if (!date || !from || !to || !topic.trim()) {
+            setFormError('Please fill in all fields.');
+            return;
+        }
+        if (!format) {
+            setFormError('Please select an appointment format.');
+            return;
+        }
+        if (from >= to) {
+            setFormError('End time must be after start time.');
+            return;
+        }
+
+        setFormError('');
+        setSubmitting(true);
+        try {
+            // Map natural form keys → exact API field names the controller expects
+            const payload = {
+                facultyID:  instructor.id,  // auto-set from whichever card's "Book Slot" was clicked
+                date,                       // "YYYY-MM-DD" — sent as separate field
+                startTime:  from,           // "HH:mm" — controller appends ":00"
+                endTime:    to,             // "HH:mm"
+                purpose:    topic.trim(),
+                mode:       format,
+                ...(form.meetingType && { meetingType: form.meetingType }),
+            };
+
+            const res = await axiosSecure.post('/appointment', payload);
+            console.log('Appointment booked:', res);
+
+            onBooked();
+            setSuccess(true);
+            setForm(emptyForm);
+        } catch (err) {
+            console.error('Booking error:', err);
+            setFormError(err?.response?.data?.message ?? 'Booking failed. Please try again.');
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const today = new Date().toISOString().split('T')[0];
+    const inputCls = 'w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-orange-400 focus:border-orange-400 outline-none transition bg-white';
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+
+                {/* Header */}
+                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white rounded-t-2xl z-10">
+                    <div className="flex items-center gap-3">
+                        <Avatar photoURL={instructor.photoURL} name={instructor.name} size="md" />
+                        <div>
+                            <h3 className="text-sm font-bold text-gray-900">{instructor.name}</h3>
+                            {instructor.designation && (
+                                <p className="text-xs text-gray-400">{instructor.designation}</p>
+                            )}
+                        </div>
+                    </div>
+                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition">
+                        <X size={18} />
+                    </button>
+                </div>
+
+                {/* Form body */}
+                <div className="px-6 py-5 space-y-4">
+                    <div>
+                        <h4 className="text-base font-semibold text-gray-900">Book an Appointment</h4>
+                        <p className="text-xs text-gray-400 mt-1">
+                            Your request will be <span className="font-semibold text-yellow-600">pending</span> until the faculty approves it.
+                        </p>
+                    </div>
+
+                    {/* Success banner */}
+                    {success && (
+                        <div className="flex items-center gap-2.5 bg-green-50 border border-green-200 rounded-xl px-3 py-2.5">
+                            <CheckCircle2 size={15} className="text-green-500 flex-shrink-0" />
+                            <p className="text-xs font-medium text-green-700">
+                                Appointment requested! Pending approval by {instructor.name}.
+                            </p>
+                        </div>
+                    )}
+
+                    {/* Date */}
+                    <div>
+                        <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                            Date <span className="text-red-400">*</span>
+                        </label>
+                        <input type="date" name="date" min={today}
+                               value={form.date} onChange={handleChange}
+                               className={inputCls} />
+                    </div>
+
+                    {/* From / To */}
+                    <div className="grid grid-cols-2 gap-3">
+                        <div>
+                            <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                                From <span className="text-red-400">*</span>
+                            </label>
+                            <input type="time" name="from"
+                                   value={form.from} onChange={handleChange}
+                                   className={inputCls} />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                                To <span className="text-red-400">*</span>
+                            </label>
+                            <input type="time" name="to"
+                                   value={form.to} onChange={handleChange}
+                                   className={inputCls} />
+                        </div>
+                    </div>
+
+                    {/* Topic */}
+                    <div>
+                        <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                            Topic / Purpose <span className="text-red-400">*</span>
+                        </label>
+                        <textarea name="topic" rows={3}
+                                  placeholder="e.g. Assignment clarification, project discussion…"
+                                  value={form.topic} onChange={handleChange}
+                                  className={`${inputCls} resize-none`} />
+                    </div>
+
+                    {/* Format */}
+                    <div>
+                        <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                            Format <span className="text-red-400">*</span>
+                        </label>
+                        <div className="grid grid-cols-2 gap-2">
+                            {[
+                                { value: 'online',    label: '🎥 Online'    },
+                                { value: 'in-person', label: '🏢 In-Person' },
+                            ].map(opt => (
+                                <button key={opt.value} type="button"
+                                        onClick={() => { setSuccess(false); setFormError(''); setForm(f => ({ ...f, format: opt.value })); }}
+                                        className={`py-2.5 text-sm font-semibold rounded-xl border transition
+                                        ${form.format === opt.value
+                                            ? 'bg-orange-500 border-orange-500 text-white'
+                                            : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
+                                    {opt.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Meeting type */}
+                    <div>
+                        <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                            Meeting Type <span className="text-gray-300 font-normal">(optional)</span>
+                        </label>
+                        <select name="meetingType" value={form.meetingType} onChange={handleChange}
+                                className={inputCls}>
+                            {MEETING_TYPES.map(t => (
+                                <option key={t.value} value={t.value}>{t.label}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {/* Error */}
+                    {formError && (
+                        <div className="flex items-center gap-2 text-xs text-red-600 bg-red-50 border border-red-100 rounded-xl px-3 py-2">
+                            <AlertCircle size={13} className="flex-shrink-0" />
+                            {formError}
+                        </div>
+                    )}
+                </div>
+
+                {/* Footer */}
+                <div className="flex gap-3 px-6 pb-6">
+                    <button onClick={onClose}
+                            className="flex-1 py-2.5 text-sm font-semibold border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 transition">
+                        {success ? 'Close' : 'Cancel'}
+                    </button>
+                    <button onClick={handleSubmit} disabled={submitting}
+                            className="flex-1 py-2.5 text-sm font-semibold bg-green-500 text-white rounded-xl hover:bg-green-600 disabled:opacity-60 disabled:cursor-not-allowed transition flex items-center justify-center gap-2">
+                        {submitting
+                            ? <><Loader2 size={14} className="animate-spin" /> Booking…</>
+                            : <><Calendar size={14} /> {success ? 'Book Another' : 'Confirm Booking'}</>}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+
+// ─── Instructor Card ──────────────────────────────────────────────────────────
+
+const InstructorCard = ({ instructor, onBookClick }) => {
+    const avail = availabilityConfig[instructor.status] ?? availabilityConfig.verified;
+
+    return (
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md hover:border-orange-100 transition-all duration-200 flex flex-col">
+
+            {/* Header */}
+            <div className="flex items-start gap-4 mb-4 pb-4 border-b border-gray-100">
+                <Avatar photoURL={instructor.photoURL} name={instructor.name} />
+                <div className="flex-1 min-w-0">
+                    <h3 className="text-base font-bold text-gray-900 truncate">{instructor.name}</h3>
+                    {instructor.designation && (
+                        <p className="text-sm text-gray-500 truncate">{instructor.designation}</p>
+                    )}
+                    {instructor.department && (
+                        <p className="text-xs text-gray-400 truncate mt-0.5">{instructor.department}</p>
+                    )}
+                    <div className="mt-2">
+                        <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${avail.badge}`}>
+                            <div className={`w-1.5 h-1.5 rounded-full ${avail.dot}`} />
+                            {avail.label}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Courses */}
+            <div className="mb-4 pb-4 border-b border-gray-100">
+                <div className="flex items-center gap-1.5 mb-2">
+                    <BookOpen size={13} className="text-orange-400" />
+                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Teaching</span>
+                </div>
+                <div className="space-y-1.5">
+                    {instructor.courses.map(c => (
+                        <div key={c.id} className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-orange-600 bg-orange-50 rounded px-1.5 py-0.5 flex-shrink-0">
+                                {c.courseCode}
+                            </span>
+                            <span className="text-sm text-gray-700 truncate">{c.courseName}</span>
+                        </div>
+                    ))}
+                </div>
+                <div className="flex items-center gap-1.5 mt-2 text-xs text-gray-400">
+                    <Users size={11} />
+                    <span>{instructor.totalStudents} students across enrolled courses</span>
+                </div>
+            </div>
+
+            {/* Contact */}
+            <div className="space-y-2 mb-4 pb-4 border-b border-gray-100">
+                <MetaRow icon={Mail} href={`mailto:${instructor.email}`} linkClass="text-blue-500">
+                    {instructor.email}
+                </MetaRow>
+                {instructor.room && (
+                    <MetaRow icon={MapPin}>Room {instructor.room}</MetaRow>
+                )}
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-2.5 mt-auto">
+                <a href={`mailto:${instructor.email}`}
+                   className="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm font-semibold bg-blue-500 text-white rounded-xl hover:bg-blue-600 active:scale-95 transition-all duration-150">
+                    <Mail size={14} />
+                    Message
+                </a>
+                <button
+                    onClick={() => onBookClick(instructor)}
+                    disabled={instructor.status === 'suspended'}
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm font-semibold bg-green-500 text-white rounded-xl hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-all duration-150">
+                    <Calendar size={14} />
+                    Book Slot
+                </button>
+            </div>
+        </div>
+    );
+};
+
+// ─── Appointment Row (Todoist-style) ──────────────────────────────────────────
+
+const AppointmentRow = ({ appointment }) => {
+    const cfg = appointmentStatusConfig[appointment.status?.toLowerCase()] ?? appointmentStatusConfig.pending;
+    const Icon = cfg.icon;
+    const isPast = new Date(appointment.startTime) < new Date();
+
+    return (
+        <div className={`flex items-center gap-3 px-2 py-3 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 rounded-md transition-colors ${isPast && appointment.status === 'pending' ? 'opacity-60' : ''}`}>
+            {/* Status dot */}
+            <div className={`w-2 h-2 rounded-full flex-shrink-0 ${cfg.dot}`} />
+
+            {/* Faculty + purpose */}
+            <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-900 truncate">{appointment.facultyName}</p>
+                {appointment.purpose && (
+                    <p className="text-xs text-gray-400 truncate mt-0.5">{appointment.purpose}</p>
+                )}
+            </div>
+
+            {/* Mode pill */}
+            {appointment.mode && (
+                <span className="hidden sm:inline-flex flex-shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 capitalize">
+                    {appointment.mode === 'online' ? '🎥 Online' : '🏢 In-Person'}
+                </span>
+            )}
+
+            {/* Date + time */}
+            <div className="hidden sm:flex items-center gap-1 text-xs text-gray-400 flex-shrink-0">
+                <Calendar size={11} />
+                <span>{formatDateTime(appointment.startTime)}</span>
+                <span className="text-gray-300">–</span>
+                <span>{formatTime(appointment.endTime)}</span>
+            </div>
+
+            {/* Status badge */}
+            <div className={`flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${cfg.badge}`}>
+                <Icon size={11} className={cfg.text} strokeWidth={2.5} />
+                <span className={cfg.text}>{cfg.label}</span>
+            </div>
+        </div>
+    );
+};
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 
 const AskMentor = () => {
-    const [searchQuery, setSearchQuery] = useState('');
+    const { userData } = useContext(AuthContext);
 
-    // Teachers from enrolled courses
-    const enrolledCourseTeachers = [
-        {
-            id: 1,
-            name: 'Dr. Abdul Rahman',
-            title: 'Associate Professor',
-            department: 'Computer Science & Engineering',
-            avatar: 'AR',
-            courseCode: 'CSE 3220',
-            courseName: 'Software Engineering',
-            email: 'rahman@cse.kuet.ac.bd',
-            phone: '+880 1712-345678',
-            office: 'Room 302, ECE Building',
-            officeHours: 'Sun, Tue: 2:00 PM - 4:00 PM',
-            expertise: ['Software Engineering', 'System Design', 'Agile Methodology'],
-            availability: 'Available',
-            rating: 4.8,
-            totalStudents: 120,
-            nextSlot: 'Tomorrow 10:00 AM'
-        },
-        {
-            id: 2,
-            name: 'Prof. Mahmuda Ahmed',
-            title: 'Professor',
-            department: 'Computer Science & Engineering',
-            avatar: 'MA',
-            courseCode: 'CSE 3210',
-            courseName: 'Database Systems',
-            email: 'ahmed@cse.kuet.ac.bd',
-            phone: '+880 1723-456789',
-            office: 'Room 205, ECE Building',
-            officeHours: 'Mon, Wed: 3:00 PM - 5:00 PM',
-            expertise: ['Database Systems', 'Big Data', 'Cloud Computing'],
-            availability: 'Busy',
-            rating: 4.9,
-            totalStudents: 115,
-            nextSlot: 'Friday 2:00 PM'
-        },
-        {
-            id: 3,
-            name: 'Dr. Kamal Khan',
-            title: 'Assistant Professor',
-            department: 'Computer Science & Engineering',
-            avatar: 'KK',
-            courseCode: 'CSE 3230',
-            courseName: 'Computer Networks',
-            email: 'khan@cse.kuet.ac.bd',
-            phone: '+880 1734-567890',
-            office: 'Room 401, ECE Building',
-            officeHours: 'Sun, Thu: 11:00 AM - 1:00 PM',
-            expertise: ['Computer Networks', 'Network Security', 'IoT'],
-            availability: 'Available',
-            rating: 4.7,
-            totalStudents: 110,
-            nextSlot: 'Today 3:00 PM'
-        },
-        {
-            id: 4,
-            name: 'Prof. Farhan Islam',
-            title: 'Associate Professor',
-            department: 'Computer Science & Engineering',
-            avatar: 'FI',
-            courseCode: 'CSE 3240',
-            courseName: 'Operating Systems',
-            email: 'islam@cse.kuet.ac.bd',
-            phone: '+880 1745-678901',
-            office: 'Room 303, ECE Building',
-            officeHours: 'Mon, Wed: 10:00 AM - 12:00 PM',
-            expertise: ['Operating Systems', 'Embedded Systems', 'Real-time Systems'],
-            availability: 'Available',
-            rating: 4.6,
-            totalStudents: 105,
-            nextSlot: 'Tomorrow 11:00 AM'
-        },
-        {
-            id: 5,
-            name: 'Dr. Nusrat Hassan',
-            title: 'Assistant Professor',
-            department: 'Computer Science & Engineering',
-            avatar: 'NH',
-            courseCode: 'CSE 3250',
-            courseName: 'Algorithm Analysis',
-            email: 'hassan@cse.kuet.ac.bd',
-            phone: '+880 1756-789012',
-            office: 'Room 208, ECE Building',
-            officeHours: 'Tue, Thu: 2:00 PM - 4:00 PM',
-            expertise: ['Algorithms', 'Data Structures', 'Competitive Programming'],
-            availability: 'Available',
-            rating: 4.8,
-            totalStudents: 125,
-            nextSlot: 'Tomorrow 2:00 PM'
-        },
-        {
-            id: 6,
-            name: 'Prof. Tahmid Karim',
-            title: 'Professor',
-            department: 'Computer Science & Engineering',
-            avatar: 'TK',
-            courseCode: 'CSE 3260',
-            courseName: 'Artificial Intelligence',
-            email: 'karim@cse.kuet.ac.bd',
-            phone: '+880 1767-890123',
-            office: 'Room 410, ECE Building',
-            officeHours: 'Sun, Tue: 1:00 PM - 3:00 PM',
-            expertise: ['Artificial Intelligence', 'Machine Learning', 'Deep Learning'],
-            availability: 'Busy',
-            rating: 4.9,
-            totalStudents: 98,
-            nextSlot: 'Thursday 10:00 AM'
+    const [instructors, setInstructors]         = useState([]);
+    const [loadingInst, setLoadingInst]         = useState(true);
+    const [instError, setInstError]             = useState(null);
+    const [searchQuery, setSearchQuery]         = useState('');
+
+    const [appointments, setAppointments]       = useState([]);
+    const [loadingAppt, setLoadingAppt]         = useState(true);
+    const [apptFilter, setApptFilter]           = useState('all');
+
+    const [bookingFor, setBookingFor]           = useState(null); // instructor object or null
+
+    // ── Fetch instructors ──────────────────────────────────────────────────
+    useEffect(() => {
+        const fetchInstructors = async () => {
+            if (!userData?._id) return;
+            setLoadingInst(true);
+            setInstError(null);
+            try {
+                // Step 1: Fetch the student's enrolled courses
+                const coursesRes = await axiosSecure.get('/courses/my-courses');
+                const courses = coursesRes.data.courses || [];
+
+                // Step 2: Build a map of teacherId → { courses[] }
+                // course.teachers is an array of ObjectId strings (not populated objects)
+                const teacherCourseMap = new Map();
+                // key: teacher ObjectId string
+                // value: { courses: [] }
+
+                for (const course of courses) {
+                    const teacherIds = Array.isArray(course.teachers) ? course.teachers : [];
+                    for (const teacherId of teacherIds) {
+                        if (!teacherId) continue;
+
+                        // Normalize: ObjectId may come as string or as { $oid: "..." }
+                        const idStr = typeof teacherId === 'object'
+                            ? (teacherId.$oid ?? teacherId._id ?? String(teacherId))
+                            : String(teacherId);
+
+                        if (!teacherCourseMap.has(idStr)) {
+                            teacherCourseMap.set(idStr, { courses: [] });
+                        }
+
+                        teacherCourseMap.get(idStr).courses.push({
+                            id:         course._id,
+                            courseCode: course.courseCode,
+                            courseName: course.courseName,
+                            students:   Array.isArray(course.students) ? course.students.length : 0,
+                        });
+                    }
+                }
+
+                // Step 3: For each unique teacher ObjectId, fetch the user profile from the users table
+                const enriched = await Promise.all(
+                    [...teacherCourseMap.entries()].map(async ([teacherId, { courses: tCourses }]) => {
+                        let profile = null;
+
+                        try {
+                            // Fetch teacher's user record by their ObjectId
+                            const r = await axiosSecure.get(`/users/id/${teacherId}`);
+                            profile = r.data.user ?? r.data ?? null;
+                        } catch (e) {
+                            console.warn(`Failed to fetch user profile for teacher ID: ${teacherId}`, e);
+                        }
+
+                        return {
+                            id:           profile?._id   ?? teacherId,
+                            name:         profile?.name         ?? 'Unknown Instructor',
+                            email:        profile?.email        ?? '',
+                            designation:  profile?.designation  ?? '',
+                            department:   profile?.department   ?? '',
+                            room:         profile?.room         ?? '',
+                            photoURL:     profile?.photoURL     ?? null,
+                            status:       profile?.status       ?? 'verified',
+                            courses:      tCourses,
+                            totalStudents: tCourses.reduce((s, c) => s + c.students, 0),
+                        };
+                    })
+                );
+
+                // Step 4: Sort — verified/available first, then alphabetically
+                enriched.sort((a, b) => {
+                    if (a.status === 'verified' && b.status !== 'verified') return -1;
+                    if (a.status !== 'verified' && b.status === 'verified') return 1;
+                    return a.name.localeCompare(b.name);
+                });
+
+                setInstructors(enriched);
+            } catch (err) {
+                console.error('Failed to fetch instructors:', err);
+                setInstError('Failed to load instructors. Please try again.');
+            } finally {
+                setLoadingInst(false);
+            }
+        };
+        fetchInstructors();
+    }, [userData]);
+
+    // ── Fetch appointments ─────────────────────────────────────────────────
+    const fetchAppointments = async () => {
+        if (!userData?._id) return;
+        setLoadingAppt(true);
+        try {
+            // GET /appointment/student/:id
+            const res = await axiosSecure.get(`/appointment/student/${userData._id}`);
+            console.log('Appointments:', res);
+            const raw = res.data.appointments || [];
+
+            const mapped = raw.map(a => ({
+                id:          a._id,
+                facultyName: a.faculty?.name ?? 'Unknown Faculty',
+                facultyId:   a.faculty?._id ?? a.faculty,
+                startTime:   a.startTime,
+                endTime:     a.endTime,
+                purpose:     a.purpose ?? '',
+                mode:        a.mode ?? '',
+                meetingType: a.meetingType ?? '',
+                status:      a.status ?? 'pending',
+            }));
+
+            // Sort: upcoming first, then by date desc for past
+            mapped.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+
+            setAppointments(mapped);
+        } catch (err) {
+            console.error('Failed to fetch appointments:', err);
+        } finally {
+            setLoadingAppt(false);
         }
-    ];
+    };
 
-    const filteredTeachers = enrolledCourseTeachers.filter(teacher => {
-        const searchLower = searchQuery.toLowerCase();
+    useEffect(() => { fetchAppointments(); }, [userData]);
+
+    // ── Filtered instructors ───────────────────────────────────────────────
+    const filteredInst = instructors.filter(inst => {
+        const q = searchQuery.toLowerCase();
         return (
-            teacher.name.toLowerCase().includes(searchLower) ||
-            teacher.courseCode.toLowerCase().includes(searchLower) ||
-            teacher.courseName.toLowerCase().includes(searchLower) ||
-            teacher.expertise.some(exp => exp.toLowerCase().includes(searchLower))
+            inst.name?.toLowerCase().includes(q) ||
+            inst.department?.toLowerCase().includes(q) ||
+            inst.designation?.toLowerCase().includes(q) ||
+            inst.courses.some(c =>
+                c.courseCode?.toLowerCase().includes(q) ||
+                c.courseName?.toLowerCase().includes(q)
+            )
         );
     });
 
-    const getAvailabilityClass = (availability) => {
-        return availability === 'Available'
-            ? 'bg-green-100 text-green-700'
-            : 'bg-orange-100 text-orange-700';
-    };
+    // ── Filtered appointments ──────────────────────────────────────────────
+    const filteredAppt = apptFilter === 'all'
+        ? appointments
+        : appointments.filter(a => a.status === apptFilter);
+
+    // Appointment counts
+    const apptCounts = appointments.reduce((acc, a) => {
+        acc[a.status] = (acc[a.status] || 0) + 1;
+        return acc;
+    }, {});
 
     return (
         <div className="space-y-6">
+
             {/* Header */}
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-                        <MessageCircleQuestion className="w-8 h-8 text-blue-600" />
-                        My Course Instructors
-                    </h1>
-                    <p className="text-gray-600 mt-1">Connect with your course teachers</p>
-                </div>
+            <div>
+                <h1 className="text-xl font-bold text-gray-900">My Course Instructors</h1>
+                <p className="text-sm text-gray-400 mt-1">Connect with the teachers from your enrolled courses</p>
             </div>
 
-            {/* Search Bar */}
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-                <div className="flex flex-col md:flex-row gap-4">
-                    <div className="flex-1 relative">
-                        <Search className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                        <input
-                            type="text"
-                            placeholder="Search by teacher name, course, or expertise..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        />
-                    </div>
-                </div>
-            </div>
-
-            {/* Info Banner */}
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-                <p className="text-sm text-blue-800">
-                    <strong>Note:</strong> These are the instructors for your currently enrolled courses.
-                    You can message them directly or book an appointment during their office hours.
+            {/* Info banner */}
+            <div className="flex items-start gap-3 bg-blue-50 border border-blue-100 rounded-2xl px-4 py-3">
+                <AlertCircle size={15} className="text-blue-400 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-blue-700">
+                    Showing instructors from your currently enrolled courses. Booked appointments remain <strong>pending</strong> until approved by the faculty.
                 </p>
             </div>
 
-            {/* Teachers Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {filteredTeachers.map((teacher) => (
-                    <div
-                        key={teacher.id}
-                        className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-lg transition"
-                    >
-                        {/* Header Section */}
-                        <div className="flex items-start gap-4 mb-4 pb-4 border-b border-gray-100">
-                            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-600 to-blue-800 text-white flex items-center justify-center text-xl font-bold shadow-lg">
-                                {teacher.avatar}
-                            </div>
-                            <div className="flex-1">
-                                <h3 className="text-xl font-bold text-gray-900">{teacher.name}</h3>
-                                <p className="text-sm text-gray-600">{teacher.title}</p>
-                                <p className="text-sm text-gray-500">{teacher.department}</p>
-                                <div className="flex items-center gap-2 mt-2">
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${getAvailabilityClass(teacher.availability)}`}>
-                    {teacher.availability}
-                  </span>
-                                    <div className="flex items-center gap-1 text-sm">
-                                        <span className="text-yellow-500">★</span>
-                                        <span className="font-semibold text-gray-700">{teacher.rating}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Course Info */}
-                        <div className="mb-4 pb-4 border-b border-gray-100">
-                            <div className="flex items-center gap-2 mb-2">
-                                <BookOpen className="w-4 h-4 text-blue-600" />
-                                <span className="text-sm font-semibold text-gray-700">Teaching Course:</span>
-                            </div>
-                            <div className="ml-6">
-                                <p className="font-bold text-gray-900">{teacher.courseCode}</p>
-                                <p className="text-sm text-gray-600">{teacher.courseName}</p>
-                                <p className="text-xs text-gray-500 mt-1">{teacher.totalStudents} students enrolled</p>
-                            </div>
-                        </div>
-
-                        {/* Contact Information */}
-                        <div className="space-y-3 mb-4 pb-4 border-b border-gray-100">
-                            <h4 className="text-sm font-semibold text-gray-700 mb-2">Contact Information:</h4>
-
-                            <div className="flex items-center gap-3 text-sm">
-                                <Mail className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                                <a href={`mailto:${teacher.email}`} className="text-blue-600 hover:text-blue-700 hover:underline">
-                                    {teacher.email}
-                                </a>
-                            </div>
-
-                            <div className="flex items-center gap-3 text-sm">
-                                <Phone className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                                <a href={`tel:${teacher.phone}`} className="text-gray-700 hover:text-blue-600">
-                                    {teacher.phone}
-                                </a>
-                            </div>
-
-                            <div className="flex items-center gap-3 text-sm">
-                                <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                                <span className="text-gray-700">{teacher.office}</span>
-                            </div>
-
-                            <div className="flex items-start gap-3 text-sm">
-                                <Calendar className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
-                                <div>
-                                    <p className="font-medium text-gray-700">Office Hours:</p>
-                                    <p className="text-gray-600">{teacher.officeHours}</p>
-                                    <p className="text-xs text-blue-600 mt-1">Next available: {teacher.nextSlot}</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Expertise */}
-                        <div className="mb-4">
-                            <div className="flex items-center gap-2 mb-2">
-                                <Award className="w-4 h-4 text-purple-600" />
-                                <h4 className="text-sm font-semibold text-gray-700">Expertise:</h4>
-                            </div>
-                            <div className="flex flex-wrap gap-2 ml-6">
-                                {teacher.expertise.map((skill, index) => (
-                                    <span
-                                        key={index}
-                                        className="px-3 py-1 bg-purple-50 text-purple-700 rounded-full text-xs font-medium"
-                                    >
-                    {skill}
-                  </span>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Action Buttons */}
-                        <div className="flex flex-col md:flex-row gap-3 mt-4">
-                            <button className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center justify-center gap-2 font-medium">
-                                <Mail className="w-4 h-4" />
-                                Message
-                            </button>
-                            <button className="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center justify-center gap-2 font-medium">
-                                <Calendar className="w-4 h-4" />
-                                Book Appointment
-                            </button>
-                        </div>
-                    </div>
-                ))}
+            {/* Search */}
+            <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+                <div className="relative">
+                    <Search size={15} className="text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                        type="text"
+                        placeholder="Search by name, course, department or designation…"
+                        value={searchQuery}
+                        onChange={e => setSearchQuery(e.target.value)}
+                        className="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-400 focus:border-orange-400 outline-none transition"
+                    />
+                </div>
             </div>
 
-            {/* No Results Message */}
-            {filteredTeachers.length === 0 && (
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
-                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Search className="w-8 h-8 text-gray-400" />
-                    </div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">No instructors found</h3>
-                    <p className="text-gray-600">
-                        Try adjusting your search query or clear the search to see all instructors.
-                    </p>
-                    <button
-                        onClick={() => setSearchQuery('')}
-                        className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-                    >
-                        Clear Search
-                    </button>
+            {/* Error */}
+            {instError && (
+                <div className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-2xl px-4 py-3 text-sm text-red-600">
+                    <AlertCircle size={15} className="flex-shrink-0" />
+                    {instError}
                 </div>
+            )}
+
+            {/* ── Instructors Grid ─────────────────────────────────────────── */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                {loadingInst ? (
+                    [1, 2, 3, 4].map(i => <SkeletonCard key={i} />)
+                ) : filteredInst.length === 0 ? (
+                    <EmptyState onClear={() => setSearchQuery('')} />
+                ) : (
+                    filteredInst.map(inst => (
+                        <InstructorCard
+                            key={inst.id}
+                            instructor={inst}
+                            onBookClick={setBookingFor}
+                        />
+                    ))
+                )}
+            </div>
+
+            {/* ── Appointment List ─────────────────────────────────────────── */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                {/* Header */}
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-5 py-4 border-b border-gray-100">
+                    <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-lg bg-purple-50 flex items-center justify-center">
+                            <Calendar size={14} className="text-purple-500" strokeWidth={2} />
+                        </div>
+                        <h2 className="text-sm font-bold text-gray-900">My Appointments</h2>
+                        {!loadingAppt && (
+                            <span className="text-xs font-semibold text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">
+                                {appointments.length}
+                            </span>
+                        )}
+                    </div>
+
+                    {/* Filter pills */}
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                        {['all', 'pending', 'approved', 'rejected', 'cancelled'].map(s => {
+                            const isActive = apptFilter === s;
+                            const count = s === 'all' ? appointments.length : (apptCounts[s] ?? 0);
+                            return (
+                                <button key={s}
+                                        onClick={() => setApptFilter(s)}
+                                        className={`px-3 py-1 rounded-full text-xs font-semibold transition capitalize
+                                        ${isActive
+                                            ? 'bg-gray-900 text-white'
+                                            : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
+                                    {s === 'all' ? 'All' : s} {count > 0 && <span className="ml-0.5 opacity-70">({count})</span>}
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                {/* Rows */}
+                <div className="px-3">
+                    {loadingAppt ? (
+                        <div className="space-y-0">
+                            {[1, 2, 3].map(i => (
+                                <div key={i} className="flex items-center gap-3 px-2 py-3 border-b border-gray-100 animate-pulse">
+                                    <div className="w-2 h-2 rounded-full bg-gray-200" />
+                                    <div className="flex-1 h-3 bg-gray-200 rounded" />
+                                    <div className="w-32 h-3 bg-gray-100 rounded hidden sm:block" />
+                                    <div className="w-20 h-6 bg-gray-100 rounded-full" />
+                                </div>
+                            ))}
+                        </div>
+                    ) : filteredAppt.length === 0 ? (
+                        <div className="flex flex-col items-center py-10 text-gray-400 text-sm">
+                            <Calendar size={28} className="text-gray-200 mb-2" />
+                            {apptFilter === 'all' ? 'No appointments booked yet.' : `No ${apptFilter} appointments.`}
+                        </div>
+                    ) : (
+                        filteredAppt.map(a => <AppointmentRow key={a.id} appointment={a} />)
+                    )}
+                </div>
+            </div>
+
+            {/* ── Booking Modal ────────────────────────────────────────────── */}
+            {bookingFor && (
+                <BookingModal
+                    instructor={bookingFor}
+                    onClose={() => setBookingFor(null)}
+                    onBooked={fetchAppointments}
+                />
             )}
         </div>
     );
