@@ -1,8 +1,11 @@
 import { NavLink } from "react-router";
-import React from "react";
+import React, {useContext, useEffect} from "react";
 import { Bell, GraduationCap, Moon, UserRound, PanelLeft, PanelRight, LogOut, LayoutDashboard, LibraryBig } from "lucide-react";
+import {AuthContext} from "../../Providers/AuthProvider/AuthProvider.jsx";
 
 const SidebarDashboard = ({ menuItems, isSidebarOpen, setIsSidebarOpen, toggleSidebar, isMobile }) => {
+    const { userData } = useContext(AuthContext);
+
     const activeClass = "bg-gray-300 p-2 rounded-lg";
     const normalClass = "hover:bg-gray-200 p-2 rounded-lg transition";
     const iconBtnClass = "hover:bg-gray-200 p-2 rounded-lg transition cursor-pointer";
@@ -42,7 +45,21 @@ const SidebarDashboard = ({ menuItems, isSidebarOpen, setIsSidebarOpen, toggleSi
                             <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
                         </button>
                         <button className={iconBtnClass}><Moon className="w-5 h-5" /></button>
-                        <button className={iconBtnClass}><UserRound className="w-5 h-5" /></button>
+                        <div className="dropdown dropdown-top">
+                            <button tabIndex={0} className={iconBtnClass}><UserRound className="w-5 h-5" /></button>
+
+                            <ul tabIndex={0} className="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-48">
+                                <li className="px-2 py-1 text-sm font-semibold text-gray-700 pointer-events-none capitalize">
+                                    {userData?.name.toLowerCase() ?? '...'}
+                                </li>
+                                <li className="px-2 pb-1 text-xs text-gray-400 pointer-events-none">
+                                    {userData?.email ?? ''}
+                                </li>
+                                <div className="divider my-0" />
+                                <li><a>Settings</a></li>
+                                <li><a>Switch account</a></li>
+                            </ul>
+                        </div>
                         <button className={iconBtnClass}><LogOut className="w-5 h-5" /></button>
                     </div>
                 </nav>
