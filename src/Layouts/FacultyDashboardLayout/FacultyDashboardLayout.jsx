@@ -6,7 +6,6 @@ import { AuthContext } from '../../Providers/AuthProvider/AuthProvider';
 
 const FacultyDashboardLayout = () => {
     const {userData,logout}=useContext(AuthContext);
-    // console.log(userData);
     return (
         <div className="drawer lg:drawer-open bg-white">
             <input id="my-drawer-4" type="checkbox" className="drawer-toggle" />
