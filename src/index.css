@@ -1,6 +1,10 @@
 @import "tailwindcss";
 @plugin "daisyui";
 
+* {
+    scrollbar-width: thin;
+    scrollbar-color: #d1d5db transparent;
+}
 
 .inter{
     font-family: "Inter", sans-serif;

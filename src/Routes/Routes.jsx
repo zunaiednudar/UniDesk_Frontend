@@ -15,6 +15,7 @@ import MyAssignments from "../Pages/StudentDashboard/MyAssignments.jsx";
 import AskMentor from "../Pages/StudentDashboard/AskMentor.jsx";
 import PublicRoute from "../Providers/PublicRoute/PublicRoute.jsx";
 import StudentRoute from "../Providers/RoleWiseRoutes/StudentRoute/StudentRoute.jsx";
+import Profile from "../Pages/Profile/Profile.jsx";
 
 export const router = createBrowserRouter([
     {
@@ -79,6 +80,10 @@ export const router = createBrowserRouter([
                 path: "ask-mentor",
                 Component: AskMentor
             },
+            {
+                path: "profile",
+                Component: Profile
+            }
         ]
     },
     {

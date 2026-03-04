@@ -13,25 +13,25 @@ const StudentDashboard = () => {
         {
             id: 'activity',
             icon: <Activity className="w-5 h-5" />,
-            label: 'My Activity',
+            label: 'Activity',
             path: '/dashboard/student/activity'
         },
         {
             id: 'courses',
             icon: <BookOpen className="w-5 h-5" />,
-            label: 'My Courses',
+            label: 'Courses',
             path: '/dashboard/student/courses'
         },
         {
             id: 'projects',
             icon: <FolderKanban className="w-5 h-5" />,
-            label: 'My Projects',
+            label: 'Projects',
             path: '/dashboard/student/projects'
         },
         {
             id: 'assignments',
             icon: <ClipboardCheck className="w-5 h-5" />,
-            label: 'My Assignments',
+            label: 'Assignments',
             path: '/dashboard/student/assignments'
         },
         {

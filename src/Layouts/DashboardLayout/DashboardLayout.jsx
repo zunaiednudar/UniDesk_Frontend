@@ -37,7 +37,7 @@ const DashboardLayout = ({ menuItems }) => {
             {/* Main Content */}
             <main className="flex flex-col md:flex-row flex-1 items-start gap-2 p-2.5 w-full overflow-y-scroll">
                 {/* Mobile Overlay */}
-                {!isSidebarOpen && (
+                {(isMobile || (!isMobile && !isSidebarOpen)) && (
                     <button onClick={toggleSidebar} className="hover:bg-gray-200 p-2 rounded-lg transition cursor-pointer">
                         <PanelLeft className="w-6 h-6 text-gray-500" />
                     </button>
