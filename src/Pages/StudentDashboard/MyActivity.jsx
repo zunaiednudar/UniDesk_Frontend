@@ -6,9 +6,11 @@ import {
     Calendar,
     Clock,
     AlertCircle,
+    Megaphone
 } from 'lucide-react';
 import axiosSecure from "../../utils/axiosSecure.js";
 import { AuthContext } from "../../Providers/AuthProvider/AuthProvider.jsx";
+import RecentNotices from "../../Components/RecentNotices/RecentNotices.jsx";
 
 const getDueDateClasses = (dateStr, isCompleted) => {
     if (isCompleted) return 'text-gray-400';
@@ -20,7 +22,6 @@ const getDueDateClasses = (dateStr, isCompleted) => {
     return 'text-gray-500';
 };
 
-// Maps every possible task status to a checkbox border/fill colour
 const getCheckboxClasses = (status) => {
     switch (status) {
         case 'completed': return 'border-green-500 bg-green-500';
@@ -55,7 +56,7 @@ const SectionHeader = ({ icon: Icon, title, iconBg, iconColor, count }) => (
         <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${iconBg}`}>
             <Icon size={16} className={iconColor} strokeWidth={2} />
         </div>
-        <h2 className="text-base font-bold text-gray-900">{title}</h2>
+        <h2 className="graphik text-base font-semibold text-gray-900">{title}</h2>
         {count !== undefined && (
             <span className="ml-1 text-xs font-semibold text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">
                 {count}
@@ -206,7 +207,7 @@ const MyActivity = () => {
                     })
                 );
 
-                // ── Submission stats for pie chart ────────────────────────
+                // Submission stats for pie chart
                 const onTime = userTasks.filter(t => t.status === 'completed').length;
                 const late   = userTasks.filter(t => t.status === 'late').length;
                 const missed = userTasks.filter(t => t.status === 'missed').length;
@@ -236,17 +237,25 @@ const MyActivity = () => {
         { name: 'Missed',  value: submissionStats.missed },
     ];
 
-    return (
-        <div className="space-y-6">
+    const [notices, setNotices] = useState([
+        { title: "Mid-term schedule released", message: "Mid-term exams will be held from Nov 10–14. Check the portal for your timetable.", date: "Today" },
+        { title: "Library hours extended", message: "The central library will remain open until 10 PM during exam weeks.", date: "Yesterday" },
+        { title: "Semester registration open", message: "Course registration for Spring 2025 is now open. Complete by Nov 30.", date: "2 days ago" },
+        { title: "Campus maintenance notice", message: "The engineering block will have no electricity on Saturday 9AM–2PM.", date: "3 days ago" },
+        { title: "Hackathon registration", message: "UniDesk Hackathon 2024 registrations are open. Form your teams and apply before Nov 20.", date: "4 days ago" },
+        { title: "New faculty joined", message: "Dr. Arif Hossain has joined the CSE department as Assistant Professor.", date: "1 week ago" },
+    ]);
 
+    return (
+        <div className="gilroy space-y-6">
             {/* Page Title */}
             <div>
-                <h1 className="text-xl font-bold text-gray-900">My Activity</h1>
-                <p className="text-sm text-gray-400 mt-1">Track your courses, assignments, and upcoming appointments</p>
+                <h1 className="graphik text-3xl font-semibold text-gray-900">My Activity</h1>
+                <p className="text-sm text-gray-400 mt-1">Visualize your academic performance, manage assignments, and stay ahead with real-time progress insights</p>
             </div>
 
             {/* Header Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-4">
                 <StatCard
                     icon={BookOpen}
                     value={stats.enrolledCourses}
@@ -270,7 +279,9 @@ const MyActivity = () => {
                 />
             </div>
 
-            {/* Main Grid — task list takes 2 cols, sidebar takes 1 */}
+            <RecentNotices notices={notices} loading={loading} />
+
+            {/* Main Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
 
                 {/* Task List */}

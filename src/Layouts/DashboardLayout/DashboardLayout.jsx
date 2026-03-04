@@ -144,7 +144,7 @@ const DashboardLayout = ({ menuItems }) => {
                             </button>
                         )}
 
-                        <span className={`pb-0.5 pl-2 graphik text-gray-500 text-lg capitalize ${isSidebarOpen? "ml-10" : ""}`}>{formattedPath}</span>
+                        <span className={`pb-0.5 pl-2 graphik text-gray-500 text-md capitalize ${isSidebarOpen? "ml-10" : ""}`}>{formattedPath}</span>
                     </div>
 
                     {/* Notification icon */}
@@ -237,7 +237,7 @@ const DashboardLayout = ({ menuItems }) => {
                 </div>
 
                 <div className="w-full flex-1">
-                    <div className="border border-gray-200 mt-0.5 mb-4"></div>
+                    <div className="border border-gray-200 mt-0.5 mb-3.5"></div>
 
                     <div className="w-full px-12">
                         <Outlet />
