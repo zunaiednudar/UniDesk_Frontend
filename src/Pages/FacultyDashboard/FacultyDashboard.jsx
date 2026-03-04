@@ -30,7 +30,7 @@ const FacultyDashboard = () => {
         const fetchCourses = async () => {
             try {
                 setLoadingCourses(true);
-                const res = await axiosSecure("/courses/my-courses");
+                const res = await axiosSecure.get("/courses/my-courses");
                 const coursesData = res.data.courses;
 
                 setCourses(coursesData);
@@ -72,7 +72,7 @@ const FacultyDashboard = () => {
         const fetchAppointments = async () => {
             try {
                 setLoadingAppointments(true);
-                const res = await axiosSecure(`/appointment/faculty/${userData._id}`);
+                const res = await axiosSecure.get(`/appointment/faculty/${userData._id}`);
                 const appointments = res.data.appointments;
 
                 const now = new Date();
@@ -214,7 +214,7 @@ const FacultyDashboard = () => {
                             )
                         }
                     </div>
-                    <NavLink to="/dashboard/faculty/my-appointments" className="bg-[#1E40AF] text-white px-5 py-2 rounded-lg cursor-pointer text-center transition-color hover:bg-blue-600 duration-500">View All Appointments</NavLink>
+                    <NavLink to="/dashboard/faculty/my-appointments" className="bg-[#1E40AF] text-white px-5 py-2 rounded-lg cursor-pointer text-center transition-colors hover:bg-blue-600 duration-500">View All Appointments</NavLink>
                 </div>
             </div>
         </div>
