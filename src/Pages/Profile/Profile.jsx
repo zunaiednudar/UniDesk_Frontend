@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { uploadToCloudinary } from "../../utils/uploadToCloudinary.js";
 import axiosSecure from "../../utils/axiosSecure.js";
 import { formatErrorMessage } from "../../utils/formatErrorMessages.js";
-import { Camera, Trash2 } from "lucide-react";
+import { Camera } from "lucide-react";
 
 const Profile = () => {
     const { userData, setUserData, setUser, updateUser, passwordReset } = useContext(AuthContext);
@@ -19,7 +19,6 @@ const Profile = () => {
     const [loading, setLoading] = useState(false);
     const [photoPreview, setPhotoPreview] = useState(null);
     const [photoFile, setPhotoFile] = useState(null);
-    const [photoDeleted, setPhotoDeleted] = useState(false);
 
     // Sync state whenever userData loads or changes (handles page refresh)
     useEffect(() => {
@@ -32,7 +31,6 @@ const Profile = () => {
             setDesignation(userData.designation || "");
             setRoom(userData.room || "");
             setPhotoPreview(userData.photoURL || null);
-            setPhotoDeleted(false);
         }
     }, [userData]);
 
@@ -53,7 +51,6 @@ const Profile = () => {
         const file = e.target.files[0];
         if (file) {
             setPhotoFile(file);
-            setPhotoDeleted(false);
             setPhotoPreview(URL.createObjectURL(file));
         }
     };
@@ -65,9 +62,7 @@ const Profile = () => {
         try {
             const imageData = photoFile
                 ? await uploadToCloudinary(photoFile)
-                : photoDeleted
-                    ? { url: null, public_id: null }
-                    : { url: userData?.photoURL, public_id: userData?.photoId };
+                : { url: userData?.photoURL, public_id: userData?.photoId };
 
             // Only send what the backend updateProfile controller accepts
             const payload = {
@@ -89,7 +84,6 @@ const Profile = () => {
                 setRoom(updated.room || "");
                 setPhotoPreview(updated.photoURL || null);
                 setPhotoFile(null);
-                setPhotoDeleted(false);
 
                 await updateUser({ displayName: updated.name, photoURL: updated.photoURL });
                 setUser(prev => ({ ...prev, displayName: updated.name, photoURL: updated.photoURL }));
@@ -132,15 +126,9 @@ const Profile = () => {
                         <div className="flex gap-2 flex-wrap">
                             <label className="cursor-pointer flex items-center gap-2 px-4 py-2 text-sm font-medium border border-gray-200 rounded-lg hover:bg-gray-50 transition text-gray-700">
                                 <Camera className="w-4 h-4" />
-                                Upload new picture
+                                Change picture
                                 <input type="file" name="photo" accept="image/*" className="hidden" onChange={handlePhotoChange} />
                             </label>
-                            <button type="button"
-                                    onClick={() => { setPhotoPreview(null); setPhotoFile(null); setPhotoDeleted(true); }}
-                                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium border border-gray-200 rounded-lg hover:bg-red-50 hover:border-red-200 hover:text-red-500 transition text-gray-500">
-                                <Trash2 className="w-4 h-4" />
-                                Delete
-                            </button>
                         </div>
                     </div>
                 </div>

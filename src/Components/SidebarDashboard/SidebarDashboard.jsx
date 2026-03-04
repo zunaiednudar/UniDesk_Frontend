@@ -50,10 +50,6 @@ const SidebarDashboard = ({ menuItems, isSidebarOpen, setIsSidebarOpen, toggleSi
                         </div>
 
                         <div className="flex flex-col items-center">
-                            <button className={`relative ${iconBtnClass}`}>
-                                <Bell className="w-5 h-5" />
-                                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
-                            </button>
                             <button className={iconBtnClass}><Moon className="w-5 h-5" /></button>
                             <div className="dropdown dropdown-top">
                                 <button tabIndex={0} className={iconBtnClass}><UserRound className="w-5 h-5" /></button>
