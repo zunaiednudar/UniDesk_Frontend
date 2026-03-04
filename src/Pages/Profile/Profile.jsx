@@ -7,7 +7,7 @@ import { formatErrorMessage } from "../../utils/formatErrorMessages.js";
 import { Camera, Trash2 } from "lucide-react";
 
 const Profile = () => {
-    const { userData, setUserData, setUser, updateUser } = useContext(AuthContext);
+    const { userData, setUserData, setUser, updateUser, passwordReset } = useContext(AuthContext);
 
     const [name, setName] = useState("");
     const [role, setRole] = useState("");
@@ -16,7 +16,6 @@ const Profile = () => {
     const [batch, setBatch] = useState("");
     const [designation, setDesignation] = useState("");
     const [room, setRoom] = useState("");
-    const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
     const [photoPreview, setPhotoPreview] = useState(null);
     const [photoFile, setPhotoFile] = useState(null);
@@ -37,6 +36,19 @@ const Profile = () => {
         }
     }, [userData]);
 
+    const [resetLoading, setResetLoading] = useState(false);
+
+    const handlePasswordReset = async () => {
+        setResetLoading(true);
+        try {
+            await passwordReset(userData.email);
+            toast.success("Password reset email sent! Check your inbox.");
+        } catch (err) {
+            toast.error(formatErrorMessage(err));
+        }
+        setResetLoading(false);
+    };
+
     const handlePhotoChange = (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -48,22 +60,6 @@ const Profile = () => {
 
     const handleProfileUpdate = async (e) => {
         e.preventDefault();
-        const form = e.target;
-        const password = form.password?.value;
-        const confirmPassword = form.confirmPassword?.value;
-
-        if (password) {
-            const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>]).{6,}$/;
-            if (!passwordRegex.test(password)) {
-                setError("Password must be at least 6 characters, with uppercase, lowercase, number and special character.");
-                return;
-            }
-            if (password !== confirmPassword) {
-                toast.error("Passwords do not match.");
-                return;
-            }
-            setError("");
-        }
 
         setLoading(true);
         try {
@@ -157,7 +153,7 @@ const Profile = () => {
                         type="text"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                        className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition capitalize"
                         placeholder="Your full name"
                         required
                     />
@@ -221,27 +217,21 @@ const Profile = () => {
                     )}
                 </div>
 
-                {/* Password */}
-                <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
-                    <div>
-                        <h2 className="text-sm font-semibold text-gray-700 mb-1">Password</h2>
-                        <p className="text-xs text-gray-400">Leave blank to keep your current password</p>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
+                {/* Password Reset */}
+                <div className="bg-white rounded-2xl border border-gray-200 p-6">
+                    <div className="flex items-center justify-between gap-4">
                         <div>
-                            <label className="text-xs font-medium text-gray-500 mb-1.5 block">New password</label>
-                            <input type="password" name="password"
-                                   className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
-                                   placeholder="••••••••" />
+                            <h2 className="text-sm font-semibold text-gray-700 mb-1">Password</h2>
+                            <p className="text-xs text-gray-400">We'll send a reset link to <span className="text-gray-500 font-medium">{userData?.email}</span></p>
                         </div>
-                        <div>
-                            <label className="text-xs font-medium text-gray-500 mb-1.5 block">Confirm password</label>
-                            <input type="password" name="confirmPassword"
-                                   className="w-full px-4 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
-                                   placeholder="••••••••" />
-                        </div>
+                        <button
+                            type="button"
+                            onClick={handlePasswordReset}
+                            disabled={resetLoading}
+                            className="shrink-0 px-4 py-2 text-sm font-medium border border-gray-200 rounded-lg hover:bg-gray-50 transition text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                            {resetLoading ? "Sending..." : "Send reset link"}
+                        </button>
                     </div>
-                    {error && <p className="text-xs text-red-500">{error}</p>}
                 </div>
 
                 {/* Save Button */}
