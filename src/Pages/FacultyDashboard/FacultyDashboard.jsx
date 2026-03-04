@@ -19,8 +19,8 @@ const FacultyDashboard = () => {
 
     // Data collection
 
-    const [courses, setCourses] = useState([]);
     const [activeCourses, setActiveCourses] = useState([]);
+    const [completedCourses,setCompletedCourses]=useState({});
     const [totalStudents, setTotalStudents] = useState(0);
     const [appointments, setAppointments] = useState([]);
 
@@ -31,14 +31,10 @@ const FacultyDashboard = () => {
             try {
                 setLoadingCourses(true);
                 const res = await axiosSecure.get("/courses/my-courses");
-                const coursesData = res.data.courses;
+                const data = res.data;
 
-                setCourses(coursesData);
-
-                const filteredCourses = coursesData.filter(
-                    course => course.status === "active"
-                );
-                setActiveCourses(filteredCourses);
+                setActiveCourses(data.activeCourses);
+                setCompletedCourses(data.completedCourses);
 
             } catch (error) {
                 // console.log(error);
@@ -53,10 +49,15 @@ const FacultyDashboard = () => {
 
     useEffect(() => {
         const fetchStudents = () => {
-            if (!courses.length)
+            if (!activeCourses.length && !completedCourses.length)
                 return;
             const total = new Set();
-            courses.map(course => {
+            activeCourses.map(course => {
+                course.students?.map(student => {
+                    total.add(student._id);
+                });
+            });
+            completedCourses.map(course => {
                 course.students?.map(student => {
                     total.add(student._id);
                 });
@@ -64,7 +65,7 @@ const FacultyDashboard = () => {
             setTotalStudents(total.size);
         }
         fetchStudents();
-    }, [courses]);
+    }, [activeCourses,completedCourses]);
 
     // Appointments fetch
 
@@ -91,7 +92,6 @@ const FacultyDashboard = () => {
             fetchAppointments();
     }, [userData?._id]);
 
-    // console.log(courses, activeCourses, totalStudents,appointments);
     return (
         <div className='w-full max-w-full p-10 flex flex-col gap-10 inter'>
 
@@ -119,7 +119,7 @@ const FacultyDashboard = () => {
                                 <div className='w-full px-5 py-10 rounded-lg shadow-xl flex items-start justify-between box-border'>
                                     <div>
                                         <p className='text-gray-500 text-sm'>Total Courses</p>
-                                        <p className='playfair text-5xl font-bold'>{courses.length}</p>
+                                        <p className='playfair text-5xl font-bold'>{activeCourses.length+completedCourses.length}</p>
                                     </div>
                                     <div className='w-10 h-10 bg-[#1E40AF] rounded-lg flex justify-center items-center'>
                                         <GraduationCap className='w-5 h-5 text-white' /></div>
