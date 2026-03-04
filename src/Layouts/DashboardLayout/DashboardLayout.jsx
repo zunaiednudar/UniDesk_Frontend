@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import { NavLink, Outlet } from 'react-router';
+import {NavLink, Outlet, useLocation} from 'react-router';
 import SidebarDashboard from "../../Components/SidebarDashboard/SidebarDashboard.jsx";
 import {Bell, PanelLeft, Check } from "lucide-react";
 import axiosSecure from "../../utils/axiosSecure.js";
@@ -121,6 +121,9 @@ const DashboardLayout = ({ menuItems }) => {
         }
     }
 
+    const location = useLocation();
+    const isNotificationsPage = location.pathname.includes("notifications");
+
     return (
         <div className="flex h-dvh">
             {/* Sidebar */}
@@ -138,7 +141,7 @@ const DashboardLayout = ({ menuItems }) => {
 
                     {/* Notification icon */}
                     <div className="dropdown dropdown-end ml-auto">
-                        <button tabIndex={0} className={`relative ${iconBtnClass} ml-auto`}>
+                        <button tabIndex={0} className={`relative ${iconBtnClass} ml-auto ${isNotificationsPage ? 'bg-gray-300' : 'hover:bg-gray-200'}`}>
                             <Bell className="w-5 h-5" />
 
                             {unreadCount > 0 && (

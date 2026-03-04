@@ -101,7 +101,7 @@ const Profile = () => {
     const readOnlyClass = "w-full px-4 py-2.5 text-sm border border-gray-200 rounded-lg bg-gray-50 text-gray-400";
 
     return (
-        <div className="gilroy min-h-screen bg-gray-50 py-8 px-4">
+        <div className="gilroy min-h-screen py-8 px-4">
             <form onSubmit={handleProfileUpdate} className="max-w-2xl mx-auto space-y-6">
 
                 {/* Header */}

@@ -1,14 +1,35 @@
-import { NavLink } from "react-router";
+import {NavLink, useLocation, useNavigate} from "react-router";
 import React, { useContext } from "react";
 import { Bell, GraduationCap, Moon, UserRound, PanelLeft, PanelRight, LayoutDashboard, LibraryBig } from "lucide-react";
 import {AuthContext} from "../../Providers/AuthProvider/AuthProvider.jsx";
+import DefaultProfile from "../../assets/default-profile.png";
+import {toast} from "sonner";
 
 const SidebarDashboard = ({ menuItems, isSidebarOpen, setIsSidebarOpen, toggleSidebar, isMobile }) => {
-    const { userData } = useContext(AuthContext);
+    const { userData, logout } = useContext(AuthContext);
 
     const activeClass = "bg-gray-300 p-2 rounded-lg";
     const normalClass = "hover:bg-gray-200 p-2 rounded-lg transition";
     const iconBtnClass = "hover:bg-gray-200 p-2 rounded-lg transition cursor-pointer";
+
+    const location = useLocation();
+    const isProfilePage = location.pathname.includes("profile");
+
+    const navigate = useNavigate();
+
+    const handleOpenModal = () => document.getElementById("logout_modal").showModal();
+    const handleCloseModal = () => document.getElementById("logout_modal").close();
+
+    const handleLogout = async () => {
+        handleCloseModal();
+        try {
+            await logout();
+            navigate("/", { replace: true });
+            toast.success("Logged out successfully");
+        } catch (error) {
+            toast.error(error.message);
+        }
+    };
 
     return (
         <>
@@ -20,6 +41,23 @@ const SidebarDashboard = ({ menuItems, isSidebarOpen, setIsSidebarOpen, toggleSi
                             ${isSidebarOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
                 />
             )}
+
+            {/* Logout confirmation modal */}
+            <dialog id="logout_modal" className="modal modal-bottom sm:modal-middle">
+                <div className="modal-box">
+                    <h3 className="font-bold text-lg">Log out</h3>
+                    <p className="py-4 text-sm text-gray-500">Are you sure you want to log out of UniDesk?</p>
+
+                    <div className="modal-action">
+                        <button className="btn btn-ghost btn-sm" onClick={handleCloseModal}>Cancel</button>
+                        <button className="btn btn-error btn-sm text-white" onClick={handleLogout}>Log out</button>
+                    </div>
+                </div>
+
+                <form method="dialog" className="modal-backdrop">
+                    <button>close</button>
+                </form>
+            </dialog>
 
             <aside className={`gilroy fixed lg:sticky top-0 flex flex-col justify-between z-40 h-screen bg-gray-100 transition-all duration-200 ease-in-out overflow-hidden
                     ${isSidebarOpen ? 'w-72 lg:w-96 translate-x-0' : 'w-0 -translate-x-full lg:translate-x-0'}`}>
@@ -41,7 +79,7 @@ const SidebarDashboard = ({ menuItems, isSidebarOpen, setIsSidebarOpen, toggleSi
                     <nav className="flex flex-col justify-between pr-4">
                         {/* Desktop Navigation */}
                         <div className="flex flex-col items-center gap-2">
-                            <NavLink to="/dashboard" className={({ isActive }) => isActive ? activeClass : normalClass}>
+                            <NavLink to="/dashboard/student" className={({ isActive }) => isActive ? activeClass : normalClass}>
                                 <LayoutDashboard className="w-5 h-5" />
                             </NavLink>
                             <NavLink to="/repository" className={({ isActive }) => isActive ? activeClass : normalClass}>
@@ -52,9 +90,16 @@ const SidebarDashboard = ({ menuItems, isSidebarOpen, setIsSidebarOpen, toggleSi
                         <div className="flex flex-col items-center">
                             <button className={iconBtnClass}><Moon className="w-5 h-5" /></button>
                             <div className="dropdown dropdown-top">
-                                <button tabIndex={0} className={iconBtnClass}><UserRound className="w-5 h-5" /></button>
+                                <button tabIndex={0} className={`${iconBtnClass} ${isProfilePage ? 'bg-gray-300' : 'hover:bg-gray-200'}`}>
+                                    {/*<UserRound className="w-5 h-5" />*/}
+                                    <img
+                                        src={userData?.photoURL || DefaultProfile}
+                                        alt={userData?.name || "Profile"}
+                                        className="w-5 h-5 rounded-full object-cover"
+                                    />
+                                </button>
 
-                                <ul tabIndex={0} className="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-48">
+                                <ul tabIndex={0} className="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-60">
                                     <li className="px-2 py-1 text-sm font-semibold text-gray-700 pointer-events-none capitalize">
                                         {userData?.name.toLowerCase() ?? '...'}
                                     </li>
@@ -63,7 +108,7 @@ const SidebarDashboard = ({ menuItems, isSidebarOpen, setIsSidebarOpen, toggleSi
                                     </li>
                                     <div className="divider my-0" />
                                     <li><NavLink to="./profile" className={({ isActive }) => isActive ? activeClass : normalClass}>Settings</NavLink></li>
-                                    <li><a>Logout</a></li>
+                                    <li><a className="p-2 cursor-pointer" onClick={handleOpenModal}>Logout</a></li>
                                 </ul>
                             </div>
                         </div>
