@@ -83,7 +83,7 @@ const Notifications = () => {
     const NotificationRow = ({ n }) => (
         <div
             onClick={() => !n.read && markRead(n.id, n._id)}
-            className={`flex items-start gap-4 p-4 rounded-xl transition border cursor-pointer
+            className={`flex flex-col md:flex-row items-start gap-4 p-4 rounded-xl transition border cursor-pointer
                 ${!n.read
                 ? 'bg-blue-50/60 border-blue-100 hover:bg-blue-50'
                 : 'bg-white border-gray-100 hover:bg-gray-50'}`}>
