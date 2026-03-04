@@ -10,8 +10,6 @@ import {
 import axiosSecure from "../../utils/axiosSecure.js";
 import { AuthContext } from "../../Providers/AuthProvider/AuthProvider.jsx";
 
-// Helpers
-
 const getDueDateClasses = (dateStr, isCompleted) => {
     if (isCompleted) return 'text-gray-400';
     if (!dateStr) return 'text-gray-400';
@@ -39,8 +37,6 @@ const appointmentStatusConfig = {
 };
 
 const PIE_COLORS = ['#10B981', '#F59E0B', '#EF4444'];
-
-// ─── Sub-components ──────────────────────────────────────────────────────────
 
 const StatCard = ({ icon: Icon, value, label, iconBg, iconColor }) => (
     <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center gap-5 hover:shadow-md transition-shadow duration-200">
@@ -147,8 +143,6 @@ const EmptyState = ({ message }) => (
     </div>
 );
 
-// ─── Main Component ──────────────────────────────────────────────────────────
-
 const MyActivity = () => {
     const { userData } = useContext(AuthContext);
     console.log("User data: ", userData);
@@ -164,7 +158,6 @@ const MyActivity = () => {
             if (!userData?._id) return;
             setLoading(true);
             try {
-                // ── Appointments ──────────────────────────────────────────
                 const appointmentsRes = await axiosSecure.get(`/appointment/student/${userData._id}`);
                 console.log("Appointments data:", appointmentsRes);
 
@@ -178,23 +171,23 @@ const MyActivity = () => {
                 }));
                 setAppointments(upcomingAppointments);
 
-                // ── Courses & Assignments ─────────────────────────────────
                 const coursesRes = await axiosSecure.get(`/courses/my-courses`);
-                console.log("Courses data: ", coursesRes);
-                const courses = coursesRes.data.courses;
+                console.log("Courses data (MyActivity.jsx): ", coursesRes);
+                const courses = [
+                    ...(coursesRes.data.activeCourses || []),
+                    ...(coursesRes.data.completedCourses || [])
+                ];
 
                 const assignmentRequests = courses.map(course => axiosSecure.get(`/course/${course._id}/assignments`));
                 const assignmentResponses = await Promise.all(assignmentRequests);
                 const allAssignments = assignmentResponses.flatMap(res => res.data.assignments);
 
-                // ── Build task list with submission status ────────────────
                 const userTasks = await Promise.all(
                     allAssignments.map(async (assignment, idx) => {
                         const courseRes = await axiosSecure.get(`/courses/${assignment.course}`);
 
-                        // Guard: submissions may not exist on the object
                         const submissions = Array.isArray(assignment.submissions) ? assignment.submissions : [];
-                        const userSubmission = submissions.find(s => s.student === userData._id);  // ← fixed: was undefined USER_ID
+                        const userSubmission = submissions.find(s => s.student === userData._id);
 
                         // let status = 'missed';
                         if (userSubmission) {
@@ -222,7 +215,7 @@ const MyActivity = () => {
                 setSubmissionStats({ onTime, late, missed });
 
                 setStats({
-                    enrolledCourses: courses.length,
+                    enrolledCourses: (coursesRes.data.activeCourses || []).length,
                     pendingAssignments: userTasks.filter(t => t.status !== 'completed').length,
                     upcomingAppointments: upcomingAppointments.length,
                 });
@@ -313,7 +306,7 @@ const MyActivity = () => {
                     )}
                 </div>
 
-                {/* Right sidebar — stacks submission overview above appointments */}
+                {/* Right sidebar */}
                 <div className="flex flex-col gap-6">
 
                     {/* Submission Overview */}

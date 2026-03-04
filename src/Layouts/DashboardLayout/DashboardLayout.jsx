@@ -124,20 +124,28 @@ const DashboardLayout = ({ menuItems }) => {
     const location = useLocation();
     const isNotificationsPage = location.pathname.includes("notifications");
 
+    const pathSegments = location.pathname.split("/").filter(Boolean);
+    const filteredSegments = pathSegments.filter((segment) => segment !== "student");
+    const formattedPath = filteredSegments.map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1)).join(" / ");
+
     return (
-        <div className="flex h-dvh">
+        <div className="gilroy flex h-dvh">
             {/* Sidebar */}
              <SidebarDashboard menuItems={menuItems} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} toggleSidebar={toggleSidebar} isMobile={isMobile} />
 
             {/* Main Content */}
             <main className="flex flex-col flex-1 items-start gap-2 p-2.5 w-full overflow-y-scroll">
                 <div className="w-full flex justify-between items-center min-h-10">
-                    {/* Mobile Overlay */}
-                    {(isMobile || (!isMobile && !isSidebarOpen)) && (
-                        <button onClick={toggleSidebar} className="hover:bg-gray-200 p-2 rounded-lg transition cursor-pointer">
-                            <PanelLeft className="w-6 h-6 text-gray-500" />
-                        </button>
-                    )}
+                    <div className="flex items-center">
+                        {/* Mobile Overlay */}
+                        {(isMobile || (!isMobile && !isSidebarOpen)) && (
+                            <button onClick={toggleSidebar} className="hover:bg-gray-200 p-2 rounded-lg transition cursor-pointer">
+                                <PanelLeft className="w-6 h-6 text-gray-500" />
+                            </button>
+                        )}
+
+                        <span className={`pb-0.5 pl-2 graphik text-gray-500 text-lg capitalize ${isSidebarOpen? "ml-10" : ""}`}>{formattedPath}</span>
+                    </div>
 
                     {/* Notification icon */}
                     <div className="dropdown dropdown-end ml-auto">
@@ -228,8 +236,12 @@ const DashboardLayout = ({ menuItems }) => {
                     </div>
                 </div>
 
-                <div className="w-full flex-1 p-2">
-                    <Outlet />
+                <div className="w-full flex-1">
+                    <div className="border border-gray-200 mt-0.5 mb-4"></div>
+
+                    <div className="w-full px-12">
+                        <Outlet />
+                    </div>
                 </div>
             </main>
         </div>
