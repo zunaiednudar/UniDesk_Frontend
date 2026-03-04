@@ -1,9 +1,8 @@
 import React, {useEffect, useState} from 'react';
 import { NavLink, Outlet } from 'react-router';
-import Footer from "../../Components/Footer/Footer.jsx";
-import NavbarDashboard from "../../Components/NavbarDashboard/NavbarDashboard.jsx";
 import SidebarDashboard from "../../Components/SidebarDashboard/SidebarDashboard.jsx";
 import {Bell, PanelLeft, Check } from "lucide-react";
+import axiosSecure from "../../utils/axiosSecure.js";
 
 const DashboardLayout = ({ menuItems }) => {
     const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
@@ -31,26 +30,96 @@ const DashboardLayout = ({ menuItems }) => {
 
     const iconBtnClass = "hover:bg-gray-200 p-2 rounded-lg transition cursor-pointer";
 
-    // Mock notifications — replace with real data from API
-    const [notifications, setNotifications] = useState([
-        { id: 1, title: "Assignment submitted", message: "John Doe submitted Assignment 3", time: "2 min ago", read: false, today: true },
-        { id: 2, title: "New course enrolled", message: "You have been enrolled in CSE 401", time: "1 hr ago", read: false, today: true },
-        { id: 3, title: "Mentor reply", message: "Your mentor replied to your question", time: "3 hr ago", read: false, today: true },
-        { id: 4, title: "Project deadline", message: "Project submission deadline is tomorrow", time: "5 hr ago", read: true, today: true },
-        { id: 5, title: "Grade published", message: "Mid-term grades have been published", time: "Yesterday", read: true, today: false },
-        { id: 6, title: "Course update", message: "New lecture added to CSE 301", time: "2 days ago", read: true, today: false },
-        { id: 7, title: "Assignment due", message: "Assignment 4 is due in 3 days", time: "3 days ago", read: true, today: false },
-        { id: 8, title: "Announcement", message: "Campus will be closed on Friday", time: "4 days ago", read: true, today: false },
-        { id: 9, title: "New message", message: "You have a new message from Admin", time: "5 days ago", read: true, today: false },
-        { id: 10, title: "Profile updated", message: "Your profile was updated successfully", time: "1 week ago", read: true, today: false },
-    ]);
+    const [notifications, setNotifications] = useState([]);
+
+    const timeAgo = (dateString) => {
+        const now = new Date();
+        const past = new Date(dateString);
+
+        const diffInSeconds = Math.floor((now - past) / 1000);
+
+        if (diffInSeconds < 60) return "Just now";
+
+        const diffInMinutes = Math.floor(diffInSeconds / 60);
+        if (diffInMinutes < 60)
+            return `${diffInMinutes} min${diffInMinutes > 1 ? "s" : ""} ago`;
+
+        const diffInHours = Math.floor(diffInMinutes / 60);
+        if (diffInHours < 24)
+            return `${diffInHours} hr${diffInHours > 1 ? "s" : ""} ago`;
+
+        const diffInDays = Math.floor(diffInHours / 24);
+        if (diffInDays < 7)
+            return `${diffInDays} day${diffInDays > 1 ? "s" : ""} ago`;
+
+        const diffInWeeks = Math.floor(diffInDays / 7);
+        if (diffInWeeks < 4)
+            return `${diffInWeeks} week${diffInWeeks > 1 ? "s" : ""} ago`;
+
+        const diffInMonths = Math.floor(diffInDays / 30);
+        if (diffInMonths < 12)
+            return `${diffInMonths} month${diffInMonths > 1 ? "s" : ""} ago`;
+
+        const diffInYears = Math.floor(diffInDays / 365);
+        return `${diffInYears} year${diffInYears > 1 ? "s" : ""} ago`;
+    };
+
+    useEffect(() => {
+        const fetchNotifications = async () => {
+            try {
+                const res = await axiosSecure.get("/notifications");
+                console.log("Notifications: ", res);
+
+                const isToday = (dateString) => {
+                    const created = new Date(dateString);
+                    const today = new Date();
+
+                    return (
+                        created.getFullYear() === today.getFullYear() &&
+                        created.getMonth() === today.getMonth() &&
+                        created.getDate() === today.getDate()
+                    );
+                };
+
+                const formattedNotifications = (res.data.notifications || []).map((notification, index) => ({
+                    id: index + 1,
+                    _id: notification._id,
+                    title: notification.type,
+                    message: notification.message,
+                    time: timeAgo(notification.createdAt),
+                    read: notification.isRead,
+                    today: isToday(notification.createdAt)
+                }));
+                setNotifications(formattedNotifications);
+            } catch (error) {
+                console.log(error);
+            }
+        }
+
+        fetchNotifications();
+    }, []);
 
     const unreadCount = notifications.filter(n => !n.read).length;
     const todayNotifs = notifications.filter(n => n.today).slice(0, 10);
     const historyNotifs = notifications.filter(n => !n.today).slice(0, 10);
 
-    const markAllRead = () => setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-    const markRead = (id) => setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+    const markAllRead = async () => {
+        try {
+            await axiosSecure.patch("/notifications/all");
+            setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+        } catch (error) {
+            console.log(error);
+        }
+    }
+
+    const markRead = async (id, _id) => {
+        try {
+            await axiosSecure.patch(`/notifications/${_id}`);
+            setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+        } catch (error) {
+            console.log(error);
+        }
+    }
 
     return (
         <div className="flex h-dvh">
@@ -101,7 +170,7 @@ const DashboardLayout = ({ menuItems }) => {
                                         {todayNotifs.map(n => (
                                             <div
                                                 key={n.id}
-                                                onClick={() => markRead(n.id)}
+                                                onClick={() => markRead(n.id, n._id)}
                                                 className={`flex items-start gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 transition border-b border-gray-50 ${!n.read ? 'bg-blue-50/50' : ''}`}>
                                                 <div className={`mt-1 w-2 h-2 rounded-full shrink-0 ${!n.read ? 'bg-blue-500' : 'bg-transparent'}`} />
                                                 <div className="flex-1 min-w-0">
@@ -123,7 +192,7 @@ const DashboardLayout = ({ menuItems }) => {
                                         {historyNotifs.map(n => (
                                             <div
                                                 key={n.id}
-                                                onClick={() => markRead(n.id)}
+                                                onClick={() => markRead(n.id, n._id)}
                                                 className={`flex items-start gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 transition border-b border-gray-50 ${!n.read ? 'bg-blue-50/50' : ''}`}>
                                                 <div className={`mt-1 w-2 h-2 rounded-full shrink-0 ${!n.read ? 'bg-blue-500' : 'bg-transparent'}`} />
                                                 <div className="flex-1 min-w-0">
