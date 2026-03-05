@@ -67,7 +67,7 @@ const SidebarDashboard = ({ menuItems, isSidebarOpen, setIsSidebarOpen, toggleSi
                         <div className='w-9 h-9 bg-[#1E40AF] rounded-lg flex justify-center items-center'>
                             <GraduationCap className='w-6 h-6 text-white' />
                         </div>
-                        <span className='graphik text-lg font-medium'>UniDesk</span>
+                        <span className='graphik text-lg font-regular'>UniDesk</span>
                     </NavLink>
 
                     <button onClick={toggleSidebar} className="hover:bg-gray-200 p-2 rounded-lg transition cursor-pointer">
