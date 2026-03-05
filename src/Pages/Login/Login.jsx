@@ -147,7 +147,7 @@ const Login = () => {
                     <div className="modal-action">
                         <form onSubmit={handleForgotPassword} className='w-full'>
                             <fieldset className="fieldset mb-5">
-                                <legend className="fieldset-legend font-medium text-sm">Enter your email</legend>
+                                <legend className="fieldset-legend text-sm">Enter your email</legend>
                                 <input type="email" name="forgotEmail" className="input w-full" placeholder="email@stud.kuet.ac.bd" required />
                             </fieldset>
                             <div className='flex gap-5 justify-end'>
