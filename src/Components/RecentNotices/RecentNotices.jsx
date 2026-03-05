@@ -99,9 +99,9 @@ const RecentNotices = ({ notices = [], loading }) => {
             ) : (
                 <div
                     ref={containerRef}
-                    className="h-56 overflow-hidden"
+                    className="mt-10 h-96 overflow-hidden"
                     style={{ scrollBehavior: 'auto' }}>
-                    <div ref={contentRef}>
+                    <div ref={contentRef} className="h-full">
                         {[...notices, ...notices].map((notice, idx) => (
                             <div key={idx} className="py-3 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 px-1 transition-colors duration-150">
                                 <p className="text-xs font-semibold text-gray-800 leading-snug">{notice.title}</p>

@@ -140,10 +140,10 @@ const Calendar = () => {
                 </p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+            <div className="grid grid-cols-1 gap-6 items-start">
 
                 {/* FullCalendar */}
-                <div className="lg:col-span-2 bg-white border-r-0 border-b lg:border-b-0 lg:border-r border-gray-200 overflow-hidden">
+                <div className="bg-white border-b border-gray-200 overflow-hidden">
 
                     {/* Custom toolbar */}
                     <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">

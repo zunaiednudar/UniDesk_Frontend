@@ -196,6 +196,15 @@ const MyActivity = () => {
     const [submissionStats, setSubmissionStats] = useState({ onTime: 0, late: 0, missed: 0 });
     const [notices, setNotices] = useState([]);
 
+    const [isLarge, setIsLarge] = useState(false);
+
+    useEffect(() => {
+        const handler = () => setIsLarge(window.innerWidth >= 1024); // lg breakpoint ~1024px
+        handler(); // run once
+        window.addEventListener('resize', handler);
+        return () => window.removeEventListener('resize', handler);
+    }, []);
+
     useEffect(() => {
         const fetchData = async () => {
             if (!userData?._id) return;
@@ -307,7 +316,7 @@ const MyActivity = () => {
 
                 setTaskList(userTasks
                     .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
-                    .slice(0, 8)
+                    .slice(0, 12)
                 );
 
                 setSubmissionStats({ onTime, late, missed });
@@ -411,7 +420,7 @@ const MyActivity = () => {
                     <div className="w-full h-full bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
                         <SectionHeader
                             icon={ClipboardCheck}
-                            title="Submission Overview"
+                            title="Performance Overview"
                             iconBg="bg-green-50"
                             iconColor="text-green-500"
                         />
@@ -419,14 +428,14 @@ const MyActivity = () => {
                             <SkeletonBlock className="h-48" />
                         ) : (
                             <>
-                                <ResponsiveContainer width="100%" height={220}>
+                                <ResponsiveContainer width="100%" height={360}>
                                     <PieChart>
                                         <Pie
                                             data={pieData}
                                             dataKey="value"
                                             nameKey="name"
-                                            outerRadius={70}
-                                            innerRadius={40}
+                                            outerRadius={isLarge ? 80 : 50}
+                                            innerRadius={isLarge ? 60 : 30}
                                             paddingAngle={3}
                                             label={({ name, percent }) =>
                                                 percent > 0 ? `${(percent * 100).toFixed(0)}%` : ''
