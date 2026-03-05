@@ -6,7 +6,7 @@ const SectionHeader = ({ icon: Icon, title, iconBg, iconColor, count }) => (
         <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${iconBg}`}>
             <Icon size={16} className={iconColor} strokeWidth={2} />
         </div>
-        <h2 className="graphik text-base font-semibold text-gray-900">{title}</h2>
+        <h2 className="text-base font-bold text-gray-900">{title}</h2>
         {count !== undefined && (
             <span className="ml-1 text-xs font-semibold text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">
                 {count}
