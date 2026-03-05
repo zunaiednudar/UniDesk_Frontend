@@ -38,6 +38,31 @@ const CardSkeleton = ({ variant = "list", lines = 3 }) => {
             </div>
         )
 
+    if (variant === "courseCard")
+        return (
+            <div className="w-full flex flex-col p-6 rounded-xl shadow-md animate-pulse">
+
+                <div className="mb-6 flex flex-col gap-3">
+                    <div className="h-6 w-32 bg-gray-200 rounded"></div>
+                    <div className="h-4 w-48 bg-gray-200 rounded"></div>
+                </div>
+
+                <div className="mb-6 flex flex-col gap-3">
+                    <div className="h-4 w-40 bg-gray-200 rounded"></div>
+                    <div className="h-4 w-52 bg-gray-200 rounded"></div>
+                    <div className="h-4 w-28 bg-gray-200 rounded"></div>
+                </div>
+
+                <hr className="border-gray-200 my-4" />
+
+                <div className="flex gap-5">
+                    <div className="h-10 flex-1 bg-gray-200 rounded-lg"></div>
+                    <div className="h-10 flex-1 bg-gray-200 rounded-lg"></div>
+                </div>
+
+            </div>
+        );
+
     // For cards inside a container
 
     return (
