@@ -1,23 +1,14 @@
 import { useContext, useEffect, useState } from 'react';
-import { BookOpen, Search, Users, Award, TrendingUp, GraduationCap, Building2, Hash, AlertCircle } from 'lucide-react';
+import { BookOpen, Search, Users, Award, TrendingUp, Building2, Hash, AlertCircle, FolderOpen, ChevronRight } from 'lucide-react';
+import {NavLink, useNavigate} from 'react-router';
 import axiosSecure from "../../utils/axiosSecure.js";
 import { AuthContext } from "../../Providers/AuthProvider/AuthProvider.jsx";
-
-// ─── Helpers ────────────────────────────────────────────────────────────────
+import CourseFilesDrawer from "../../Components/Course/CourseFilesDrawer.jsx";
 
 const statusBadgeConfig = {
     active:    'bg-green-100 text-green-700',
     completed: 'bg-blue-100 text-blue-700',
 };
-
-const progressBarColor = (progress) => {
-    if (progress === 100) return 'bg-blue-500';
-    if (progress >= 60)  return 'bg-green-500';
-    if (progress >= 30)  return 'bg-orange-400';
-    return 'bg-red-400';
-};
-
-// ─── Sub-components ──────────────────────────────────────────────────────────
 
 const StatCard = ({ icon: Icon, value, label, iconBg, iconColor, valueColor = 'text-gray-900' }) => (
     <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200">
@@ -45,7 +36,7 @@ const SkeletonCard = () => (
             <div className="h-3 w-28 bg-gray-100 rounded" />
             <div className="h-3 w-40 bg-gray-100 rounded" />
         </div>
-        <div className="h-1.5 w-full bg-gray-200 rounded-full" />
+        <div className="h-10 w-full bg-gray-100 rounded-xl" />
     </div>
 );
 
@@ -56,29 +47,93 @@ const EmptyState = ({ message }) => (
     </div>
 );
 
-// ─── Main Component ──────────────────────────────────────────────────────────
+const CourseCard = ({ course, onFilesClick, navigate }) => (
+    <div
+        onClick={() => navigate(`/dashboard/student/courses/${course.id}/details`)}
+        className="group bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md hover:border-orange-200 transition-all duration-200 cursor-pointer relative overflow-hidden"
+    >
+        {/* Hover accent bar */}
+        <div className="absolute top-0 left-6 right-6 h-0.5 bg-gradient-to-r from-orange-400 to-orange-300 rounded-b-full opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+
+        {/* Header */}
+        <div className="flex items-start justify-between mb-4">
+            <div className="min-w-0 flex-1">
+                <h3 className="text-base font-bold text-gray-900 truncate group-hover:text-orange-600 transition-colors duration-150">
+                    {course.code}
+                </h3>
+                <p className="text-sm text-gray-500 mt-0.5 truncate">{course.name}</p>
+            </div>
+            <span className={`ml-3 flex-shrink-0 px-2.5 py-1 rounded-full text-xs font-semibold capitalize ${statusBadgeConfig[course.status] ?? 'bg-gray-100 text-gray-600'}`}>
+                {course.status}
+            </span>
+        </div>
+
+        {/* Meta */}
+        <div className="space-y-2 mb-5">
+            {course.department && (
+                <div className="flex items-center gap-2 text-sm text-gray-500">
+                    <Building2 size={14} className="flex-shrink-0 text-gray-400" />
+                    <span className="truncate">{course.department}</span>
+                </div>
+            )}
+            {(course.year || course.semester || course.session) && (
+                <div className="flex items-center gap-2 text-sm text-gray-500">
+                    <Hash size={14} className="flex-shrink-0 text-gray-400" />
+                    <span className="truncate">
+                        {[course.year, course.semester, course.session].filter(Boolean).join(' · ')}
+                    </span>
+                </div>
+            )}
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+                <Users size={14} className="flex-shrink-0 text-gray-400" />
+                <span>{course.students} student{course.students !== 1 ? 's' : ''}</span>
+            </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+            <button
+                onClick={e => { e.stopPropagation(); onFilesClick(course); }}
+                className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium text-gray-500 hover:bg-orange-50 hover:text-orange-600 transition-all duration-150"
+            >
+                <FolderOpen size={15} strokeWidth={1.75} />
+                <span>Files</span>
+            </button>
+            <div className="flex items-center gap-1">
+                <span className="text-xs text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity duration-150 mr-1">
+                    View details
+                </span>
+                <ChevronRight
+                    size={16}
+                    className="text-gray-300 group-hover:text-orange-400 group-hover:translate-x-0.5 transition-all duration-150"
+                    strokeWidth={2}
+                />
+            </div>
+        </div>
+    </div>
+);
 
 const MyCourses = () => {
     const { userData } = useContext(AuthContext);
+    const navigate = useNavigate();
 
     const [courses, setCourses]           = useState([]);
     const [loading, setLoading]           = useState(true);
     const [searchQuery, setSearchQuery]   = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
+    const [drawerOpen, setDrawerOpen]     = useState(false);
+    const [activeCourse, setActiveCourse] = useState(null);
 
     useEffect(() => {
         const fetchCourses = async () => {
             if (!userData?._id) return;
             setLoading(true);
             try {
-                // GET /courses/my-courses → { courses: Course[] }
                 const res = await axiosSecure.get('/courses/my-courses');
-                console.log('Courses response:', res);
+                const activeCourses    = res.data.activeCourses    || [];
+                const completedCourses = res.data.completedCourses || [];
 
-                const raw = res.data.courses || [];
-
-                // Map Course model fields → UI shape
-                const mapped = raw.map(course => ({
+                const mapCourse = (course, status) => ({
                     id:          course._id,
                     code:        course.courseCode,
                     name:        course.courseName,
@@ -87,17 +142,18 @@ const MyCourses = () => {
                     department:  course.department,
                     year:        course.year,
                     semester:    course.semester,
-                    // teachers is an array of populated User refs; fall back to raw value if not populated
                     instructors: Array.isArray(course.teachers)
                         ? course.teachers.map(t => t?.name ?? t).filter(Boolean)
                         : [],
-                    students:    Array.isArray(course.students) ? course.students.length : 0,
-                    status:      course.status ?? 'active',
-                    // progress is not in the Course model — can be added later via assignment data
-                    progress:    course.progress ?? 0,
-                }));
+                    students: Array.isArray(course.students) ? course.students.length : 0,
+                    status,
+                    progress: course.progress ?? 0,
+                });
 
-                setCourses(mapped);
+                setCourses([
+                    ...activeCourses.map(c    => mapCourse(c, 'active')),
+                    ...completedCourses.map(c => mapCourse(c, 'completed')),
+                ]);
             } catch (err) {
                 console.error('Failed to fetch courses:', err);
             } finally {
@@ -107,15 +163,10 @@ const MyCourses = () => {
         fetchCourses();
     }, [userData]);
 
-    // ── Derived stats ──────────────────────────────────────────────────────
     const totalCourses   = courses.length;
     const activeCount    = courses.filter(c => c.status === 'active').length;
     const completedCount = courses.filter(c => c.status === 'completed').length;
-    const avgProgress    = totalCourses
-        ? Math.round(courses.reduce((sum, c) => sum + (c.progress || 0), 0) / totalCourses)
-        : 0;
 
-    // ── Search + filter ───────────────────────────────────────────────────
     const filteredCourses = courses.filter(course => {
         const q = searchQuery.toLowerCase();
         const matchesSearch =
@@ -128,50 +179,18 @@ const MyCourses = () => {
     });
 
     return (
-        <div className="space-y-6">
-
-            {/* Header */}
+        <div className="gilroy space-y-6">
             <div>
-                <h1 className="text-xl font-bold text-gray-900">My Courses</h1>
+                <h1 className="graphik text-3xl font-semibold text-gray-900">My Courses</h1>
                 <p className="text-sm text-gray-400 mt-1">Manage and track your enrolled courses</p>
             </div>
 
-            {/* Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <StatCard
-                    icon={BookOpen}
-                    value={loading ? '—' : totalCourses}
-                    label="Total Courses"
-                    iconBg="bg-blue-50"
-                    iconColor="text-blue-500"
-                />
-                <StatCard
-                    icon={TrendingUp}
-                    value={loading ? '—' : activeCount}
-                    label="Active"
-                    iconBg="bg-green-50"
-                    iconColor="text-green-500"
-                    valueColor="text-green-600"
-                />
-                <StatCard
-                    icon={Award}
-                    value={loading ? '—' : completedCount}
-                    label="Completed"
-                    iconBg="bg-blue-50"
-                    iconColor="text-blue-500"
-                    valueColor="text-blue-600"
-                />
-                <StatCard
-                    icon={TrendingUp}
-                    value={loading ? '—' : `${avgProgress}%`}
-                    label="Avg Progress"
-                    iconBg="bg-purple-50"
-                    iconColor="text-purple-500"
-                    valueColor="text-purple-600"
-                />
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-4">
+                <StatCard icon={BookOpen}  value={loading ? '—' : totalCourses}   label="Total Courses" iconBg="bg-blue-50"  iconColor="text-blue-500" />
+                <StatCard icon={TrendingUp} value={loading ? '—' : activeCount}   label="Active"        iconBg="bg-green-50" iconColor="text-green-500" valueColor="text-green-600" />
+                <StatCard icon={Award}     value={loading ? '—' : completedCount} label="Completed"     iconBg="bg-blue-50"  iconColor="text-blue-500" valueColor="text-blue-600" />
             </div>
 
-            {/* Search & Filter */}
             <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
                 <div className="flex flex-col md:flex-row gap-3">
                     <div className="flex-1 relative">
@@ -196,74 +215,28 @@ const MyCourses = () => {
                 </div>
             </div>
 
-            {/* Courses Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                 {loading ? (
-                    [1, 2, 3, 4, 5, 6].map(i => <SkeletonCard key={i} />)
+                    [1,2,3,4,5,6].map(i => <SkeletonCard key={i} />)
                 ) : filteredCourses.length === 0 ? (
                     <EmptyState message="No courses found matching your search." />
                 ) : (
                     filteredCourses.map(course => (
-                        <div
+                        <CourseCard
                             key={course.id}
-                            className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md hover:border-orange-100 transition-all duration-200 cursor-pointer"
-                        >
-                            {/* Header row */}
-                            <div className="flex items-start justify-between mb-4">
-                                <div className="min-w-0 flex-1">
-                                    <h3 className="text-base font-bold text-gray-900 truncate">{course.code}</h3>
-                                    <p className="text-sm text-gray-500 mt-0.5 truncate">{course.name}</p>
-                                </div>
-                                <span className={`ml-3 flex-shrink-0 px-2.5 py-1 rounded-full text-xs font-semibold capitalize ${statusBadgeConfig[course.status] ?? 'bg-gray-100 text-gray-600'}`}>
-                                    {course.status}
-                                </span>
-                            </div>
-
-                            {/* Meta */}
-                            <div className="space-y-2 mb-5">
-                                {/*{course.instructors.length > 0 && (*/}
-                                {/*    <div className="flex items-center gap-2 text-sm text-gray-500">*/}
-                                {/*        <GraduationCap size={14} className="flex-shrink-0 text-gray-400" />*/}
-                                {/*        <span className="truncate">{course.instructors.join(', ')}</span>*/}
-                                {/*    </div>*/}
-                                {/*)}*/}
-                                {course.department && (
-                                    <div className="flex items-center gap-2 text-sm text-gray-500">
-                                        <Building2 size={14} className="flex-shrink-0 text-gray-400" />
-                                        <span className="truncate">{course.department}</span>
-                                    </div>
-                                )}
-                                {(course.year || course.semester || course.session) && (
-                                    <div className="flex items-center gap-2 text-sm text-gray-500">
-                                        <Hash size={14} className="flex-shrink-0 text-gray-400" />
-                                        <span className="truncate">
-                                            {[course.year, course.semester, course.session].filter(Boolean).join(' · ')}
-                                        </span>
-                                    </div>
-                                )}
-                                <div className="flex items-center gap-2 text-sm text-gray-500">
-                                    <Users size={14} className="flex-shrink-0 text-gray-400" />
-                                    <span>{course.students} student{course.students !== 1 ? 's' : ''}</span>
-                                </div>
-                            </div>
-
-                            {/* Progress bar */}
-                            <div>
-                                <div className="flex items-center justify-between mb-1.5">
-                                    <span className="text-xs font-medium text-gray-500">Progress</span>
-                                    <span className="text-xs font-bold text-gray-900">{course.progress}%</span>
-                                </div>
-                                <div className="w-full bg-gray-100 rounded-full h-1.5">
-                                    <div
-                                        className={`h-1.5 rounded-full transition-all duration-500 ${progressBarColor(course.progress)}`}
-                                        style={{ width: `${course.progress}%` }}
-                                    />
-                                </div>
-                            </div>
-                        </div>
+                            course={course}
+                            navigate={navigate}
+                            onFilesClick={c => { setActiveCourse(c); setDrawerOpen(true); }}
+                        />
                     ))
                 )}
             </div>
+
+            <CourseFilesDrawer
+                isOpen={drawerOpen}
+                onClose={() => setDrawerOpen(false)}
+                course={activeCourse}
+            />
         </div>
     );
 };

@@ -40,22 +40,30 @@ const Calendar = () => {
             try {
                 const mapped = [];
 
-                // Appointments
+                // Appointments — use .appointments (plural) to match MyActivity.jsx
                 const appointmentRes = await axiosSecure.get(`/appointment/student/${userData._id}`);
-                (appointmentRes.data.appointment || []).forEach((a, idx) => {
+                (appointmentRes.data.appointments || []).forEach((a) => {
                     const cfg = EVENT_TYPES.appointment;
+                    // Use date-only so it renders as a solid pill in month view
+                    const startDate = new Date(a.startTime).toISOString().split("T")[0];
                     mapped.push({
-                        id: `appointment-${idx}`,
-                        title: `Appointment — ${a.faculty?.name || "Faculty"}`,
-                        start: a.startTime,
-                        end:   a.endTime,
+                        id: `appointment-${a._id}`,
+                        title: `Appointment — ${
+                            a.faculty?.name
+                                ? a.faculty.name.charAt(0).toUpperCase() + a.faculty.name.slice(1)
+                                : "Faculty"
+                        }`,
+                        start: startDate,
+                        allDay: true,
                         backgroundColor: cfg.bg,
                         borderColor:     cfg.border,
                         textColor:       "#ffffff",
                         extendedProps: {
-                            type:   "appointment",
-                            course: a.faculty?.room ? `Room ${a.faculty.room}` : "",
-                            status: a.status,
+                            type:      "appointment",
+                            course:    a.faculty?.room ? `Room ${a.faculty.room}` : "",
+                            status:    a.status,
+                            startTime: a.startTime,
+                            endTime:   a.endTime,
                         }
                     });
                 });
@@ -151,11 +159,6 @@ const Calendar = () => {
                             <h2 className="text-base font-bold text-gray-900">
                                 {title || new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" })}
                             </h2>
-                            <button
-                                onClick={goToday}
-                                className="text-xs font-semibold text-blue-600 border border-blue-200 rounded-lg px-2.5 py-1 hover:bg-blue-50 transition">
-                                Today
-                            </button>
                         </div>
                         <div className="flex items-center gap-1">
                             <button onClick={prev} className="p-1.5 rounded-lg hover:bg-gray-100 transition text-gray-500">
@@ -180,6 +183,7 @@ const Calendar = () => {
                                 headerToolbar={false}
                                 weekends={true}
                                 height="auto"
+                                dayMaxEvents={3}
                                 events={events}
                                 datesSet={(info) => setTitle(info.view.title)}
                                 eventClick={(info) => setSelectedEvent(info.event)}
@@ -247,7 +251,11 @@ const Calendar = () => {
 
                                     <p className="text-xs text-gray-400 mt-2">
                                         {isAppointment
-                                            ? `${new Date(selectedEvent.start).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} – ${new Date(selectedEvent.end).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}, ${new Date(selectedEvent.start).toLocaleDateString("en-US", { month: "long", day: "numeric" })}`
+                                            ? (() => {
+                                                const s = selectedEvent.extendedProps?.startTime || selectedEvent.start;
+                                                const e = selectedEvent.extendedProps?.endTime;
+                                                return `${new Date(s).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}${e ? " – " + new Date(e).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : ""}, ${new Date(s).toLocaleDateString("en-US", { month: "long", day: "numeric" })}`;
+                                            })()
                                             : new Date(selectedEvent.start).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })
                                         }
                                     </p>
