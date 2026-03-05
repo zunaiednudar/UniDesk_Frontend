@@ -3,7 +3,7 @@ import styled from 'styled-components';
 
 const Loading = () => {
     return (
-        <div className='w-full h-screen flex justify-center items-center'>
+        <div className='gilroy w-full h-screen flex justify-center items-center'>
             <StyledWrapper>
                 <div className="loader">
                     <div>
