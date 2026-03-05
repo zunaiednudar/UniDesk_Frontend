@@ -2,10 +2,12 @@ import { useContext, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import {
     ArrowLeft, BookOpen, Users, Building2, Hash, GraduationCap,
-    ClipboardCheck, Megaphone, Calendar, Clock, AlertCircle,
-    ChevronRight, CheckCircle2, Circle, AlertTriangle, FolderOpen
+    ClipboardCheck, Megaphone, Calendar, AlertCircle,
+    CheckCircle2, Circle, AlertTriangle, FolderOpen
 } from 'lucide-react';
 import axiosSecure from "../../utils/axiosSecure.js";
+import timeAgo from "../../utils/timeAgo.js";
+import formatName from "../../utils/formatName.js";
 import { AuthContext } from "../../Providers/AuthProvider/AuthProvider.jsx";
 import CourseFilesDrawer from "../../Components/Course/CourseFilesDrawer.jsx";
 
@@ -15,10 +17,10 @@ const statusBadgeConfig = {
 };
 
 const assignmentStatusConfig = {
-    completed: { icon: CheckCircle2,   color: 'text-green-500',  bg: 'bg-green-50',  label: 'Submitted'   },
-    late:      { icon: AlertTriangle,  color: 'text-orange-500', bg: 'bg-orange-50', label: 'Late'        },
-    missed:    { icon: AlertCircle,    color: 'text-red-400',    bg: 'bg-red-50',    label: 'Missed'      },
-    pending:   { icon: Circle,         color: 'text-gray-400',   bg: 'bg-gray-50',   label: 'Pending'     },
+    completed: { icon: CheckCircle2,  color: 'text-green-500',  bg: 'bg-green-50',  label: 'Submitted' },
+    late:      { icon: AlertTriangle, color: 'text-orange-500', bg: 'bg-orange-50', label: 'Late'      },
+    missed:    { icon: AlertCircle,   color: 'text-red-400',    bg: 'bg-red-50',    label: 'Missed'    },
+    pending:   { icon: Circle,        color: 'text-gray-400',   bg: 'bg-gray-50',   label: 'Pending'   },
 };
 
 const SkeletonLine = ({ w = 'w-full', h = 'h-4' }) => (
@@ -61,16 +63,14 @@ const CourseDetails = () => {
 
     useEffect(() => {
         const fetchAll = async () => {
-            console.log("Course id (CourseDetails.jsx): ", id);
             if (!id || !userData?._id) return;
             setLoading(true);
             try {
                 // Fetch course details directly by ID
                 const courseRes = await axiosSecure.get(`/courses/${id}`);
                 const raw = courseRes.data.course || courseRes.data;
-                console.log("Course data (CourseDetails.jsx): ", courseRes.data);
 
-                if (raw) {
+                if (raw?._id) {
                     setCourse({
                         id:          raw._id,
                         code:        raw.courseCode,
@@ -80,18 +80,28 @@ const CourseDetails = () => {
                         department:  raw.department,
                         year:        raw.year,
                         semester:    raw.semester,
-                        instructors: Array.isArray(raw.faculties)
-                            ? raw.faculties.map(t => typeof t === 'object' ? t : { name: t })
+                        faculties: Array.isArray(raw.faculties)
+                            ? raw.faculties.map(f => ({
+                                name:     formatName(f?.name),
+                                email:    f?.email    ?? "",
+                                photoURL: f?.photoURL ?? null,
+                            }))
                             : [],
-                        students: Array.isArray(raw.students) ? raw.students.length : 0,
-                        status:      raw.status ?? 'active',
+                        students: Array.isArray(raw.students)
+                            ? raw.students.map(s => ({
+                                name:     formatName(s?.name),
+                                email:    s?.email     ?? "",
+                                photoURL: s?.photoURL  ?? null,
+                                roll:     s?.studentID ?? "",
+                            }))
+                            : [],
+                        status: raw.status ?? 'active',
                     });
                 }
 
                 // Fetch assignments
                 const assignRes = await axiosSecure.get(`/course/${id}/assignments`);
                 const allAssignments = assignRes.data.assignments || [];
-                console.log("Assignment data (CourseDetails.jsx): ", assignRes.data);
 
                 const mapped = allAssignments.map(a => {
                     const submissions = Array.isArray(a.submissions) ? a.submissions : [];
@@ -138,7 +148,7 @@ const CourseDetails = () => {
         fetchAll();
     }, [id, userData]);
 
-    const statusCfg = statusBadgeConfig[course?.status] ?? statusBadgeConfig.active;
+    const statusCfg    = statusBadgeConfig[course?.status] ?? statusBadgeConfig.active;
     const pendingCount = assignments.filter(a => a.status === 'pending').length;
     const doneCount    = assignments.filter(a => a.status === 'completed').length;
 
@@ -189,10 +199,11 @@ const CourseDetails = () => {
             {!loading && course && (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {[
-                        { icon: Building2,      label: 'Department', value: course.department || '—' },
-                        { icon: Hash,           label: 'Session',    value: [course.year, course.semester, course.session].filter(Boolean).join(' · ') || '—' },
-                        { icon: Users,          label: 'Students',   value: `${course.students} enrolled` },
-                        { icon: ClipboardCheck, label: 'Assignments',value: `${doneCount}/${assignments.length} done` },
+                        { icon: Building2,      label: 'Department',  value: course.department || '—' },
+                        { icon: Hash,           label: 'Session',     value: [course.year, course.semester, course.session].filter(Boolean).join(' · ') || '—' },
+                        // Fix: course.students is now an array of objects
+                        { icon: Users,          label: 'Students',    value: `${course.students.length} enrolled` },
+                        { icon: ClipboardCheck, label: 'Assignments', value: `${doneCount}/${assignments.length} done` },
                     ].map(({ icon: Icon, label, value }) => (
                         <div key={label} className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4">
                             <div className="flex items-center gap-2 mb-1.5">
@@ -262,8 +273,8 @@ const CourseDetails = () => {
                 {/* Right column */}
                 <div className="grid grid-rows-[auto_1fr] gap-6 lg:row-span-2 h-full">
 
-                    {/* Instructors */}
-                    {!loading && course?.instructors?.length > 0 && (
+                    {/* Faculties */}
+                    {!loading && course?.faculties?.length > 0 && (
                         <SectionCard>
                             <SectionTitle
                                 icon={GraduationCap}
@@ -272,17 +283,21 @@ const CourseDetails = () => {
                                 iconColor="text-purple-500"
                             />
                             <div className="space-y-3">
-                                {course.instructors.map((t, i) => (
+                                {course.faculties.map((f, i) => (
                                     <div key={i} className="flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-100 to-purple-200 flex items-center justify-center shrink-0">
-                                            <span className="text-xs font-bold text-purple-600">
-                                                {(t?.name || t)?.[0]?.toUpperCase() || '?'}
-                                            </span>
+                                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-100 to-purple-200 flex items-center justify-center shrink-0 overflow-hidden">
+                                            {f?.photoURL ? (
+                                                <img src={f.photoURL} alt={f.name} className="w-full h-full object-cover" />
+                                            ) : (
+                                                <span className="text-xs font-bold text-purple-600">
+                                                    {f?.name?.[0]?.toUpperCase() || '?'}
+                                                </span>
+                                            )}
                                         </div>
                                         <div>
-                                            <p className="text-sm font-medium text-gray-800">{t?.name || t}</p>
-                                            {t?.designation && (
-                                                <p className="text-xs text-gray-400 capitalize">{t.designation}</p>
+                                            <p className="text-sm font-medium text-gray-800">{f?.name || '—'}</p>
+                                            {f?.email && (
+                                                <p className="text-xs text-gray-400">{f.email}</p>
                                             )}
                                         </div>
                                     </div>

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { X, FolderOpen, FileText, FileImage, FileArchive, Download, UploadCloud, File, ChevronRight } from 'lucide-react';
 import axiosSecure from "../../utils/axiosSecure.js";
+import timeAgo from "../../utils/timeAgo.js";
 
 const fileIconMap = (url = '') => {
     const ext = url.split('?')[0].split('.').pop().toLowerCase();
@@ -11,17 +12,6 @@ const fileIconMap = (url = '') => {
     if (['doc','docx'].includes(ext))
         return { icon: FileText,  color: 'text-blue-500', bg: 'bg-blue-50'  };
     return   { icon: File,        color: 'text-gray-500', bg: 'bg-gray-100' };
-};
-
-const timeAgo = (dateString) => {
-    const now  = new Date();
-    const past = new Date(dateString);
-    const diff = Math.floor((now - past) / 1000);
-    if (diff < 60)    return 'Just now';
-    if (diff < 3600)  return `${Math.floor(diff / 60)}m ago`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-    if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
-    return past.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 };
 
 // Force file download + fall back to new tab if CORS blocks blob fetch

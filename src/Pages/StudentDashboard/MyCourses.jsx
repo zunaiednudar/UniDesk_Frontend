@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { NavLink, useNavigate } from 'react-router';
 import axiosSecure from "../../utils/axiosSecure.js";
+import formatName from "../../utils/formatName.js";
 import { AuthContext } from "../../Providers/AuthProvider/AuthProvider.jsx";
 import CourseFilesDrawer from "../../Components/Course/CourseFilesDrawer.jsx";
 import DefaultProfile from "../../assets/default-profile.png";
@@ -105,7 +106,11 @@ const CourseCard = ({ course, onFilesClick, navigate }) => (
                 </div>
             </div>
 
-            <div className="border border-gray-200"></div>
+            <div className="border-t border-gray-200"></div>
+
+            {course.faculties?.length > 0 &&
+                <span className="text-sm text-gray-500 mb-2">Instructors</span>
+            }
 
             {/* Faculty info */}
             <div className="space-y-2">
@@ -147,17 +152,6 @@ const CourseCard = ({ course, onFilesClick, navigate }) => (
         </div>
     </div>
 );
-
-const formatName = (name) => {
-    if (!name) return "";
-    return name
-        .split(/([ .])/g)
-        .map(part => {
-            if (part === " " || part === ".") return part;
-            return part.charAt(0).toUpperCase() + part.slice(1);
-        })
-        .join("");
-};
 
 const MyCourses = () => {
     const { userData } = useContext(AuthContext);
