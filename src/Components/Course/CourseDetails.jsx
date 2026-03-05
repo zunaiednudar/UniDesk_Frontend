@@ -9,6 +9,8 @@ import axiosSecure from "../../utils/axiosSecure.js";
 import { AuthContext } from "../../Providers/AuthProvider/AuthProvider.jsx";
 import CourseFilesDrawer from "../../Components/Course/CourseFilesDrawer.jsx";
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
 const statusBadgeConfig = {
     active:    { badge: 'bg-green-100 text-green-700 border border-green-200', dot: 'bg-green-500' },
     completed: { badge: 'bg-blue-100 text-blue-700 border border-blue-200',   dot: 'bg-blue-500'  },
@@ -32,12 +34,14 @@ const timeAgo = (dateString) => {
     return past.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 };
 
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
 const SkeletonLine = ({ w = 'w-full', h = 'h-4' }) => (
     <div className={`${w} ${h} bg-gray-100 rounded animate-pulse`} />
 );
 
 const SectionCard = ({ children, className = '' }) => (
-    <div className={`bg-white rounded-2xl border border-gray-100 shadow-sm p-6 ${className}`}>
+    <div className={`h-full overflow-y-auto bg-white rounded-2xl border border-gray-100 shadow-sm p-6 ${className}`}>
         {children}
     </div>
 );
@@ -72,16 +76,14 @@ const CourseDetails = () => {
 
     useEffect(() => {
         const fetchAll = async () => {
+            console.log("Course id (CourseDetails.jsx): ", id);
             if (!id || !userData?._id) return;
             setLoading(true);
             try {
-                // Fetch course details from my-courses list
-                const coursesRes = await axiosSecure.get('/courses/my-courses');
-                const allCourses = [
-                    ...(coursesRes.data.activeCourses    || []),
-                    ...(coursesRes.data.completedCourses || []),
-                ];
-                const raw = allCourses.find(c => c._id === id);
+                // Fetch course details directly by ID
+                const courseRes = await axiosSecure.get(`/courses/${id}`);
+                const raw = courseRes.data.course || courseRes.data;
+                console.log("Course data (CourseDetails.jsx): ", courseRes.data);
 
                 if (raw) {
                     setCourse({
@@ -93,17 +95,18 @@ const CourseDetails = () => {
                         department:  raw.department,
                         year:        raw.year,
                         semester:    raw.semester,
-                        instructors: Array.isArray(raw.teachers)
-                            ? raw.teachers.map(t => typeof t === 'object' ? t : { name: t })
+                        instructors: Array.isArray(raw.faculties)
+                            ? raw.faculties.map(t => typeof t === 'object' ? t : { name: t })
                             : [],
                         students: Array.isArray(raw.students) ? raw.students.length : 0,
-                        status: coursesRes.data.activeCourses?.find(c => c._id === id) ? 'active' : 'completed',
+                        status:      raw.status ?? 'active',
                     });
                 }
 
                 // Fetch assignments
                 const assignRes = await axiosSecure.get(`/course/${id}/assignments`);
                 const allAssignments = assignRes.data.assignments || [];
+                console.log("Assignment data (CourseDetails.jsx): ", assignRes.data);
 
                 const mapped = allAssignments.map(a => {
                     const submissions = Array.isArray(a.submissions) ? a.submissions : [];
@@ -218,10 +221,10 @@ const CourseDetails = () => {
             )}
 
             {/* Main Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 lg:grid-rows-2 max-h-[720px] gap-6">
 
                 {/* Assignments — spans 2 cols */}
-                <div className="lg:col-span-2">
+                <div className="lg:col-span-2 lg:row-span-2 overflow-y-auto">
                     <SectionCard>
                         <SectionTitle
                             icon={ClipboardCheck}
@@ -272,7 +275,7 @@ const CourseDetails = () => {
                 </div>
 
                 {/* Right column */}
-                <div className="flex flex-col gap-6">
+                <div className="grid grid-rows-[auto_1fr] gap-6 lg:row-span-2 h-full">
 
                     {/* Instructors */}
                     {!loading && course?.instructors?.length > 0 && (
@@ -303,54 +306,56 @@ const CourseDetails = () => {
                         </SectionCard>
                     )}
 
-                    {/* Announcements */}
-                    <SectionCard className="flex-1">
-                        <SectionTitle
-                            icon={Megaphone}
-                            title="Announcements"
-                            iconBg="bg-blue-50"
-                            iconColor="text-blue-500"
-                        />
-                        {loading ? (
-                            <div className="space-y-3">
-                                {[1,2].map(i => <div key={i} className="h-16 bg-gray-50 rounded-xl animate-pulse" />)}
-                            </div>
-                        ) : notices.length === 0 ? (
-                            <EmptyState message="No announcements." />
-                        ) : (
-                            <div className="space-y-3">
-                                {notices.map(n => (
-                                    <div key={n.id} className="p-3 rounded-xl bg-gray-50 border border-gray-100 hover:border-blue-100 hover:bg-blue-50/30 transition-all duration-150">
-                                        <div className="flex items-start justify-between gap-2 mb-1">
-                                            <p className="text-sm font-semibold text-gray-800 leading-snug">{n.title}</p>
-                                            <span className="text-[10px] text-gray-400 shrink-0 mt-0.5">{n.time}</span>
-                                        </div>
-                                        {n.message && (
-                                            <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed">{n.message}</p>
-                                        )}
-                                        {n.faculty && (
-                                            <p className="text-[10px] text-gray-400 mt-1.5">— {n.faculty}</p>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
+                    <div className="overflow-y-auto">
+                        {/* Description */}
+                        {!loading && course?.description && (
+                            <SectionCard>
+                                <SectionTitle
+                                    icon={BookOpen}
+                                    title="About this Course"
+                                    iconBg="bg-gray-100"
+                                    iconColor="text-gray-500"
+                                />
+                                <p className="text-sm text-gray-600 leading-relaxed">{course.description}</p>
+                            </SectionCard>
                         )}
-                    </SectionCard>
+                    </div>
                 </div>
             </div>
 
-            {/* Description */}
-            {!loading && course?.description && (
-                <SectionCard>
-                    <SectionTitle
-                        icon={BookOpen}
-                        title="About this Course"
-                        iconBg="bg-gray-100"
-                        iconColor="text-gray-500"
-                    />
-                    <p className="text-sm text-gray-600 leading-relaxed">{course.description}</p>
-                </SectionCard>
-            )}
+            {/* Announcements */}
+            <SectionCard className="flex-1">
+                <SectionTitle
+                    icon={Megaphone}
+                    title="Announcements"
+                    iconBg="bg-blue-50"
+                    iconColor="text-blue-500"
+                />
+                {loading ? (
+                    <div className="space-y-3">
+                        {[1,2].map(i => <div key={i} className="h-16 bg-gray-50 rounded-xl animate-pulse" />)}
+                    </div>
+                ) : notices.length === 0 ? (
+                    <EmptyState message="No announcements." />
+                ) : (
+                    <div className="space-y-3">
+                        {notices.map(n => (
+                            <div key={n.id} className="p-3 rounded-xl bg-gray-50 border border-gray-100 hover:border-blue-100 hover:bg-blue-50/30 transition-all duration-150">
+                                <div className="flex items-start justify-between gap-2 mb-1">
+                                    <p className="text-sm font-semibold text-gray-800 leading-snug">{n.title}</p>
+                                    <span className="text-[10px] text-gray-400 shrink-0 mt-0.5">{n.time}</span>
+                                </div>
+                                {n.message && (
+                                    <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed">{n.message}</p>
+                                )}
+                                {n.faculty && (
+                                    <p className="text-[10px] text-gray-400 mt-1.5">— {n.faculty}</p>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </SectionCard>
 
             {/* Files Drawer */}
             <CourseFilesDrawer

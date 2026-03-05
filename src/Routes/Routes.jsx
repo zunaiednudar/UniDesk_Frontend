@@ -93,7 +93,7 @@ export const router = createBrowserRouter([
                 Component: Notification
             },
             {
-                path: "courses/:courseId/details",
+                path: "courses/:id/details",
                 Component: CourseDetails
             },
         ]

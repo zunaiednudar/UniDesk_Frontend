@@ -59,7 +59,7 @@ const SidebarDashboard = ({ menuItems, isSidebarOpen, setIsSidebarOpen, toggleSi
                 </form>
             </dialog>
 
-            <aside className={`gilroy fixed lg:sticky top-0 flex flex-col justify-between z-40 h-screen bg-gray-100 transition-all duration-200 ease-in-out overflow-hidden
+            <aside className={`gilroy fixed lg:sticky top-0 flex flex-col justify-between z-41 h-screen bg-gray-100 transition-all duration-200 ease-in-out overflow-hidden
                     ${isSidebarOpen ? 'w-72 lg:w-96 translate-x-0' : 'w-0 -translate-x-full lg:translate-x-0'}`}>
                 <div className="w-full flex items-center justify-between gap-4 border-b-2 border-gray-200 px-2">
                     {/* Logo */}
