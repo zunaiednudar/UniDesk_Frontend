@@ -2,15 +2,14 @@
 @plugin "daisyui";
 
 
-.inter{
+.gilroy {
     font-family: "Inter", sans-serif;
     font-optical-sizing: auto;
     font-style: normal;
 }
 
-.playfair{
+.graphik {
     font-family: "Playfair", serif;
     font-optical-sizing: auto;
     font-style: normal;
 }
-

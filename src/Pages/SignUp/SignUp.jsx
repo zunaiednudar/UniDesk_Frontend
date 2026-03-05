@@ -116,7 +116,7 @@ const SignUp = () => {
     };
 
     return (
-        <div className="w-full max-w-full flex inter">
+        <div className="w-full max-w-full flex gilroy">
             {/* Interactive Background */}
             <div
                 className="hidden lg:flex lg:w-full lg:max-w-[50%] bg-gradient-to-br from-[#1E40AF] via-[#1E3A8A] to-[#3B82F6]"
@@ -136,7 +136,7 @@ const SignUp = () => {
                 />
 
                 <div className="absolute h-auto inset-0 z-50 flex flex-col mt-50 items-center gap-5">
-                    <div className="w-[70%] text-5xl font-extrabold playfair text-white min-h-15">
+                    <div className="w-[70%] text-5xl font-extrabold graphik text-white min-h-15">
                         <TextType
                             text={"Join the Digital Campus"}
                             typingSpeed={100}
@@ -159,7 +159,7 @@ const SignUp = () => {
 
             <div
                 className="w-full max-w-full lg:max-w-[50%] min-h-screen flex flex-col items-center justify-center p-10">
-                <p className="playfair font-extrabold text-black text-3xl md:text-5xl mb-5">Create Account</p>
+                <p className="graphik font-extrabold text-black text-3xl md:text-5xl mb-5">Create Account</p>
                 <p className="text-gray-400 mb-10 text-sm md:text-[16px]">Join the UniDesk Community today</p>
                 <button onClick={() => handleGoogleLogin(signInWithGoogle, removeUser, logout, navigate,setUserData)}
                     className="w-full max-w-[500px] h-12 btn bg-white text-black border-[#e5e5e5] mb-5 cursor-pointer">

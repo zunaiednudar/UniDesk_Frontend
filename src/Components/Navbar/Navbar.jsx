@@ -20,7 +20,7 @@ const Navbar = () => {
                     <div className='w-10 h-10 bg-[#1E40AF] rounded-lg flex justify-center items-center'>
                         <GraduationCap className='w-6 h-6 text-white' />
                     </div>
-                    <span className='playfair text-2xl font-extrabold'>UniDesk</span>
+                    <span className='graphik text-2xl font-extrabold'>UniDesk</span>
                 </NavLink>
 
                 <div className='hidden lg:flex gap-5 font-bold items-center'>

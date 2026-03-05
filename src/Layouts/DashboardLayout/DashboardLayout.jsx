@@ -10,7 +10,7 @@ const DashboardLayout = ({ menuItems, userRole = 'student' }) => {
 
     return (
         <>
-            <div className="playfair text-xl min-h-screen bg-gray-50">
+            <div className="graphik text-xl min-h-screen bg-gray-50">
                 {/* Top Navigation Bar */}
 
                 <NavbarDashboard isSidebarOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />

@@ -15,6 +15,29 @@ const CardSkeleton = ({ variant = "list", lines = 3 }) => {
             </div>
         );
 
+    if (variant === "pendingAssignment")
+        return (
+            <div className="w-full p-6 rounded-xl bg-white shadow-md flex flex-col gap-4 animate-pulse">
+
+                <div className="flex justify-between items-center">
+                    <div className="h-5 w-40 bg-gray-200 rounded"></div>
+                    <div className="h-5 w-16 bg-gray-200 rounded-full"></div>
+                </div>
+
+                <div className="h-4 w-32 bg-gray-200 rounded"></div>
+
+                <div className="flex justify-between">
+                    <div className="h-4 w-24 bg-gray-200 rounded"></div>
+                    <div className="h-4 w-16 bg-gray-200 rounded"></div>
+                </div>
+                <div className="flex justify-between items-center">
+                    <div className="h-4 w-28 bg-gray-200 rounded"></div>
+                    <div className="h-5 w-10 bg-gray-200 rounded-full"></div>
+                </div>
+
+            </div>
+        )
+
     // For cards inside a container
 
     return (

@@ -114,10 +114,10 @@ const FacultyMyProfile = () => {
     };
 
     return (
-        <div className='w-full max-w-full p-10 flex flex-col gap-10 inter'>
+        <div className='w-full max-w-full p-10 flex flex-col gap-10 gilroy'>
 
             <div className='w-full max-w-full'>
-                <p className='text-3xl playfair font-bold text-black'>My Profile</p>
+                <p className='text-3xl graphik font-bold text-black'>My Profile</p>
                 <p className='text-gray-500'>View and manage your profile information</p>
             </div>
 
@@ -159,7 +159,7 @@ const FacultyMyProfile = () => {
                     />
 
                     <div className='flex flex-col items-center md:items-start gap-2'>
-                        <p className='playfair text-xl md:text-2xl font-extrabold'>{userData?.name.split(" ")
+                        <p className='graphik text-xl md:text-2xl font-extrabold'>{userData?.name.split(" ")
                             .map(word => word.charAt(0).toUpperCase() + word.slice(1))
                             .join(" ")}
                         </p>
@@ -177,13 +177,13 @@ const FacultyMyProfile = () => {
                 </div>
                 <hr className='text-gray-500' />
                 <div className='flex flex-col items-start gap-2'>
-                    <p className='text-xl playfair font-bold'>Biography</p>
+                    <p className='text-xl graphik font-bold'>Biography</p>
                     <p className='text-justify text-sm text-gray-500'>{
                         userData?.biography ? userData?.biography : "No biography found"
                     }</p>
                 </div>
                 <div className='flex flex-col items-start gap-2'>
-                    <p className='text-xl playfair font-bold'>Research Interests</p>
+                    <p className='text-xl graphik font-bold'>Research Interests</p>
                     <div className='flex flex-wrap gap-2'>
                         {
                             userData?.researchInterests ? (userData?.researchInterests.map(interest => <span
@@ -203,7 +203,7 @@ const FacultyMyProfile = () => {
                 <div className="modal-box max-w-xl p-8">
 
                     <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-2xl font-bold playfair">Update Profile</h3>
+                        <h3 className="text-2xl font-bold graphik">Update Profile</h3>
                         <button
                             onClick={handleCloseUpdateModal}
                             className="btn btn-sm btn-circle btn-ghost"

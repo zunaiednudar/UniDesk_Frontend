@@ -3,14 +3,14 @@ import { Bell, GraduationCap } from 'lucide-react';
 const Navbar = ({ userData }) => {
     // console.log(userData);
     return (
-        <nav className="navbar bg-white items-center sticky top-0 z-50 shadow-2xl inter">
+        <nav className="navbar bg-white items-center sticky top-0 z-50 shadow-2xl gilroy">
             <label htmlFor="my-drawer-4" className="btn btn-square btn-ghost lg:hidden">
                 <svg xmlns="http://www.w3.org/2000/svg" className="size-6 text-black"
                     viewBox="0 0 24 24">
                     <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" strokeWidth="2" />
                 </svg>
             </label>
-            <div className='w-full max-w-full flex gap-5 items-center justify-end'>
+            <div className='flex gap-5 items-center ml-auto'>
 
                 {/* Notification sign */}
 
@@ -42,7 +42,7 @@ const Navbar = ({ userData }) => {
 
                 {/* Profile Information */}
 
-                <div className='w-full max-w-50 h-auto flex items-center justify-end gap-3'>
+                <div className='h-auto flex items-center gap-3'>
                     <div className='flex flex-col'>
                         <p className='text-xs font-bold'>{userData.name.toUpperCase()}</p>
                         <p className='text-xs'>{userData.designation
@@ -51,7 +51,6 @@ const Navbar = ({ userData }) => {
                             .join(" ")}, {userData.department.toUpperCase()}</p>
                     </div>
                     <img className='w-10 h-10 rounded-[50%] border border-black' src={userData.photoURL} />
-
                 </div>
             </div>
         </nav>

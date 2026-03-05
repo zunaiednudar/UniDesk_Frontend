@@ -10,7 +10,7 @@ const Footer = () => {
     const link_website = "https://www.kuet.ac.bd/";
 
     return (
-        <footer className="bg-gray-900 py-12 inter">
+        <footer className="bg-gray-900 py-12 gilroy">
             <div className="w-full max-w-360 mx-auto px-5">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-4">
                     {/*Information Section*/}
@@ -19,7 +19,7 @@ const Footer = () => {
                             <div className='w-10 h-10 bg-blue-500 rounded-lg flex justify-center items-center'>
                                 <GraduationCap className='w-6 h-6 text-white' />
                             </div>
-                            <span className='playfair text-2xl font-bold text-white'>UniDesk</span>
+                            <span className='graphik text-2xl font-bold text-white'>UniDesk</span>
                         </NavLink>
 
                         <p className="text-gray-300 text-sm leading-relaxed cursor-default">
@@ -29,7 +29,7 @@ const Footer = () => {
 
                     {/*Quick Links Section*/}
                     <div>
-                        <h4 className="playfair text-2xl font-semibold mb-4 text-white cursor-default">Quick Links</h4>
+                        <h4 className="graphik text-2xl font-semibold mb-4 text-white cursor-default">Quick Links</h4>
 
                         <ul className="space-y-2 text-gray-300 text-sm leading-relaxed">
                             <li className="hover:text-gray-100"><NavLink to="/home">Home</NavLink></li>
@@ -39,7 +39,7 @@ const Footer = () => {
 
                     {/*Contact Section*/}
                     <div>
-                        <h4 className="playfair text-2xl font-semibold mb-4 text-white cursor-default">Contact</h4>
+                        <h4 className="graphik text-2xl font-semibold mb-4 text-white cursor-default">Contact</h4>
 
                         <ul className="space-y-3">
                             <li className="flex items-start gap-3">
@@ -65,7 +65,7 @@ const Footer = () => {
 
                     {/*Follow Us Section*/}
                     <div>
-                        <h4 className="playfair text-2xl font-semibold mb-4 text-white cursor-default">Follow Us</h4>
+                        <h4 className="graphik text-2xl font-semibold mb-4 text-white cursor-default">Follow Us</h4>
 
                         <div className="flex gap-3">
                             {/* Facebook */}

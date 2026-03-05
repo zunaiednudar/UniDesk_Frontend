@@ -54,7 +54,7 @@ const Home = () => {
     ];
 
     return (
-        <div className="inter bg-gray-100">
+        <div className="gilroy bg-gray-100">
             {/*Hero Section*/}
             <div className="relative bg-gradient-to-br from-[#1E40AF] via-[#1E3A8A] to-[#3B82F6] text-white">
                 <div className="absolute inset-0 z-0">
@@ -76,7 +76,7 @@ const Home = () => {
 
                 <div className="relative z-10 max-w-7xl mx-auto px-6 py-20 flex flex-col justify-center">
                     <div className="text-center">
-                        <h1 className="playfair text-5xl md:text-6xl font-extrabold mb-6">
+                        <h1 className="graphik text-5xl md:text-6xl font-extrabold mb-6">
                             <TextType
                                 text="Welcome to UniDesk"
                                 typingSpeed={100}
@@ -133,7 +133,7 @@ const Home = () => {
             {/*Features Section*/}
             <div ref={featuresRef} className="max-w-360 mx-auto px-6 py-20 scroll-mt-24">
                 <div className="text-center mb-16">
-                    <h2 className="playfair text-4xl font-extrabold text-gray-900 mb-2">Powerful Features</h2>
+                    <h2 className="graphik text-4xl font-extrabold text-gray-900 mb-2">Powerful Features</h2>
 
                     <p className="text-gray-600 text-sm">Everything you need for a complete learning management experience</p>
                 </div>
@@ -143,7 +143,7 @@ const Home = () => {
                         <div key={index} className="bg-white rounded-xl p-6 transition border border-gray-100">
                             <div className="mb-4">{feature.icon}</div>
 
-                            <h3 className="playfair text-2xl font-extrabold text-gray-900 mb-3">{feature.title}</h3>
+                            <h3 className="graphik text-2xl font-extrabold text-gray-900 mb-3">{feature.title}</h3>
 
                             <p className="text-sm text-gray-600 leading-relaxed">{feature.description}</p>
                         </div>
@@ -164,7 +164,7 @@ const Home = () => {
                         </div>
 
                         <div>
-                            <h2 className="playfair text-4xl font-extrabold text-gray-900 mb-6">About UniDesk</h2>
+                            <h2 className="graphik text-4xl font-extrabold text-gray-900 mb-6">About UniDesk</h2>
 
                             <p className="text-gray-600 mb-6 leading-relaxed text-justify">
                                 UniDesk is a comprehensive Learning Management System designed specifically for Khulna University of Engineering & Technology (KUET).
@@ -179,7 +179,7 @@ const Home = () => {
                                         </div>
 
                                         <div>
-                                            <h4 className="playfair text-xl font-extrabold text-gray-900">{benefit.title}</h4>
+                                            <h4 className="graphik text-xl font-extrabold text-gray-900">{benefit.title}</h4>
                                             <p className="text-gray-500">{benefit.description}</p>
                                         </div>
                                     </div>
@@ -193,7 +193,7 @@ const Home = () => {
             {/*CTA Section*/}
             <div className="bg-gradient-to-r from-blue-900 via-blue-750 to-blue-500 text-white py-20">
                 <div className="max-w-4xl mx-auto px-6 text-center">
-                    <h2 className="playfair text-5xl text-white font-extrabold mb-2">Ready to Get Started?</h2>
+                    <h2 className="graphik text-5xl text-white font-extrabold mb-2">Ready to Get Started?</h2>
 
                     <p className="text-lg text-gray-100 mb-8">
                         Join thousands of students and faculties already using UniDesk
