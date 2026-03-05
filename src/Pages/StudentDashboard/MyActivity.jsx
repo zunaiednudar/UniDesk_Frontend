@@ -11,6 +11,7 @@ import {
 import axiosSecure from "../../utils/axiosSecure.js";
 import { AuthContext } from "../../Providers/AuthProvider/AuthProvider.jsx";
 import RecentNotices from "../../Components/RecentNotices/RecentNotices.jsx";
+import CalendarF from "../../Components/Calendar/Calendar.jsx"
 
 const getDueDateClasses = (dateStr, isCompleted) => {
     if (isCompleted) return 'text-gray-400';
@@ -65,45 +66,85 @@ const SectionHeader = ({ icon: Icon, title, iconBg, iconColor, count }) => (
     </div>
 );
 
-const TaskItem = ({ task, onToggle }) => {
+const TaskItem = ({ task }) => {
     const isCompleted = task.status === 'completed';
+    const isLate = task.status === 'late';
     const dateClasses = getDueDateClasses(task.dueDate, isCompleted);
     const checkboxClasses = getCheckboxClasses(task.status);
 
+    const taskStatusConfig = {
+        completed: {
+            badge: 'bg-green-50 border border-green-200',
+            dot: 'bg-green-500',
+            label: 'Completed',
+        },
+        late: {
+            badge: 'bg-red-50 border border-red-200',
+            dot: 'bg-red-500',
+            label: 'Late',
+        },
+        pending: {
+            badge: 'bg-gray-50 border border-gray-200',
+            dot: 'bg-gray-400',
+            label: 'Pending',
+        },
+    };
+
+    const cfg = taskStatusConfig[task.status] || taskStatusConfig.pending;
+
     return (
-        <div
-            role="button"
-            tabIndex={0}
-            onClick={() => onToggle?.(task.id)}
-            onKeyDown={e => e.key === 'Enter' && onToggle?.(task.id)}
-            className="flex items-center gap-3 py-2.5 px-1 border-b border-gray-100 last:border-b-0 rounded-md cursor-pointer hover:bg-gray-50 transition-colors duration-100 outline-none"
-        >
-            {/* Checkbox */}
-            <div className={`w-[18px] h-[18px] rounded-full flex-shrink-0 border-2 flex items-center justify-center transition-all duration-150 ${checkboxClasses}`}>
-                {isCompleted && (
-                    <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-                        <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                )}
-            </div>
-
-            {/* Title + course */}
-            <div className="flex-1 min-w-0">
-                <p className={`text-sm font-medium truncate leading-snug transition-colors ${isCompleted ? 'line-through text-gray-400' : 'text-gray-900'}`}>
-                    {task.title}
-                </p>
-                {task.course && (
-                    <p className="text-xs text-gray-400 mt-0.5 truncate">{task.course}</p>
-                )}
-            </div>
-
-            {/* Due date */}
-            {task.dueDate && (
-                <div className={`flex-shrink-0 flex items-center gap-1 text-xs font-medium ${dateClasses}`}>
-                    <Calendar size={11} strokeWidth={2} />
-                    <span>{task.dueDate}</span>
+        <div className="flex flex-col justify-between py-3 px-2 border-b border-gray-100 last:border-b-0">
+            {/* Top: Checkbox + Title */}
+            <div className="flex items-center gap-3">
+                <div
+                    className={`w-[18px] h-[18px] rounded-full flex-shrink-0 border-2 flex items-center justify-center transition-all duration-150 ${checkboxClasses}`}
+                >
+                    {isCompleted && (
+                        <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                            <path
+                                d="M1 4L3.5 6.5L9 1"
+                                stroke="white"
+                                strokeWidth="1.8"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                            />
+                        </svg>
+                    )}
                 </div>
-            )}
+                <div className="flex-1 min-w-0">
+                    <p
+                        className={`text-sm font-medium truncate leading-snug ${
+                            isCompleted ? 'line-through text-gray-400' : 'text-gray-900'
+                        }`}
+                    >
+                        {task.title}
+                    </p>
+                    {task.course && (
+                        <p className="text-xs text-gray-400 mt-0.5 truncate">{task.course}</p>
+                    )}
+                </div>
+            </div>
+
+            {/* Bottom: Status badge (left) + Due date (right) */}
+            <div className="flex items-center justify-between mt-2">
+                <div
+                    className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 ${cfg.badge}`}
+                >
+                    <div className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+                    <span className="text-xs font-semibold text-gray-600 capitalize">
+            {cfg.label}
+          </span>
+                </div>
+
+                {task.dueDate && (
+                    <div
+                        className={`flex-shrink-0 flex items-center gap-1 text-xs font-medium ${dateClasses}`}
+                    >
+                        <Calendar size={11} strokeWidth={2} />
+                        <span>{task.dueDate}</span>
+                    </div>
+                )}
+            </div>
         </div>
     );
 };
@@ -115,7 +156,7 @@ const AppointmentCard = ({ appointment }) => {
         <div className="p-4 rounded-xl border border-gray-100 bg-white hover:border-orange-200 hover:shadow-sm transition-all duration-200">
             <div className="flex items-start justify-between mb-3">
                 <div>
-                    <h3 className="text-sm font-bold text-gray-900">{appointment.faculty}</h3>
+                    <h3 className="text-sm font-bold text-gray-900 capitalize">{appointment.faculty}</h3>
                     {appointment.room && (
                         <p className="text-xs text-gray-400 mt-0.5">Room {appointment.room}</p>
                     )}
@@ -153,15 +194,6 @@ const MyActivity = () => {
     const [taskList, setTaskList] = useState([]);
     const [loading, setLoading] = useState(true);
     const [submissionStats, setSubmissionStats] = useState({ onTime: 0, late: 0, missed: 0 });
-    // const [notices, setNotices] = useState([
-    //     { title: "Mid-term schedule released", message: "Mid-term exams will be held from Nov 10–14. Check the portal for your timetable.", date: "Today" },
-    //     { title: "Library hours extended", message: "The central library will remain open until 10 PM during exam weeks.", date: "Yesterday" },
-    //     { title: "Semester registration open", message: "Course registration for Spring 2025 is now open. Complete by Nov 30.", date: "2 days ago" },
-    //     { title: "Campus maintenance notice", message: "The engineering block will have no electricity on Saturday 9AM–2PM.", date: "3 days ago" },
-    //     { title: "Hackathon registration", message: "UniDesk Hackathon 2024 registrations are open. Form your teams and apply before Nov 20.", date: "4 days ago" },
-    //     { title: "New faculty joined", message: "Dr. Arif Hossain has joined the CSE department as Assistant Professor.", date: "1 week ago" },
-    // ]);
-
     const [notices, setNotices] = useState([]);
 
     useEffect(() => {
@@ -225,14 +257,14 @@ const MyActivity = () => {
                 };
 
                 const recentNotices = [...allNotices]
-                        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-                        .slice(0, 10)
-                        .map(n => ({
-                            title: n.title,
-                            message: n.description,
-                            date: timeAgo(n.createdAt),
-                            faculty: n.faculty?.name || ""
-                        }));
+                    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+                    .slice(0, 10)
+                    .map(n => ({
+                        title: n.title,
+                        message: n.description,
+                        date: timeAgo(n.createdAt),
+                        faculty: n.faculty?.name || ""
+                    }));
 
                 console.log("Recent notices: ", recentNotices);
                 setNotices(recentNotices);
@@ -249,7 +281,7 @@ const MyActivity = () => {
                         const submissions = Array.isArray(assignment.submissions) ? assignment.submissions : [];
                         const userSubmission = submissions.find(s => s.student === userData._id);
 
-                        // let status = 'missed';
+                        let status = 'missed';
                         if (userSubmission) {
                             const diffHrs = (new Date(userSubmission.submittedAt) - new Date(assignment.dueDate)) / (1000 * 60 * 60);
                             status = diffHrs <= 0 ? 'completed' : 'late';
@@ -271,7 +303,13 @@ const MyActivity = () => {
                 const late   = userTasks.filter(t => t.status === 'late').length;
                 const missed = userTasks.filter(t => t.status === 'missed').length;
 
-                setTaskList(userTasks);
+                // setTaskList(userTasks);
+
+                setTaskList(userTasks
+                    .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
+                    .slice(0, 8)
+                );
+
                 setSubmissionStats({ onTime, late, missed });
 
                 setStats({
@@ -329,13 +367,15 @@ const MyActivity = () => {
                 />
             </div>
 
-            <RecentNotices notices={notices} loading={loading} />
-
             {/* Main Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+            <div className="grid grid-cols-1 lg:grid-cols-5 lg:grid-rows-6 gap-6 items-start">
+                {/* Recent Announcements */}
+                <div className="w-full h-full lg:col-span-3 lg:row-span-2">
+                    <RecentNotices notices={notices} loading={loading} />
+                </div>
 
                 {/* Task List */}
-                <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                <div className="w-full h-full lg:col-span-2 lg:row-span-4 bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
                     <SectionHeader
                         icon={ClipboardCheck}
                         title="Task List"
@@ -355,23 +395,20 @@ const MyActivity = () => {
                                 <TaskItem
                                     key={task.id}
                                     task={task}
-                                    onToggle={(id) => setTaskList(prev =>
-                                        prev.map(t => t.id === id
-                                            ? { ...t, status: t.status === 'completed' ? 'missed' : 'completed' }
-                                            : t
-                                        )
-                                    )}
                                 />
                             ))}
                         </div>
                     )}
                 </div>
 
-                {/* Right sidebar */}
-                <div className="flex flex-col gap-6">
+                {/* Calendar */}
+                <div className="w-full h-full lg:col-span-3 lg:row-span-4">
+                    <CalendarF />
+                </div>
 
-                    {/* Submission Overview */}
-                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                {/* Submission Overview */}
+                <div className="w-full h-full lg:col-span-2 lg:row-span-2 flex flex-col gap-6">
+                    <div className="w-full h-full bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
                         <SectionHeader
                             icon={ClipboardCheck}
                             title="Submission Overview"
@@ -382,7 +419,7 @@ const MyActivity = () => {
                             <SkeletonBlock className="h-48" />
                         ) : (
                             <>
-                                <ResponsiveContainer width="100%" height={240}>
+                                <ResponsiveContainer width="100%" height={220}>
                                     <PieChart>
                                         <Pie
                                             data={pieData}
@@ -405,7 +442,7 @@ const MyActivity = () => {
                                 </ResponsiveContainer>
 
                                 {/* Legend */}
-                                <div className="flex justify-around mt-2">
+                                <div className="flex justify-around mt-4">
                                     {pieData.map((entry, idx) => (
                                         <div key={idx} className="flex flex-col items-center gap-1">
                                             <div className="flex items-center gap-1.5">
@@ -419,31 +456,30 @@ const MyActivity = () => {
                             </>
                         )}
                     </div>
-
-                    {/* Appointments */}
-                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-                        <SectionHeader
-                            icon={Calendar}
-                            title="Appointments"
-                            iconBg="bg-purple-50"
-                            iconColor="text-purple-500"
-                        />
-                        {loading ? (
-                            <div className="space-y-3">
-                                {[1, 2].map(i => <SkeletonBlock key={i} className="h-20" />)}
-                            </div>
-                        ) : appointments.length === 0 ? (
-                            <EmptyState message="No upcoming appointments scheduled." />
-                        ) : (
-                            <div className="space-y-3">
-                                {appointments.map(appointment => (
-                                    <AppointmentCard key={appointment.id} appointment={appointment} />
-                                ))}
-                            </div>
-                        )}
-                    </div>
-
                 </div>
+            </div>
+
+            {/* Appointments */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                <SectionHeader
+                    icon={Calendar}
+                    title="Appointments"
+                    iconBg="bg-purple-50"
+                    iconColor="text-purple-500"
+                />
+                {loading ? (
+                    <div className="space-y-3">
+                        {[1, 2].map(i => <SkeletonBlock key={i} className="h-20" />)}
+                    </div>
+                ) : appointments.length === 0 ? (
+                    <EmptyState message="No upcoming appointments scheduled." />
+                ) : (
+                    <div className="space-y-3">
+                        {appointments.map(appointment => (
+                            <AppointmentCard key={appointment.id} appointment={appointment} />
+                        ))}
+                    </div>
+                )}
             </div>
         </div>
     );
