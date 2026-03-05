@@ -153,6 +153,16 @@ const MyActivity = () => {
     const [taskList, setTaskList] = useState([]);
     const [loading, setLoading] = useState(true);
     const [submissionStats, setSubmissionStats] = useState({ onTime: 0, late: 0, missed: 0 });
+    // const [notices, setNotices] = useState([
+    //     { title: "Mid-term schedule released", message: "Mid-term exams will be held from Nov 10–14. Check the portal for your timetable.", date: "Today" },
+    //     { title: "Library hours extended", message: "The central library will remain open until 10 PM during exam weeks.", date: "Yesterday" },
+    //     { title: "Semester registration open", message: "Course registration for Spring 2025 is now open. Complete by Nov 30.", date: "2 days ago" },
+    //     { title: "Campus maintenance notice", message: "The engineering block will have no electricity on Saturday 9AM–2PM.", date: "3 days ago" },
+    //     { title: "Hackathon registration", message: "UniDesk Hackathon 2024 registrations are open. Form your teams and apply before Nov 20.", date: "4 days ago" },
+    //     { title: "New faculty joined", message: "Dr. Arif Hossain has joined the CSE department as Assistant Professor.", date: "1 week ago" },
+    // ]);
+
+    const [notices, setNotices] = useState([]);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -178,6 +188,55 @@ const MyActivity = () => {
                     ...(coursesRes.data.activeCourses || []),
                     ...(coursesRes.data.completedCourses || [])
                 ];
+
+                const activeCourses = [...(coursesRes.data.activeCourses || [])];
+                console.log("Active courses: ", activeCourses);
+                console.log("Active course IDs:", activeCourses.map(c => c._id));
+
+                const noticeRequests = activeCourses.map(course => axiosSecure.get(`/course/${course._id}/announcements`));
+                const noticeResponses = await Promise.all(noticeRequests);
+                console.log("Raw notice responses:", noticeResponses.map(r => r.data));
+                console.log("Status codes:", noticeResponses.map(r => r.status));
+
+                const allNotices = noticeResponses.flatMap(res => res.data?.announcements || []);
+                console.log("All notices:", allNotices);
+
+                // const allUniqueNotices = Array.from(
+                //     new Map(allNotices.map(n => [n._id, n])).values()
+                // );
+
+                const timeAgo = (dateString) => {
+                    const now = new Date();
+                    const past = new Date(dateString);
+                    const diffInSeconds = Math.floor((now - past) / 1000);
+                    if (diffInSeconds < 60) return "Just now";
+                    const diffInMinutes = Math.floor(diffInSeconds / 60);
+                    if (diffInMinutes < 60) return `${diffInMinutes} min${diffInMinutes > 1 ? "s" : ""} ago`;
+                    const diffInHours = Math.floor(diffInMinutes / 60);
+                    if (diffInHours < 24) return `${diffInHours} hr${diffInHours > 1 ? "s" : ""} ago`;
+                    const diffInDays = Math.floor(diffInHours / 24);
+                    if (diffInDays < 7) return `${diffInDays} day${diffInDays > 1 ? "s" : ""} ago`;
+                    const diffInWeeks = Math.floor(diffInDays / 7);
+                    if (diffInWeeks < 4) return `${diffInWeeks} week${diffInWeeks > 1 ? "s" : ""} ago`;
+                    const diffInMonths = Math.floor(diffInDays / 30);
+                    if (diffInMonths < 12) return `${diffInMonths} month${diffInMonths > 1 ? "s" : ""} ago`;
+                    const diffInYears = Math.floor(diffInDays / 365);
+                    return `${diffInYears} year${diffInYears > 1 ? "s" : ""} ago`;
+                };
+
+                const recentNotices = [...allNotices]
+                        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+                        .slice(0, 10)
+                        .map(n => ({
+                            title: n.title,
+                            message: n.description,
+                            date: timeAgo(n.createdAt),
+                            faculty: n.faculty?.name || ""
+                        }));
+
+                console.log("Recent notices: ", recentNotices);
+                setNotices(recentNotices);
+
 
                 const assignmentRequests = courses.map(course => axiosSecure.get(`/course/${course._id}/assignments`));
                 const assignmentResponses = await Promise.all(assignmentRequests);
@@ -236,15 +295,6 @@ const MyActivity = () => {
         { name: 'Late',    value: submissionStats.late   },
         { name: 'Missed',  value: submissionStats.missed },
     ];
-
-    const [notices, setNotices] = useState([
-        { title: "Mid-term schedule released", message: "Mid-term exams will be held from Nov 10–14. Check the portal for your timetable.", date: "Today" },
-        { title: "Library hours extended", message: "The central library will remain open until 10 PM during exam weeks.", date: "Yesterday" },
-        { title: "Semester registration open", message: "Course registration for Spring 2025 is now open. Complete by Nov 30.", date: "2 days ago" },
-        { title: "Campus maintenance notice", message: "The engineering block will have no electricity on Saturday 9AM–2PM.", date: "3 days ago" },
-        { title: "Hackathon registration", message: "UniDesk Hackathon 2024 registrations are open. Form your teams and apply before Nov 20.", date: "4 days ago" },
-        { title: "New faculty joined", message: "Dr. Arif Hossain has joined the CSE department as Assistant Professor.", date: "1 week ago" },
-    ]);
 
     return (
         <div className="gilroy space-y-6">
