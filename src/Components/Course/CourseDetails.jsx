@@ -9,8 +9,6 @@ import axiosSecure from "../../utils/axiosSecure.js";
 import { AuthContext } from "../../Providers/AuthProvider/AuthProvider.jsx";
 import CourseFilesDrawer from "../../Components/Course/CourseFilesDrawer.jsx";
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
 const statusBadgeConfig = {
     active:    { badge: 'bg-green-100 text-green-700 border border-green-200', dot: 'bg-green-500' },
     completed: { badge: 'bg-blue-100 text-blue-700 border border-blue-200',   dot: 'bg-blue-500'  },
@@ -22,19 +20,6 @@ const assignmentStatusConfig = {
     missed:    { icon: AlertCircle,    color: 'text-red-400',    bg: 'bg-red-50',    label: 'Missed'      },
     pending:   { icon: Circle,         color: 'text-gray-400',   bg: 'bg-gray-50',   label: 'Pending'     },
 };
-
-const timeAgo = (dateString) => {
-    const now  = new Date();
-    const past = new Date(dateString);
-    const diff = Math.floor((now - past) / 1000);
-    if (diff < 60)    return 'Just now';
-    if (diff < 3600)  return `${Math.floor(diff / 60)}m ago`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-    if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
-    return past.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-};
-
-// ─── Sub-components ───────────────────────────────────────────────────────────
 
 const SkeletonLine = ({ w = 'w-full', h = 'h-4' }) => (
     <div className={`${w} ${h} bg-gray-100 rounded animate-pulse`} />

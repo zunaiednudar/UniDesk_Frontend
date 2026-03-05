@@ -1,9 +1,23 @@
-import { useContext, useEffect, useState } from 'react';
-import { BookOpen, Search, Users, Award, TrendingUp, Building2, Hash, AlertCircle, FolderOpen, ChevronRight } from 'lucide-react';
-import {NavLink, useNavigate} from 'react-router';
+import React, { useContext, useEffect, useState } from 'react';
+import {
+    BookOpen,
+    Search,
+    Users,
+    Award,
+    TrendingUp,
+    Building2,
+    Hash,
+    AlertCircle,
+    FolderOpen,
+    ChevronRight,
+    CheckCircle,
+    Check, ArrowRight
+} from 'lucide-react';
+import { NavLink, useNavigate } from 'react-router';
 import axiosSecure from "../../utils/axiosSecure.js";
 import { AuthContext } from "../../Providers/AuthProvider/AuthProvider.jsx";
 import CourseFilesDrawer from "../../Components/Course/CourseFilesDrawer.jsx";
+import DefaultProfile from "../../assets/default-profile.png";
 
 const statusBadgeConfig = {
     active:    'bg-green-100 text-green-700',
@@ -41,7 +55,7 @@ const SkeletonCard = () => (
 );
 
 const EmptyState = ({ message }) => (
-    <div className="col-span-full flex flex-col items-center py-16 text-gray-400 text-sm">
+    <div className="col-span-full flex flex-col items-center py-12 text-gray-400 text-sm">
         <AlertCircle size={32} className="text-gray-200 mb-3" />
         {message}
     </div>
@@ -68,25 +82,46 @@ const CourseCard = ({ course, onFilesClick, navigate }) => (
             </span>
         </div>
 
-        {/* Meta */}
-        <div className="space-y-2 mb-5">
-            {course.department && (
+        <div className="flex flex-col justify-between gap-4">
+            {/* Meta */}
+            <div className="space-y-2 mb-5">
+                {course.department && (
+                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                        <Building2 size={14} className="flex-shrink-0 text-gray-400" />
+                        <span className="truncate">{course.department}</span>
+                    </div>
+                )}
+                {(course.year || course.semester || course.session) && (
+                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                        <Hash size={14} className="flex-shrink-0 text-gray-400" />
+                        <span className="truncate">
+                            {[course.year, course.semester, course.session].filter(Boolean).join(' · ')}
+                        </span>
+                    </div>
+                )}
                 <div className="flex items-center gap-2 text-sm text-gray-500">
-                    <Building2 size={14} className="flex-shrink-0 text-gray-400" />
-                    <span className="truncate">{course.department}</span>
+                    <Users size={14} className="flex-shrink-0 text-gray-400" />
+                    <span>{course.students.length} student{course.students.length !== 1 ? 's' : ''}</span>
                 </div>
-            )}
-            {(course.year || course.semester || course.session) && (
-                <div className="flex items-center gap-2 text-sm text-gray-500">
-                    <Hash size={14} className="flex-shrink-0 text-gray-400" />
-                    <span className="truncate">
-                        {[course.year, course.semester, course.session].filter(Boolean).join(' · ')}
-                    </span>
-                </div>
-            )}
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-                <Users size={14} className="flex-shrink-0 text-gray-400" />
-                <span>{course.students} student{course.students !== 1 ? 's' : ''}</span>
+            </div>
+
+            <div className="border border-gray-200"></div>
+
+            {/* Faculty info */}
+            <div className="space-y-2">
+                {course.faculties?.map((f, idx) => (
+                    <div key={idx} className="flex items-center gap-2 text-sm text-gray-500">
+                        <img
+                            src={f?.photoURL || DefaultProfile}
+                            alt={f?.name || "Profile"}
+                            className="w-5 h-5 rounded-full object-cover mr-2"
+                        />
+                        <div className="flex flex-col items-start">
+                            <span className="text-sm text-gray-500">{f?.name || ""}</span>
+                            <span className="text-xs text-gray-400">{f?.email || ""}</span>
+                        </div>
+                    </div>
+                ))}
             </div>
         </div>
 
@@ -113,6 +148,17 @@ const CourseCard = ({ course, onFilesClick, navigate }) => (
     </div>
 );
 
+const formatName = (name) => {
+    if (!name) return "";
+    return name
+        .split(/([ .])/g)
+        .map(part => {
+            if (part === " " || part === ".") return part;
+            return part.charAt(0).toUpperCase() + part.slice(1);
+        })
+        .join("");
+};
+
 const MyCourses = () => {
     const { userData } = useContext(AuthContext);
     const navigate = useNavigate();
@@ -120,7 +166,6 @@ const MyCourses = () => {
     const [courses, setCourses]           = useState([]);
     const [loading, setLoading]           = useState(true);
     const [searchQuery, setSearchQuery]   = useState('');
-    const [statusFilter, setStatusFilter] = useState('all');
     const [drawerOpen, setDrawerOpen]     = useState(false);
     const [activeCourse, setActiveCourse] = useState(null);
 
@@ -133,27 +178,49 @@ const MyCourses = () => {
                 const activeCourses    = res.data.activeCourses    || [];
                 const completedCourses = res.data.completedCourses || [];
 
-                const mapCourse = (course, status) => ({
-                    id:          course._id,
-                    code:        course.courseCode,
-                    name:        course.courseName,
-                    description: course.description,
-                    session:     course.session,
-                    department:  course.department,
-                    year:        course.year,
-                    semester:    course.semester,
-                    instructors: Array.isArray(course.teachers)
-                        ? course.teachers.map(t => t?.name ?? t).filter(Boolean)
-                        : [],
-                    students: Array.isArray(course.students) ? course.students.length : 0,
-                    status,
-                    progress: course.progress ?? 0,
-                });
+                const allIds = [
+                    ...activeCourses.map(c => ({ id: c._id, status: 'active' })),
+                    ...completedCourses.map(c => ({ id: c._id, status: 'completed' })),
+                ];
 
-                setCourses([
-                    ...activeCourses.map(c    => mapCourse(c, 'active')),
-                    ...completedCourses.map(c => mapCourse(c, 'completed')),
-                ]);
+                const detailed = await Promise.all(
+                    allIds.map(async ({ id, status }) => {
+                        try {
+                            const r = await axiosSecure.get(`/courses/${id}`);
+                            const course = r.data.course || r.data;
+                            return {
+                                id,
+                                code:        course.courseCode,
+                                name:        course.courseName,
+                                description: course.description,
+                                session:     course.session,
+                                department:  course.department,
+                                year:        course.year,
+                                semester:    course.semester,
+                                faculties: Array.isArray(course.faculties)
+                                    ? course.faculties.map(f => ({
+                                        name:     formatName(f?.name),
+                                        email:    f?.email    ?? "",
+                                        photoURL: f?.photoURL ?? null,
+                                    }))
+                                    : [],
+                                students: Array.isArray(course.students)
+                                    ? course.students.map(s => ({
+                                        name:     formatName(s?.name),
+                                        email:    s?.email     ?? "",
+                                        photoURL: s?.photoURL  ?? null,
+                                        roll:     s?.studentID ?? "",
+                                    }))
+                                    : [],
+                                status,
+                            };
+                        } catch {
+                            return null;
+                        }
+                    })
+                );
+
+                setCourses(detailed.filter(Boolean));
             } catch (err) {
                 console.error('Failed to fetch courses:', err);
             } finally {
@@ -167,69 +234,119 @@ const MyCourses = () => {
     const activeCount    = courses.filter(c => c.status === 'active').length;
     const completedCount = courses.filter(c => c.status === 'completed').length;
 
-    const filteredCourses = courses.filter(course => {
-        const q = searchQuery.toLowerCase();
-        const matchesSearch =
-            course.name?.toLowerCase().includes(q) ||
-            course.code?.toLowerCase().includes(q) ||
-            course.department?.toLowerCase().includes(q) ||
-            course.instructors?.some(i => i.toLowerCase().includes(q));
-        const matchesStatus = statusFilter === 'all' || course.status === statusFilter;
-        return matchesSearch && matchesStatus;
-    });
+    const q = searchQuery.toLowerCase();
+    const matchesCourse = (course) =>
+        course.name?.toLowerCase().includes(q) ||
+        course.code?.toLowerCase().includes(q) ||
+        course.department?.toLowerCase().includes(q) ||
+        course.faculties?.some(f => f.name?.toLowerCase().includes(q));
+
+    const activeCourses    = courses.filter(c => c.status === 'active'    && matchesCourse(c));
+    const completedCourses = courses.filter(c => c.status === 'completed' && matchesCourse(c));
+    const recentCompleted  = completedCourses.slice(0, 10);
 
     return (
         <div className="gilroy space-y-6">
+
+            {/* Page title */}
             <div>
                 <h1 className="graphik text-3xl font-semibold text-gray-900">My Courses</h1>
                 <p className="text-sm text-gray-400 mt-1">Manage and track your enrolled courses</p>
             </div>
 
+            {/* Stats */}
             <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-4">
-                <StatCard icon={BookOpen}  value={loading ? '—' : totalCourses}   label="Total Courses" iconBg="bg-blue-50"  iconColor="text-blue-500" />
-                <StatCard icon={TrendingUp} value={loading ? '—' : activeCount}   label="Active"        iconBg="bg-green-50" iconColor="text-green-500" valueColor="text-green-600" />
-                <StatCard icon={Award}     value={loading ? '—' : completedCount} label="Completed"     iconBg="bg-blue-50"  iconColor="text-blue-500" valueColor="text-blue-600" />
+                <StatCard icon={BookOpen}   value={loading ? '—' : totalCourses}   label="Total Courses" iconBg="bg-blue-50"  iconColor="text-blue-500" />
+                <StatCard icon={TrendingUp} value={loading ? '—' : activeCount}    label="Active"        iconBg="bg-green-50" iconColor="text-green-500" valueColor="text-green-600" />
+                <StatCard icon={Award}      value={loading ? '—' : completedCount} label="Completed"     iconBg="bg-blue-50"  iconColor="text-blue-500" valueColor="text-blue-600" />
             </div>
 
+            {/* Search */}
             <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-                <div className="flex flex-col md:flex-row gap-3">
-                    <div className="flex-1 relative">
-                        <Search size={16} className="text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                        <input
-                            type="text"
-                            placeholder="Search by name, code, department…"
-                            value={searchQuery}
-                            onChange={e => setSearchQuery(e.target.value)}
-                            className="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-400 focus:border-orange-400 outline-none transition"
-                        />
-                    </div>
-                    <select
-                        value={statusFilter}
-                        onChange={e => setStatusFilter(e.target.value)}
-                        className="px-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-400 focus:border-orange-400 outline-none transition bg-white"
-                    >
-                        <option value="all">All Status</option>
-                        <option value="active">Active</option>
-                        <option value="completed">Completed</option>
-                    </select>
+                <div className="relative">
+                    <Search size={16} className="text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                        type="text"
+                        placeholder="Search by name, code, department, or instructor…"
+                        value={searchQuery}
+                        onChange={e => setSearchQuery(e.target.value)}
+                        className="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-400 focus:border-orange-400 outline-none transition"
+                    />
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                {loading ? (
-                    [1,2,3,4,5,6].map(i => <SkeletonCard key={i} />)
-                ) : filteredCourses.length === 0 ? (
-                    <EmptyState message="No courses found matching your search." />
-                ) : (
-                    filteredCourses.map(course => (
-                        <CourseCard
-                            key={course.id}
-                            course={course}
-                            navigate={navigate}
-                            onFilesClick={c => { setActiveCourse(c); setDrawerOpen(true); }}
-                        />
-                    ))
-                )}
+            {/* Active Courses */}
+            <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-green-500" />
+                    <h2 className="text-sm font-bold text-gray-800">Active Courses</h2>
+                    {!loading && (
+                        <span className="text-xs text-gray-400 font-medium bg-gray-100 px-2 py-0.5 rounded-full">
+                            {activeCourses.length}
+                        </span>
+                    )}
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                    {loading ? (
+                        [1,2,3].map(i => <SkeletonCard key={i} />)
+                    ) : activeCourses.length === 0 ? (
+                        <EmptyState message="No active courses found." />
+                    ) : (
+                        activeCourses.map(course => (
+                            <CourseCard
+                                key={course.id}
+                                course={course}
+                                navigate={navigate}
+                                onFilesClick={c => { setActiveCourse(c); setDrawerOpen(true); }}
+                            />
+                        ))
+                    )}
+                </div>
+            </div>
+
+            {/* Divider */}
+            <div className="border-t border-gray-200"></div>
+            <span className="graphik text-xl font-medium cursor-default">Recent Courses</span>
+
+
+            {/* Completed Courses */}
+            <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                    {/*<div className="flex items-center gap-2">*/}
+                    {/*    <div className="w-2 h-2 rounded-full bg-blue-500" />*/}
+                    {/*    <h2 className="text-sm font-bold text-gray-800">Completed Courses</h2>*/}
+                    {/*    {!loading && (*/}
+                    {/*        <span className="text-xs text-gray-400 font-medium bg-gray-100 px-2 py-0.5 rounded-full">*/}
+                    {/*            {completedCount}*/}
+                    {/*        </span>*/}
+                    {/*    )}*/}
+                    {/*</div>*/}
+                    {!loading && completedCount > 10 && (
+                        <NavLink
+                            to="/dashboard/student/courses/completed"
+                            className="flex items-center gap-1 text-xs font-semibold text-orange-500 hover:text-orange-600 transition-colors"
+                        >
+                            See all
+                            <ChevronRight size={13} strokeWidth={2.5} />
+                        </NavLink>
+                    )}
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                    {loading ? (
+                        [1,2,3].map(i => <SkeletonCard key={i} />)
+                    ) : recentCompleted.length === 0 ? (
+                        <EmptyState message="No completed courses yet." />
+                    ) : (
+                        recentCompleted.map(course => (
+                            <CourseCard
+                                key={course.id}
+                                course={course}
+                                navigate={navigate}
+                                onFilesClick={c => { setActiveCourse(c); setDrawerOpen(true); }}
+                            />
+                        ))
+                    )}
+                </div>
             </div>
 
             <CourseFilesDrawer
