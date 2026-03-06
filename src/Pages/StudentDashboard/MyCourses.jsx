@@ -179,49 +179,41 @@ const MyCourses = () => {
                 const activeCourses = res.data.activeCourses || [];
                 const completedCourses = res.data.completedCourses || [];
 
-                const allIds = [
-                    ...activeCourses.map(c => ({id: c._id, status: 'active'})),
-                    ...completedCourses.map(c => ({id: c._id, status: 'completed'})),
+                // /courses/my-courses already has faculties populated with _id, name, email.
+                // /courses/:id has no .populate() so it returns raw ObjectIds — don't use it.
+                const mapCourse = (course, status) => ({
+                    id: course._id,
+                    code: course.courseCode,
+                    name: course.courseName,
+                    description: course.description,
+                    session: course.session,
+                    department: course.department,
+                    year: course.year,
+                    semester: course.semester,
+                    faculties: Array.isArray(course.faculties)
+                        ? course.faculties.map(f => ({
+                            name: formatName(f?.name),
+                            email: f?.email ?? "",
+                            photoURL: f?.photoURL ?? null,
+                        }))
+                        : [],
+                    students: Array.isArray(course.students)
+                        ? course.students.map(s => ({
+                            name: formatName(s?.name),
+                            email: s?.email ?? "",
+                            photoURL: s?.photoURL ?? null,
+                            roll: s?.studentID ?? "",
+                        }))
+                        : [],
+                    status,
+                });
+
+                const detailed = [
+                    ...activeCourses.map(c => mapCourse(c, 'active')),
+                    ...completedCourses.map(c => mapCourse(c, 'completed')),
                 ];
 
-                const detailed = await Promise.all(
-                    allIds.map(async ({id, status}) => {
-                        try {
-                            const r = await axiosSecure.get(`/courses/${id}`);
-                            const course = r.data.course || r.data;
-                            return {
-                                id,
-                                code: course.courseCode,
-                                name: course.courseName,
-                                description: course.description,
-                                session: course.session,
-                                department: course.department,
-                                year: course.year,
-                                semester: course.semester,
-                                faculties: Array.isArray(course.faculties)
-                                    ? course.faculties.map(f => ({
-                                        name: formatName(f?.name),
-                                        email: f?.email ?? "",
-                                        photoURL: f?.photoURL ?? null,
-                                    }))
-                                    : [],
-                                students: Array.isArray(course.students)
-                                    ? course.students.map(s => ({
-                                        name: formatName(s?.name),
-                                        email: s?.email ?? "",
-                                        photoURL: s?.photoURL ?? null,
-                                        roll: s?.studentID ?? "",
-                                    }))
-                                    : [],
-                                status,
-                            };
-                        } catch {
-                            return null;
-                        }
-                    })
-                );
-
-                setCourses(detailed.filter(Boolean));
+                setCourses(detailed);
             } catch (err) {
                 console.error('Failed to fetch courses:', err);
             } finally {

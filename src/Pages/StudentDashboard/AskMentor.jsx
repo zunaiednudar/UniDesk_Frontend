@@ -138,7 +138,7 @@ const MEETING_TYPES = [
 ];
 
 // Maps JS getDay() index to schedule day names
-const JS_DAY_TO_SCHEDULE = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const JS_DAY_TO_SCHEDULE = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 
 // Returns true if time HH:MM falls within any busy slot on that day's schedule
 const isTimeBusy = (schedule, dayName, time) => {
@@ -150,7 +150,7 @@ const isTimeBusy = (schedule, dayName, time) => {
     const busySlots = dayEntry.classes || [];
     return busySlots.some(slot => {
         const slotStart = slot.startTime ?? slot.from;
-        const slotEnd = slot.endTime ?? slot.to;
+        const slotEnd   = slot.endTime   ?? slot.to;
         if (!slotStart || !slotEnd) return false;
         return time >= slotStart && time < slotEnd;
     });
@@ -164,7 +164,7 @@ const rangeOverlapsBusy = (schedule, dayName, from, to) => {
     const busySlots = dayEntry.classes || [];
     return busySlots.some(slot => {
         const slotStart = slot.startTime ?? slot.from;
-        const slotEnd = slot.endTime ?? slot.to;
+        const slotEnd   = slot.endTime   ?? slot.to;
         if (!slotStart || !slotEnd) return false;
         // overlap: from < slotEnd AND to > slotStart
         return from < slotEnd && to > slotStart;
@@ -338,7 +338,7 @@ const BookingModal = ({instructor, onClose, onBooked}) => {
                                 </p>
                                 {busySlotsForDay.map((slot, i) => {
                                     const s = slot.startTime ?? slot.from ?? '';
-                                    const e = slot.endTime ?? slot.to ?? '';
+                                    const e = slot.endTime   ?? slot.to   ?? '';
                                     return (
                                         <p key={i} className="text-xs text-red-500 pl-4">
                                             {slot.courseName || slot.subject || 'Class'}: {s} – {e}
@@ -383,8 +383,7 @@ const BookingModal = ({instructor, onClose, onBooked}) => {
                     </div>
                     {/* Real-time overlap warning */}
                     {form.from && form.to && selectedDayName && rangeOverlapsBusy(schedule, selectedDayName, form.from, form.to) && (
-                        <div
-                            className="flex items-center gap-2 text-xs text-red-600 bg-red-50 border border-red-100 rounded-xl px-3 py-2 -mt-2">
+                        <div className="flex items-center gap-2 text-xs text-red-600 bg-red-50 border border-red-100 rounded-xl px-3 py-2 -mt-2">
                             <AlertCircle size={13} className="flex-shrink-0"/>
                             This time overlaps with the faculty's class. Please pick a different slot.
                         </div>
@@ -614,34 +613,18 @@ const AskMentor = () => {
             setLoadingInst(true);
             setInstError(null);
             try {
-                // Step 1: get course IDs from list endpoint
+                // /courses/my-courses already populates faculties with _id, name, email
+                // (and photoURL if backend includes it). No need for per-course fetches —
+                // singleCourse has no .populate() so it returns raw ObjectIds, useless here.
                 const coursesRes = await axiosSecure.get('/courses/my-courses');
                 const activeCourses = coursesRes.data.activeCourses || [];
                 const completedCourses = coursesRes.data.completedCourses || [];
+                const allCourses = [...activeCourses, ...completedCourses];
 
-                const allIds = [
-                    ...activeCourses.map(c => c._id),
-                    ...completedCourses.map(c => c._id),
-                ];
-
-                // Step 2: fetch each course individually via /courses/:id —
-                // this is the same approach MyCourses uses and returns fully
-                // populated faculty objects including photoURL, designation, etc.
-                const detailedCourses = await Promise.all(
-                    allIds.map(async (id) => {
-                        try {
-                            const r = await axiosSecure.get(`/courses/${id}`);
-                            return r.data.course || r.data;
-                        } catch {
-                            return null;
-                        }
-                    })
-                );
-
-                // Step 3: build one entry per unique faculty across all courses
+                // Build one entry per unique faculty across all courses
                 const facultyMap = new Map();
 
-                for (const course of detailedCourses.filter(Boolean)) {
+                for (const course of allCourses) {
                     const faculties = Array.isArray(course.faculties) ? course.faculties : [];
                     const studentCount = Array.isArray(course.students) ? course.students.length : 0;
 
