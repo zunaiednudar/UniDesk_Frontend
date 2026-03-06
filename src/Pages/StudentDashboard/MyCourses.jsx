@@ -168,10 +168,7 @@ const JoinCourseModal = ({onClose, onJoined}) => {
     const [success, setSuccess] = useState('');
 
     const handleJoin = async () => {
-        if (!code.trim()) {
-            setError('Please enter an invitation code.');
-            return;
-        }
+        if (!code.trim()) { setError('Please enter an invitation code.'); return; }
         setError('');
         setLoading(true);
         try {
@@ -219,11 +216,7 @@ const JoinCourseModal = ({onClose, onJoined}) => {
                             type="text"
                             placeholder="e.g. c693d39d8387"
                             value={code}
-                            onChange={e => {
-                                setCode(e.target.value);
-                                setError('');
-                                setSuccess('');
-                            }}
+                            onChange={e => { setCode(e.target.value); setError(''); setSuccess(''); }}
                             onKeyDown={e => e.key === 'Enter' && handleJoin()}
                             className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-400 focus:border-orange-400 outline-none transition"
                             autoFocus
@@ -231,15 +224,13 @@ const JoinCourseModal = ({onClose, onJoined}) => {
                     </div>
 
                     {error && (
-                        <div
-                            className="flex items-center gap-2 text-xs text-red-600 bg-red-50 border border-red-100 rounded-xl px-3 py-2.5">
+                        <div className="flex items-center gap-2 text-xs text-red-600 bg-red-50 border border-red-100 rounded-xl px-3 py-2.5">
                             <AlertCircle size={12} className="flex-shrink-0"/>
                             {error}
                         </div>
                     )}
                     {success && (
-                        <div
-                            className="flex items-center gap-2 text-xs text-green-600 bg-green-50 border border-green-100 rounded-xl px-3 py-2.5">
+                        <div className="flex items-center gap-2 text-xs text-green-600 bg-green-50 border border-green-100 rounded-xl px-3 py-2.5">
                             <CheckCircle size={12} className="flex-shrink-0"/>
                             {success}
                         </div>
@@ -388,8 +379,7 @@ const MyCourses = () => {
             <div className="flex items-start justify-between gap-4">
                 <div>
                     <h1 className="graphik text-3xl font-semibold text-gray-900">My Courses</h1>
-                    <p className="text-sm text-gray-400 mt-1">Track your courses, monitor progress, and stay updated
-                        with
+                    <p className="text-sm text-gray-400 mt-1">Track your courses, monitor progress, and stay updated with
                         assignments and deadlines</p>
                 </div>
                 <button
@@ -476,10 +466,10 @@ const MyCourses = () => {
                     {/*</div>*/}
                     {!loading && completedCount > 10 && (
                         <NavLink
-                            to="/dashboard/student/courses/completed"
-                            className="flex items-center gap-1 text-xs font-semibold text-orange-500 hover:text-orange-600 transition-colors"
+                            to="/dashboard/student/courses/list"
+                            className="flex items-center gap-1 text-xs font-semibold text-blue-500 hover:text-blue-600 transition-colors"
                         >
-                            See all
+                            See all {completedCount} courses
                             <ChevronRight size={13} strokeWidth={2.5}/>
                         </NavLink>
                     )}

@@ -3,7 +3,8 @@ import {useParams, useNavigate} from 'react-router';
 import {
     ArrowLeft, BookOpen, Users, Building2, Hash, GraduationCap,
     ClipboardCheck, Megaphone, Calendar, AlertCircle,
-    CheckCircle2, Circle, AlertTriangle, FolderOpen
+    CheckCircle2, Circle, AlertTriangle, FolderOpen,
+    LogOut, X, Loader2
 } from 'lucide-react';
 import axiosSecure from "../../utils/axiosSecure.js";
 import timeAgo from "../../utils/timeAgo.js";
@@ -50,6 +51,64 @@ const EmptyState = ({message}) => (
     </div>
 );
 
+const LeaveModal = ({course, onClose, onLeft}) => {
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+
+    const handleLeave = async () => {
+        setLoading(true);
+        setError('');
+        try {
+            await axiosSecure.delete(`/courses/${course.id}/student/leave`);
+            onLeft();
+        } catch (err) {
+            setError(err?.response?.data?.message || 'Failed to leave course. Please try again.');
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+             onClick={onClose}>
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm"
+                 onClick={e => e.stopPropagation()}>
+                <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+                    <h3 className="text-sm font-bold text-gray-900">Leave Course</h3>
+                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition">
+                        <X size={16}/>
+                    </button>
+                </div>
+                <div className="px-5 py-5 space-y-3">
+                    <p className="text-sm text-gray-600 leading-relaxed">
+                        Are you sure you want to leave <span
+                        className="font-semibold text-gray-900">{course.code} — {course.name}</span>?
+                        You will need an invitation code to rejoin.
+                    </p>
+                    {error && (
+                        <div
+                            className="flex items-center gap-2 text-xs text-red-600 bg-red-50 border border-red-100 rounded-xl px-3 py-2.5">
+                            <AlertCircle size={12} className="flex-shrink-0"/>{error}
+                        </div>
+                    )}
+                </div>
+                <div className="flex gap-3 px-5 pb-5">
+                    <button onClick={onClose}
+                            className="flex-1 py-2.5 text-sm font-semibold border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 transition">
+                        Stay
+                    </button>
+                    <button onClick={handleLeave} disabled={loading}
+                            className="flex-1 py-2.5 text-sm font-semibold bg-red-500 text-white rounded-xl hover:bg-red-600 disabled:opacity-60 transition flex items-center justify-center gap-2">
+                        {loading
+                            ? <><Loader2 size={13} className="animate-spin"/> Leaving…</>
+                            : <><LogOut size={13}/> Leave Course</>
+                        }
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const CourseDetails = () => {
     const {id} = useParams();
     const navigate = useNavigate();
@@ -60,15 +119,13 @@ const CourseDetails = () => {
     const [notices, setNotices] = useState([]);
     const [loading, setLoading] = useState(true);
     const [drawerOpen, setDrawerOpen] = useState(false);
+    const [leaveOpen, setLeaveOpen] = useState(false);
 
     useEffect(() => {
         const fetchAll = async () => {
             if (!id || !userData?._id) return;
             setLoading(true);
             try {
-                // /courses/:id has no .populate() — faculties come back as raw ObjectIds.
-                // /courses/my-courses already has faculties fully populated (name, email, photoURL).
-                // Fetch both in parallel: use my-courses for faculty data, :id for everything else.
                 const [courseRes, myCoursesRes] = await Promise.all([
                     axiosSecure.get(`/courses/${id}`),
                     axiosSecure.get('/courses/my-courses'),
@@ -76,7 +133,6 @@ const CourseDetails = () => {
 
                 const raw = courseRes.data.course || courseRes.data;
 
-                // Find matching course in my-courses list to get populated faculty objects
                 const allMyCourses = [
                     ...(myCoursesRes.data.activeCourses || []),
                     ...(myCoursesRes.data.completedCourses || []),
@@ -203,13 +259,24 @@ const CourseDetails = () => {
                             </div>
                             <p className="text-base text-gray-500 mt-1">{course.name}</p>
                         </div>
-                        <button
-                            onClick={() => setDrawerOpen(true)}
-                            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-orange-50 hover:border-orange-200 hover:text-orange-600 transition-all duration-150"
-                        >
-                            <FolderOpen size={15} strokeWidth={1.75}/>
-                            Course Files
-                        </button>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => setDrawerOpen(true)}
+                                className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-orange-50 hover:border-orange-200 hover:text-orange-600 transition-all duration-150"
+                            >
+                                <FolderOpen size={15} strokeWidth={1.75}/>
+                                Course Files
+                            </button>
+                            {course?.status === 'active' && (
+                                <button
+                                    onClick={() => setLeaveOpen(true)}
+                                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-red-200 text-sm font-medium text-red-500 hover:bg-red-50 transition-all duration-150"
+                                >
+                                    <LogOut size={15} strokeWidth={1.75}/>
+                                    Leave Course
+                                </button>
+                            )}
+                        </div>
                     </div>
                 ) : (
                     <p className="text-gray-400 text-sm">Course not found.</p>
@@ -396,6 +463,14 @@ const CourseDetails = () => {
                 onClose={() => setDrawerOpen(false)}
                 course={course}
             />
+
+            {leaveOpen && course && (
+                <LeaveModal
+                    course={course}
+                    onClose={() => setLeaveOpen(false)}
+                    onLeft={() => navigate('/dashboard/student/courses')}
+                />
+            )}
         </div>
     );
 };
