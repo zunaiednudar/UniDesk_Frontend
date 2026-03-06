@@ -1,12 +1,13 @@
-import {useContext, useEffect, useState} from 'react';
+import React, {useContext, useEffect, useState} from 'react';
 import {PieChart, Pie, Cell, Tooltip, ResponsiveContainer} from 'recharts';
 import {
-    BookOpen, ClipboardCheck, Calendar, Clock, AlertCircle, Megaphone
+    BookOpen, ClipboardCheck, Calendar, Clock, AlertCircle, Megaphone, Check, ChevronRight
 } from 'lucide-react';
 import axiosSecure from "../../utils/axiosSecure.js";
 import {AuthContext} from "../../Providers/AuthProvider/AuthProvider.jsx";
 import RecentNotices from "../../Components/RecentNotices/RecentNotices.jsx";
 import CalendarF from "../../Components/Calendar/Calendar.jsx"
+import {NavLink} from "react-router";
 
 const getDueDateClasses = (dateStr, isCompleted) => {
     if (isCompleted) return 'text-gray-400';
@@ -50,17 +51,31 @@ const StatCard = ({icon: Icon, value, label, iconBg, iconColor}) => (<div
         </div>
     </div>);
 
-const SectionHeader = ({icon: Icon, title, iconBg, iconColor, count}) => (
-    <div className="flex items-center gap-2.5 mb-5">
-        <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${iconBg}`}>
-            <Icon size={16} className={iconColor} strokeWidth={2}/>
-        </div>
-        <h2 className="text-base font-bold text-gray-900">{title}</h2>
-        {count !== undefined && (
-            <span className="ml-1 text-xs font-semibold text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">
+const SectionHeader = ({icon: Icon, title, iconBg, iconColor, count, seeAllTo, navigate}) => (
+    <div className="flex items-start justify-between gap-2">
+        <div className="flex items-center gap-2.5 mb-5">
+            <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${iconBg}`}>
+                <Icon size={16} className={iconColor} strokeWidth={2}/>
+            </div>
+            <h2 className="text-base font-bold text-gray-900">{title}</h2>
+            {count !== undefined && (
+                <span className="ml-1 text-xs font-semibold text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">
                 {count}
-            </span>)}
-    </div>);
+            </span>)
+            }
+        </div>
+
+        {navigate === true && (
+            <NavLink
+                to={seeAllTo}
+                className="flex items-center p-2 gap-1 text-xs font-semibold text-gray-500 border border-gray-500 hover:text-blue-600 hover:border-blue-600 rounded transition-colors"
+            >
+                See all
+                <ChevronRight size={13} strokeWidth={2.5}/>
+            </NavLink>
+        )}
+    </div>
+);
 
 const TaskItem = ({task}) => {
     const isCompleted = task.status === 'completed';
@@ -363,6 +378,8 @@ const MyActivity = () => {
                         iconBg="bg-orange-50"
                         iconColor="text-orange-500"
                         count={loading ? undefined : pendingCount}
+                        seeAllTo="../assessments"
+                        navigate={true}
                     />
                     {loading ? (<div className="space-y-3">
                             {[1, 2, 3].map(i => <SkeletonBlock key={i} className="h-12"/>)}
@@ -387,6 +404,8 @@ const MyActivity = () => {
                             title="Performance Overview"
                             iconBg="bg-green-50"
                             iconColor="text-green-500"
+                            seeAllTo=""
+                            navigate={false}
                         />
                         {loading ? (<SkeletonBlock className="h-48"/>) : (<>
                                 <ResponsiveContainer width="100%" height={360}>
@@ -434,6 +453,8 @@ const MyActivity = () => {
                     title="Appointments"
                     iconBg="bg-purple-50"
                     iconColor="text-purple-500"
+                    seeAllTo="../ask-mentor"
+                    navigate={true}
                 />
                 {loading ? (<div className="space-y-3">
                         {[1, 2].map(i => <SkeletonBlock key={i} className="h-20"/>)}
