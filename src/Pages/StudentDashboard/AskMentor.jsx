@@ -137,6 +137,40 @@ const MEETING_TYPES = [
     {value: 'project', label: 'Project'},
 ];
 
+// Maps JS getDay() index to schedule day names
+const JS_DAY_TO_SCHEDULE = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+// Returns true if time HH:MM falls within any busy slot on that day's schedule
+const isTimeBusy = (schedule, dayName, time) => {
+    if (!schedule) return false;
+    const dayEntry = schedule.weeklySchedule?.find(d => d.day === dayName);
+    if (!dayEntry) return false;
+    const allSlots = [...(dayEntry.classes || []), ...(dayEntry.freeSlots || [])];
+    // Mark class slots as busy; freeSlots are actually free so only block classes
+    const busySlots = dayEntry.classes || [];
+    return busySlots.some(slot => {
+        const slotStart = slot.startTime ?? slot.from;
+        const slotEnd = slot.endTime ?? slot.to;
+        if (!slotStart || !slotEnd) return false;
+        return time >= slotStart && time < slotEnd;
+    });
+};
+
+// Returns true if the chosen [from, to] range overlaps any busy class slot
+const rangeOverlapsBusy = (schedule, dayName, from, to) => {
+    if (!schedule || !from || !to) return false;
+    const dayEntry = schedule.weeklySchedule?.find(d => d.day === dayName);
+    if (!dayEntry) return false;
+    const busySlots = dayEntry.classes || [];
+    return busySlots.some(slot => {
+        const slotStart = slot.startTime ?? slot.from;
+        const slotEnd = slot.endTime ?? slot.to;
+        if (!slotStart || !slotEnd) return false;
+        // overlap: from < slotEnd AND to > slotStart
+        return from < slotEnd && to > slotStart;
+    });
+};
+
 const BookingModal = ({instructor, onClose, onBooked}) => {
     const emptyForm = {
         date: '',
@@ -151,6 +185,37 @@ const BookingModal = ({instructor, onClose, onBooked}) => {
     const [submitting, setSubmitting] = useState(false);
     const [formError, setFormError] = useState('');
     const [success, setSuccess] = useState(false);
+
+    // Faculty schedule state
+    const [schedule, setSchedule] = useState(null);
+    const [scheduleLoading, setScheduleLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchSchedule = async () => {
+            setScheduleLoading(true);
+            try {
+                const r = await axiosSecure.get(`/schedule/${instructor.id}`);
+                setSchedule(r.data.schedule ?? r.data ?? null);
+            } catch {
+                setSchedule(null); // no schedule set — all times open
+            } finally {
+                setScheduleLoading(false);
+            }
+        };
+        fetchSchedule();
+    }, [instructor.id]);
+
+    // Derived: which day of week is the selected date?
+    const selectedDayName = form.date
+        ? JS_DAY_TO_SCHEDULE[new Date(form.date + 'T00:00:00').getDay()]
+        : null;
+
+    // Busy class slots for the selected day (to render hint list)
+    const busySlotsForDay = (() => {
+        if (!schedule || !selectedDayName) return [];
+        const dayEntry = schedule.weeklySchedule?.find(d => d.day === selectedDayName);
+        return dayEntry?.classes || [];
+    })();
 
     const handleChange = (e) => {
         setSuccess(false);
@@ -171,6 +236,12 @@ const BookingModal = ({instructor, onClose, onBooked}) => {
         }
         if (from >= to) {
             setFormError('End time must be after start time.');
+            return;
+        }
+
+        // Check against faculty schedule
+        if (schedule && selectedDayName && rangeOverlapsBusy(schedule, selectedDayName, from, to)) {
+            setFormError('This time slot overlaps with the faculty\'s class schedule. Please choose a different time.');
             return;
         }
 
@@ -254,6 +325,33 @@ const BookingModal = ({instructor, onClose, onBooked}) => {
                         <input type="date" name="date" min={today}
                                value={form.date} onChange={handleChange}
                                className={inputCls}/>
+                        {/* Show busy class slots for selected day */}
+                        {scheduleLoading && (
+                            <p className="text-xs text-gray-400 mt-1.5 flex items-center gap-1">
+                                <Loader2 size={11} className="animate-spin"/> Loading schedule…
+                            </p>
+                        )}
+                        {!scheduleLoading && form.date && busySlotsForDay.length > 0 && (
+                            <div className="mt-2 bg-red-50 border border-red-100 rounded-xl px-3 py-2.5 space-y-1">
+                                <p className="text-xs font-semibold text-red-600 flex items-center gap-1.5">
+                                    <AlertCircle size={11}/> Busy on {selectedDayName}
+                                </p>
+                                {busySlotsForDay.map((slot, i) => {
+                                    const s = slot.startTime ?? slot.from ?? '';
+                                    const e = slot.endTime ?? slot.to ?? '';
+                                    return (
+                                        <p key={i} className="text-xs text-red-500 pl-4">
+                                            {slot.courseName || slot.subject || 'Class'}: {s} – {e}
+                                        </p>
+                                    );
+                                })}
+                            </div>
+                        )}
+                        {!scheduleLoading && form.date && busySlotsForDay.length === 0 && selectedDayName && (
+                            <p className="text-xs text-green-600 mt-1.5 flex items-center gap-1">
+                                <CheckCircle2 size={11}/> No classes scheduled on {selectedDayName}
+                            </p>
+                        )}
                     </div>
 
                     {/* From / To */}
@@ -264,7 +362,11 @@ const BookingModal = ({instructor, onClose, onBooked}) => {
                             </label>
                             <input type="time" name="from"
                                    value={form.from} onChange={handleChange}
-                                   className={inputCls}/>
+                                   className={`${inputCls} ${
+                                       form.from && selectedDayName && rangeOverlapsBusy(schedule, selectedDayName, form.from, form.to || form.from)
+                                           ? 'border-red-400 ring-2 ring-red-100'
+                                           : ''
+                                   }`}/>
                         </div>
                         <div>
                             <label className="block text-xs font-semibold text-gray-600 mb-1.5">
@@ -272,9 +374,21 @@ const BookingModal = ({instructor, onClose, onBooked}) => {
                             </label>
                             <input type="time" name="to"
                                    value={form.to} onChange={handleChange}
-                                   className={inputCls}/>
+                                   className={`${inputCls} ${
+                                       form.to && selectedDayName && rangeOverlapsBusy(schedule, selectedDayName, form.from || form.to, form.to)
+                                           ? 'border-red-400 ring-2 ring-red-100'
+                                           : ''
+                                   }`}/>
                         </div>
                     </div>
+                    {/* Real-time overlap warning */}
+                    {form.from && form.to && selectedDayName && rangeOverlapsBusy(schedule, selectedDayName, form.from, form.to) && (
+                        <div
+                            className="flex items-center gap-2 text-xs text-red-600 bg-red-50 border border-red-100 rounded-xl px-3 py-2 -mt-2">
+                            <AlertCircle size={13} className="flex-shrink-0"/>
+                            This time overlaps with the faculty's class. Please pick a different slot.
+                        </div>
+                    )}
 
                     {/* Topic */}
                     <div>
@@ -391,12 +505,12 @@ const InstructorCard = ({instructor, onBookClick}) => {
                 </div>
                 <div className="space-y-1.5">
                     {instructor.courses.map(c => (
-                        <div key={c.id} className="flex items-center gap-2">
+                        <div key={c.id} className="flex items-start gap-2">
                             <span
                                 className="text-xs font-bold text-orange-600 bg-orange-50 rounded px-1.5 py-0.5 flex-shrink-0">
                                 {c.courseCode}
                             </span>
-                            <span className="text-sm text-gray-700 truncate">{c.courseName}</span>
+                            <span className="text-sm text-gray-700">{c.courseName}</span>
                         </div>
                     ))}
                 </div>
@@ -676,7 +790,7 @@ const AskMentor = () => {
                 </div>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
                 {loadingInst ? (
                     [1, 2, 3, 4].map(i => <SkeletonCard key={i}/>)
                 ) : filteredInst.length === 0 ? (
