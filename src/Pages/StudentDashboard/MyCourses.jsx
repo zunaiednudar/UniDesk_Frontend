@@ -11,7 +11,8 @@ import {
     FolderOpen,
     ChevronRight,
     CheckCircle,
-    Check, ArrowRight
+    Check, ArrowRight,
+    Plus, X, Loader2, LogIn
 } from 'lucide-react';
 import {NavLink, useNavigate} from 'react-router';
 import axiosSecure from "../../utils/axiosSecure.js";
@@ -160,6 +161,110 @@ const CourseCard = ({course, onFilesClick, navigate}) => (
     </div>
 );
 
+const JoinCourseModal = ({onClose, onJoined}) => {
+    const [code, setCode] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
+
+    const handleJoin = async () => {
+        if (!code.trim()) {
+            setError('Please enter an invitation code.');
+            return;
+        }
+        setError('');
+        setLoading(true);
+        try {
+            const res = await axiosSecure.post(`/courses/student/join?invitationCode=${code.trim()}`);
+            setSuccess(res.data?.message || 'Successfully joined the course!');
+            setTimeout(() => {
+                onJoined();
+                onClose();
+            }, 1200);
+        } catch (err) {
+            setError(err?.response?.data?.message || 'Invalid invitation code. Please try again.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+             onClick={onClose}>
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm"
+                 onClick={e => e.stopPropagation()}>
+                {/* Header */}
+                <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+                    <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-lg bg-orange-50 flex items-center justify-center">
+                            <LogIn size={14} className="text-orange-500" strokeWidth={2}/>
+                        </div>
+                        <h3 className="text-sm font-bold text-gray-900">Join a Course</h3>
+                    </div>
+                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition">
+                        <X size={16}/>
+                    </button>
+                </div>
+
+                {/* Body */}
+                <div className="px-5 py-5 space-y-4">
+                    <p className="text-xs text-gray-500 leading-relaxed">
+                        Enter the invitation code provided by your instructor to enroll in the course.
+                    </p>
+                    <div>
+                        <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                            Invitation Code <span className="text-red-400">*</span>
+                        </label>
+                        <input
+                            type="text"
+                            placeholder="e.g. c693d39d8387"
+                            value={code}
+                            onChange={e => {
+                                setCode(e.target.value);
+                                setError('');
+                                setSuccess('');
+                            }}
+                            onKeyDown={e => e.key === 'Enter' && handleJoin()}
+                            className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-400 focus:border-orange-400 outline-none transition"
+                            autoFocus
+                        />
+                    </div>
+
+                    {error && (
+                        <div
+                            className="flex items-center gap-2 text-xs text-red-600 bg-red-50 border border-red-100 rounded-xl px-3 py-2.5">
+                            <AlertCircle size={12} className="flex-shrink-0"/>
+                            {error}
+                        </div>
+                    )}
+                    {success && (
+                        <div
+                            className="flex items-center gap-2 text-xs text-green-600 bg-green-50 border border-green-100 rounded-xl px-3 py-2.5">
+                            <CheckCircle size={12} className="flex-shrink-0"/>
+                            {success}
+                        </div>
+                    )}
+                </div>
+
+                {/* Footer */}
+                <div className="flex gap-3 px-5 pb-5">
+                    <button onClick={onClose}
+                            className="flex-1 py-2.5 text-sm font-semibold border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 transition">
+                        Cancel
+                    </button>
+                    <button onClick={handleJoin} disabled={loading || !!success}
+                            className="flex-1 py-2.5 text-sm font-semibold bg-orange-500 text-white rounded-xl hover:bg-orange-600 disabled:opacity-60 transition flex items-center justify-center gap-2">
+                        {loading
+                            ? <><Loader2 size={13} className="animate-spin"/> Joining…</>
+                            : <><LogIn size={13}/> Join Course</>
+                        }
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const MyCourses = () => {
     const {userData} = useContext(AuthContext);
     const navigate = useNavigate();
@@ -169,6 +274,7 @@ const MyCourses = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [activeCourse, setActiveCourse] = useState(null);
+    const [joinOpen, setJoinOpen] = useState(false);
 
     useEffect(() => {
         const fetchCourses = async () => {
@@ -179,8 +285,6 @@ const MyCourses = () => {
                 const activeCourses = res.data.activeCourses || [];
                 const completedCourses = res.data.completedCourses || [];
 
-                // /courses/my-courses already has faculties populated with _id, name, email.
-                // /courses/:id has no .populate() so it returns raw ObjectIds — don't use it.
                 const mapCourse = (course, status) => ({
                     id: course._id,
                     code: course.courseCode,
@@ -223,6 +327,45 @@ const MyCourses = () => {
         fetchCourses();
     }, [userData]);
 
+    const refetchCourses = () => {
+        if (!userData?._id) return;
+        setLoading(true);
+        axiosSecure.get('/courses/my-courses').then(res => {
+            const activeCourses = res.data.activeCourses || [];
+            const completedCourses = res.data.completedCourses || [];
+            const mapCourse = (course, status) => ({
+                id: course._id,
+                code: course.courseCode,
+                name: course.courseName,
+                description: course.description,
+                session: course.session,
+                department: course.department,
+                year: course.year,
+                semester: course.semester,
+                faculties: Array.isArray(course.faculties)
+                    ? course.faculties.map(f => ({
+                        name: formatName(f?.name),
+                        email: f?.email ?? "",
+                        photoURL: f?.photoURL ?? null,
+                    }))
+                    : [],
+                students: Array.isArray(course.students)
+                    ? course.students.map(s => ({
+                        name: formatName(s?.name),
+                        email: s?.email ?? "",
+                        photoURL: s?.photoURL ?? null,
+                        roll: s?.studentID ?? "",
+                    }))
+                    : [],
+                status,
+            });
+            setCourses([
+                ...activeCourses.map(c => mapCourse(c, 'active')),
+                ...completedCourses.map(c => mapCourse(c, 'completed')),
+            ]);
+        }).catch(console.error).finally(() => setLoading(false));
+    };
+
     const totalCourses = courses.length;
     const activeCount = courses.filter(c => c.status === 'active').length;
     const completedCount = courses.filter(c => c.status === 'completed').length;
@@ -242,10 +385,20 @@ const MyCourses = () => {
         <div className="gilroy space-y-6">
 
             {/* Page title */}
-            <div>
-                <h1 className="graphik text-3xl font-semibold text-gray-900">My Courses</h1>
-                <p className="text-sm text-gray-400 mt-1">Track your courses, monitor progress, and stay updated with
-                    assignments and deadlines</p>
+            <div className="flex items-start justify-between gap-4">
+                <div>
+                    <h1 className="graphik text-3xl font-semibold text-gray-900">My Courses</h1>
+                    <p className="text-sm text-gray-400 mt-1">Track your courses, monitor progress, and stay updated
+                        with
+                        assignments and deadlines</p>
+                </div>
+                <button
+                    onClick={() => setJoinOpen(true)}
+                    className="flex-shrink-0 flex items-center gap-2 px-4 py-2.5 bg-orange-500 text-white text-sm font-semibold rounded-xl hover:bg-orange-600 active:scale-95 transition-all duration-150 shadow-sm"
+                >
+                    <Plus size={15} strokeWidth={2.5}/>
+                    Join Course
+                </button>
             </div>
 
             {/* Stats */}
@@ -357,6 +510,13 @@ const MyCourses = () => {
                 onClose={() => setDrawerOpen(false)}
                 course={activeCourse}
             />
+
+            {joinOpen && (
+                <JoinCourseModal
+                    onClose={() => setJoinOpen(false)}
+                    onJoined={refetchCourses}
+                />
+            )}
         </div>
     );
 };
