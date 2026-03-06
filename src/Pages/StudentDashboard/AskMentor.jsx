@@ -1,10 +1,12 @@
-import {useContext, useEffect, useState} from 'react';
+import {useContext, useEffect, useRef, useState} from 'react';
+import {useLocation, useNavigate} from 'react-router';
 import {
     Search, Mail, Calendar, MapPin, BookOpen,
     AlertCircle, Users, Clock, CheckCircle2,
-    XCircle, X, Loader2
+    XCircle, X, Loader2, Video, Trash2,
+    GraduationCap, Briefcase, FlaskConical, MessageSquare
 } from 'lucide-react';
-// Note: Mail is kept for the "Message" mailto link on instructor cards
+
 import axiosSecure from "../../utils/axiosSecure.js";
 import formatName from "../../utils/formatName.js";
 import {AuthContext} from "../../Providers/AuthProvider/AuthProvider.jsx";
@@ -13,6 +15,12 @@ const availabilityConfig = {
     verified: {dot: 'bg-green-400', badge: 'bg-green-100 text-green-700', label: 'Available'},
     pending: {dot: 'bg-yellow-400', badge: 'bg-yellow-100 text-yellow-700', label: 'Pending'},
     suspended: {dot: 'bg-red-400', badge: 'bg-red-100 text-red-700', label: 'Unavailable'},
+};
+
+const supervisorRelConfig = {
+    thesis:     {label: 'Thesis',     bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-100', icon: BookOpen},
+    project:    {label: 'Project',    bg: 'bg-blue-50',   text: 'text-blue-700',   border: 'border-blue-100',   icon: Briefcase},
+    internship: {label: 'Internship', bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-100', icon: FlaskConical},
 };
 
 const appointmentStatusConfig = {
@@ -66,7 +74,6 @@ const formatTime = (dateStr) => {
     return new Date(dateStr).toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit'});
 };
 
-// Converts "HH:MM" (24hr) to "hh:MM AM/PM" (12hr) for display
 const to12hr = (time24) => {
     if (!time24) return '';
     const [h, m] = time24.split(':').map(Number);
@@ -145,26 +152,22 @@ const MEETING_TYPES = [
     {value: 'project', label: 'Project'},
 ];
 
-// Maps JS getDay() index to schedule day names
-const JS_DAY_TO_SCHEDULE = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const JS_DAY_TO_SCHEDULE = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 
-// Returns true if time HH:MM falls within any busy slot on that day's schedule
 const isTimeBusy = (schedule, dayName, time) => {
     if (!schedule) return false;
     const dayEntry = schedule.weeklySchedule?.find(d => d.day === dayName);
     if (!dayEntry) return false;
     const allSlots = [...(dayEntry.classes || []), ...(dayEntry.freeSlots || [])];
-    // Mark class slots as busy; freeSlots are actually free so only block classes
     const busySlots = dayEntry.classes || [];
     return busySlots.some(slot => {
         const slotStart = slot.startTime ?? slot.from;
-        const slotEnd = slot.endTime ?? slot.to;
+        const slotEnd   = slot.endTime   ?? slot.to;
         if (!slotStart || !slotEnd) return false;
         return time >= slotStart && time < slotEnd;
     });
 };
 
-// Returns true if the chosen [from, to] range overlaps any busy class slot
 const rangeOverlapsBusy = (schedule, dayName, from, to) => {
     if (!schedule || !from || !to) return false;
     const dayEntry = schedule.weeklySchedule?.find(d => d.day === dayName);
@@ -172,7 +175,7 @@ const rangeOverlapsBusy = (schedule, dayName, from, to) => {
     const busySlots = dayEntry.classes || [];
     return busySlots.some(slot => {
         const slotStart = slot.startTime ?? slot.from;
-        const slotEnd = slot.endTime ?? slot.to;
+        const slotEnd   = slot.endTime   ?? slot.to;
         if (!slotStart || !slotEnd) return false;
         // overlap: from < slotEnd AND to > slotStart
         return from < slotEnd && to > slotStart;
@@ -219,7 +222,6 @@ const BookingModal = ({instructor, onClose, onBooked}) => {
         fetchSchedule();
     }, [instructor.id]);
 
-    // Derived: which day of week is the selected date?
     const selectedDayName = (() => {
         if (!form.date) return null;
         // Parse yyyy-mm-dd directly to avoid any timezone shifting
@@ -227,21 +229,18 @@ const BookingModal = ({instructor, onClose, onBooked}) => {
         return JS_DAY_TO_SCHEDULE[new Date(y, m - 1, d).getDay()];
     })();
 
-    // Busy class slots for the selected day (to render hint list)
     const busySlotsForDay = (() => {
         if (!schedule || !selectedDayName) return [];
         const dayEntry = schedule.weeklySchedule?.find(d => d.day === selectedDayName);
         return dayEntry?.classes || [];
     })();
 
-    // Free slots for selected day — used for min/max on time inputs
     const freeSlotsForDay = (() => {
         if (!schedule || !selectedDayName) return [];
         const dayEntry = schedule.weeklySchedule?.find(d => d.day === selectedDayName);
         return dayEntry?.freeSlots || [];
     })();
 
-    // If a from time is picked, find which free slot it belongs to (to set max on "to")
     const activeFreeSlot = (() => {
         if (!form.from || freeSlotsForDay.length === 0) return null;
         return freeSlotsForDay.find(slot =>
@@ -249,7 +248,6 @@ const BookingModal = ({instructor, onClose, onBooked}) => {
         ) || null;
     })();
 
-    // Frontend guard: check if from/to is strictly inside any free slot
     const isInsideFreeSlot = (from, to) => {
         if (!from || !to || freeSlotsForDay.length === 0) return false;
         return freeSlotsForDay.some(slot =>
@@ -279,7 +277,6 @@ const BookingModal = ({instructor, onClose, onBooked}) => {
             return;
         }
 
-        // Check time is inside a free slot (backend enforces this strictly)
         if (schedule && freeSlotsForDay.length > 0 && !isInsideFreeSlot(from, to)) {
             setFormError("Please choose a time within the available slots shown above.");
             return;
@@ -296,8 +293,6 @@ const BookingModal = ({instructor, onClose, onBooked}) => {
         try {
             const payload = {
                 facultyID: instructor.id,
-                // Send as plain yyyy-mm-dd — backend concatenates date + startTime itself
-                // e.g. new Date(`${date}T${startTime}:00`) so date must stay bare
                 date,
                 startTime: from,
                 endTime: to,
@@ -386,7 +381,7 @@ const BookingModal = ({instructor, onClose, onBooked}) => {
                                 </p>
                                 {busySlotsForDay.map((slot, i) => {
                                     const s = slot.startTime ?? slot.from ?? '';
-                                    const e = slot.endTime ?? slot.to ?? '';
+                                    const e = slot.endTime   ?? slot.to   ?? '';
                                     return (
                                         <p key={i} className="text-xs text-red-500 pl-4">
                                             {slot.courseName || slot.subject || 'Class'}: {to12hr(s)} – {to12hr(e)}
@@ -406,8 +401,7 @@ const BookingModal = ({instructor, onClose, onBooked}) => {
                                 </p>
                             );
                             return freeSlots.length > 0 ? (
-                                <div
-                                    className="mt-2 bg-green-50 border border-green-100 rounded-xl px-3 py-2.5 space-y-1">
+                                <div className="mt-2 bg-green-50 border border-green-100 rounded-xl px-3 py-2.5 space-y-1">
                                     <p className="text-xs font-semibold text-green-700 flex items-center gap-1.5">
                                         <CheckCircle2 size={11}/> Available slots on {selectedDayName}
                                     </p>
@@ -458,8 +452,7 @@ const BookingModal = ({instructor, onClose, onBooked}) => {
                     </div>
                     {/* Real-time overlap warning */}
                     {form.from && form.to && selectedDayName && rangeOverlapsBusy(schedule, selectedDayName, form.from, form.to) && (
-                        <div
-                            className="flex items-center gap-2 text-xs text-red-600 bg-red-50 border border-red-100 rounded-xl px-3 py-2 -mt-2">
+                        <div className="flex items-center gap-2 text-xs text-red-600 bg-red-50 border border-red-100 rounded-xl px-3 py-2 -mt-2">
                             <AlertCircle size={13} className="flex-shrink-0"/>
                             This time overlaps with the faculty's class. Please pick a different slot.
                         </div>
@@ -544,6 +537,50 @@ const BookingModal = ({instructor, onClose, onBooked}) => {
 };
 
 
+const SupervisorCard = ({supervisor, onBookClick}) => {
+    const relCfg = supervisorRelConfig[supervisor.relationshipType] ?? supervisorRelConfig.project;
+    const RelIcon = relCfg.icon;
+
+    return (
+        <div className={`rounded-2xl border ${relCfg.border} ${relCfg.bg} p-5 flex flex-col gap-4 hover:shadow-md transition-shadow duration-200`}>
+            {/* Header */}
+            <div className="flex items-start gap-3">
+                <Avatar photoURL={supervisor.photoURL} name={supervisor.name} size="md"/>
+                <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-gray-900 truncate">{supervisor.name}</p>
+                    <p className="text-xs text-gray-400 truncate">{supervisor.email}</p>
+                    <span className={`mt-1.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold border ${relCfg.bg} ${relCfg.text} ${relCfg.border}`}>
+                        <RelIcon size={10} strokeWidth={2.5}/>{relCfg.label}
+                    </span>
+                </div>
+            </div>
+
+            {/* Topic */}
+            {supervisor.topic && (
+                <div>
+                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">Topic</p>
+                    <p className="text-xs text-gray-700 leading-relaxed line-clamp-2">{supervisor.topic}</p>
+                </div>
+            )}
+
+            {/* Actions */}
+            <div className="flex flex-col gap-2 pt-1 border-t border-white/60 mt-auto">
+                <button
+                    onClick={() => onBookClick(supervisor)}
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold bg-green-500 text-white rounded-xl hover:bg-green-600 active:scale-95 transition-all">
+                    <Calendar size={12}/> Set Appointment
+                </button>
+                <button
+                    disabled
+                    title="Chat coming soon"
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold border border-gray-200 text-gray-400 rounded-xl cursor-not-allowed opacity-60">
+                    <MessageSquare size={12}/> Chat
+                </button>
+            </div>
+        </div>
+    );
+};
+
 const InstructorCard = ({instructor, onBookClick}) => {
     const avail = availabilityConfig[instructor.status] ?? availabilityConfig.verified;
 
@@ -624,14 +661,93 @@ const InstructorCard = ({instructor, onBookClick}) => {
     );
 };
 
-const AppointmentRow = ({appointment}) => {
-    const cfg = appointmentStatusConfig[appointment.status?.toLowerCase()] ?? appointmentStatusConfig.pending;
-    const Icon = cfg.icon;
-    const isPast = new Date(appointment.startTime) < new Date();
+// Cancel modal
+const CancelModal = ({appointment, onClose, onCancelled}) => {
+    const [reason, setReason] = useState('');
+    const [submitting, setSubmitting] = useState(false);
+    const [error, setError] = useState('');
+
+    const handleCancel = async () => {
+        if (!reason.trim()) { setError('Please provide a reason.'); return; }
+        setSubmitting(true);
+        try {
+            await axiosSecure.patch(`/appointment/${appointment.id}`, {
+                status: 'cancelled',
+                reason: reason.trim(),
+            });
+            onCancelled();
+            onClose();
+        } catch (err) {
+            setError(err?.response?.data?.message ?? 'Cancellation failed. Please try again.');
+        } finally {
+            setSubmitting(false);
+        }
+    };
 
     return (
-        <div
-            className={`flex items-center gap-3 px-2 py-3 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 rounded-md transition-colors ${isPast && appointment.status === 'pending' ? 'opacity-60' : ''}`}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
+                <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+                    <h3 className="text-sm font-bold text-gray-900">Cancel Appointment</h3>
+                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X size={16}/></button>
+                </div>
+                <div className="px-5 py-4 space-y-3">
+                    <p className="text-xs text-gray-500">
+                        Cancelling appointment with <span className="font-semibold text-gray-700">{appointment.facultyName}</span>.
+                        This will send a cancellation request to the faculty.
+                    </p>
+                    <div>
+                        <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                            Reason <span className="text-red-400">*</span>
+                        </label>
+                        <textarea
+                            rows={3}
+                            value={reason}
+                            onChange={e => { setReason(e.target.value); setError(''); }}
+                            placeholder="Why are you cancelling this appointment?"
+                            className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-red-300 focus:border-red-300 outline-none transition resize-none"
+                        />
+                    </div>
+                    {error && (
+                        <div className="flex items-center gap-2 text-xs text-red-600 bg-red-50 border border-red-100 rounded-xl px-3 py-2">
+                            <AlertCircle size={12} className="flex-shrink-0"/>{error}
+                        </div>
+                    )}
+                </div>
+                <div className="flex gap-3 px-5 pb-5">
+                    <button onClick={onClose}
+                            className="flex-1 py-2.5 text-sm font-semibold border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 transition">
+                        Keep it
+                    </button>
+                    <button onClick={handleCancel} disabled={submitting}
+                            className="flex-1 py-2.5 text-sm font-semibold bg-red-500 text-white rounded-xl hover:bg-red-600 disabled:opacity-60 transition flex items-center justify-center gap-2">
+                        {submitting ? <><Loader2 size={13} className="animate-spin"/> Cancelling…</> : <><Trash2 size={13}/> Confirm Cancel</>}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const AppointmentRow = ({appointment, onCancelClick}) => {
+    const cfg = appointmentStatusConfig[appointment.status?.toLowerCase()] ?? appointmentStatusConfig.pending;
+    const Icon = cfg.icon;
+    const now = new Date();
+    const start = new Date(appointment.startTime);
+    const end = new Date(appointment.endTime);
+    const isPast = end < now;
+    const isOngoing = start <= now && now <= end;
+    // Show join button 15 min before start until end
+    const msUntilStart = start - now;
+    const canJoin = appointment.status === 'approved'
+        && appointment.mode === 'online'
+        && appointment.meetLink
+        && msUntilStart <= 15 * 60 * 1000
+        && !isPast;
+    const canCancel = ['pending', 'approved'].includes(appointment.status) && !isPast;
+
+    return (
+        <div className={`flex flex-wrap items-center gap-3 px-2 py-3 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 rounded-md transition-colors ${isPast && appointment.status === 'pending' ? 'opacity-60' : ''}`}>
             {/* Status dot */}
             <div className={`w-2 h-2 rounded-full flex-shrink-0 ${cfg.dot}`}/>
 
@@ -645,8 +761,7 @@ const AppointmentRow = ({appointment}) => {
 
             {/* Mode pill */}
             {appointment.mode && (
-                <span
-                    className="hidden sm:inline-flex flex-shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 capitalize">
+                <span className="hidden sm:inline-flex flex-shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 capitalize">
                     {appointment.mode === 'online' ? '🎥 Online' : '🏢 In-Person'}
                 </span>
             )}
@@ -660,11 +775,26 @@ const AppointmentRow = ({appointment}) => {
             </div>
 
             {/* Status badge */}
-            <div
-                className={`flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${cfg.badge}`}>
+            <div className={`flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${cfg.badge}`}>
                 <Icon size={11} className={cfg.text} strokeWidth={2.5}/>
                 <span className={cfg.text}>{cfg.label}</span>
             </div>
+
+            {/* Join button — online approved, within 15 min of start */}
+            {canJoin && (
+                <a href={appointment.meetLink} target="_blank" rel="noopener noreferrer"
+                   className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-blue-500 text-white rounded-xl hover:bg-blue-600 active:scale-95 transition-all animate-pulse">
+                    <Video size={12}/> {isOngoing ? 'Join Now' : 'Join Soon'}
+                </a>
+            )}
+
+            {/* Cancel button */}
+            {canCancel && (
+                <button onClick={() => onCancelClick(appointment)}
+                        className="flex-shrink-0 inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-red-500 border border-red-200 rounded-xl hover:bg-red-50 transition">
+                    <X size={11}/> Cancel
+                </button>
+            )}
         </div>
     );
 };
@@ -672,16 +802,36 @@ const AppointmentRow = ({appointment}) => {
 const AskMentor = () => {
     const {userData} = useContext(AuthContext);
 
+    const navigate = useNavigate();
+    const location = useLocation();
+
     const [instructors, setInstructors] = useState([]);
     const [loadingInst, setLoadingInst] = useState(true);
     const [instError, setInstError] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
 
+    const [supervisors, setSupervisors] = useState([]);
+    const [loadingSup, setLoadingSup] = useState(true);
+
     const [appointments, setAppointments] = useState([]);
     const [loadingAppt, setLoadingAppt] = useState(true);
     const [apptFilter, setApptFilter] = useState('all');
 
-    const [bookingFor, setBookingFor] = useState(null); // instructor object or null
+    const [bookingFor, setBookingFor] = useState(null);
+    const [cancellingAppt, setCancellingAppt] = useState(null);
+
+    // If navigated here from MyAssessments with a supervisor pre-selected, open modal
+    const didAutoOpen = useRef(false);
+    useEffect(() => {
+        if (didAutoOpen.current) return;
+        const state = location.state;
+        if (state?.openBookingFor) {
+            didAutoOpen.current = true;
+            setBookingFor(state.openBookingFor);
+            // Clear state so back-navigation doesn't re-open
+            window.history.replaceState({}, '');
+        }
+    }, [location.state]);
 
     useEffect(() => {
         const fetchInstructors = async () => {
@@ -689,9 +839,6 @@ const AskMentor = () => {
             setLoadingInst(true);
             setInstError(null);
             try {
-                // /courses/my-courses already populates faculties with _id, name, email
-                // (and photoURL if backend includes it). No need for per-course fetches —
-                // singleCourse has no .populate() so it returns raw ObjectIds, useless here.
                 const coursesRes = await axiosSecure.get('/courses/my-courses');
                 const activeCourses = coursesRes.data.activeCourses || [];
                 const completedCourses = coursesRes.data.completedCourses || [];
@@ -750,6 +897,40 @@ const AskMentor = () => {
         fetchInstructors();
     }, [userData]);
 
+    useEffect(() => {
+        const fetchSupervisors = async () => {
+            if (!userData?._id) return;
+            setLoadingSup(true);
+            try {
+                const res = await axiosSecure.get(`/supervisor/student/${userData._id}`);
+                const rels = res.data.supervisors || [];
+                const mapped = rels.map(s => ({
+                    // Shape matches what BookingModal expects for instructor
+                    id: s.supervisor._id,
+                    name: formatName(s.supervisor.name),
+                    email: s.supervisor.email ?? '',
+                    photoURL: s.supervisor.photoURL ?? null,
+                    designation: s.supervisor.designation ?? '',
+                    department: s.supervisor.department ?? '',
+                    room: s.supervisor.room ?? '',
+                    status: s.supervisor.status ?? 'verified',
+                    courses: [],
+                    totalStudents: 0,
+                    relationshipType: s.relationshipType,
+                    topic: s.topic ?? '',
+                    description: s.description ?? '',
+                    supStatus: s.status ?? 'active',
+                }));
+                setSupervisors(mapped);
+            } catch {
+                setSupervisors([]);
+            } finally {
+                setLoadingSup(false);
+            }
+        };
+        fetchSupervisors();
+    }, [userData]);
+
     const fetchAppointments = async () => {
         if (!userData?._id) return;
         setLoadingAppt(true);
@@ -767,6 +948,7 @@ const AskMentor = () => {
                 purpose: a.purpose ?? '',
                 mode: a.mode ?? '',
                 meetingType: a.meetingType ?? '',
+                meetLink: a.meetLink ?? null,
                 status: a.status ?? 'pending',
             }));
 
@@ -783,6 +965,40 @@ const AskMentor = () => {
     useEffect(() => {
         fetchAppointments();
     }, [userData]);
+
+    // Browser notification for appointments starting within 15 minutes
+    useEffect(() => {
+        if (appointments.length === 0) return;
+        if (!('Notification' in window)) return;
+
+        const checkUpcoming = () => {
+            const now = new Date();
+            appointments.forEach(a => {
+                if (a.status !== 'approved') return;
+                const start = new Date(a.startTime);
+                const msUntil = start - now;
+                // Notify at 10 min mark
+                if (msUntil > 0 && msUntil <= 10 * 60 * 1000) {
+                    const notifKey = `notified_${a.id}`;
+                    if (sessionStorage.getItem(notifKey)) return;
+                    sessionStorage.setItem(notifKey, '1');
+                    const notify = () => new Notification('Upcoming Appointment', {
+                        body: `Your meeting with ${a.facultyName} starts in ~${Math.ceil(msUntil / 60000)} min.`,
+                        icon: '/favicon.ico',
+                    });
+                    if (Notification.permission === 'granted') {
+                        notify();
+                    } else if (Notification.permission !== 'denied') {
+                        Notification.requestPermission().then(p => { if (p === 'granted') notify(); });
+                    }
+                }
+            });
+        };
+
+        checkUpcoming();
+        const interval = setInterval(checkUpcoming, 60 * 1000); // check every minute
+        return () => clearInterval(interval);
+    }, [appointments]);
 
     const filteredInst = instructors.filter(inst => {
         const q = searchQuery.toLowerCase();
@@ -865,6 +1081,39 @@ const AskMentor = () => {
                 )}
             </div>
 
+            {/* Supervisors Section */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div className="flex items-center gap-2 px-5 py-4 border-b border-gray-100">
+                    <div className="w-7 h-7 rounded-lg bg-purple-50 flex items-center justify-center">
+                        <GraduationCap size={14} className="text-purple-500" strokeWidth={2}/>
+                    </div>
+                    <h2 className="text-sm font-bold text-gray-900">My Supervisors</h2>
+                    {!loadingSup && (
+                        <span className="text-xs font-semibold text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">
+                            {supervisors.length}
+                        </span>
+                    )}
+                </div>
+                <div className="p-5">
+                    {loadingSup ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {[1, 2].map(i => <div key={i} className="h-48 bg-gray-50 rounded-2xl animate-pulse"/>)}
+                        </div>
+                    ) : supervisors.length === 0 ? (
+                        <div className="flex flex-col items-center py-8 text-gray-400 text-sm">
+                            <GraduationCap size={28} className="text-gray-200 mb-2" strokeWidth={1.5}/>
+                            No supervision relationships found
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {supervisors.map(s => (
+                                <SupervisorCard key={s.id + s.relationshipType} supervisor={s} onBookClick={setBookingFor}/>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
+
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                 {/* Header */}
                 <div
@@ -921,7 +1170,7 @@ const AskMentor = () => {
                             {apptFilter === 'all' ? 'No appointments booked yet.' : `No ${apptFilter} appointments.`}
                         </div>
                     ) : (
-                        filteredAppt.map(a => <AppointmentRow key={a.id} appointment={a}/>)
+                        filteredAppt.map(a => <AppointmentRow key={a.id} appointment={a} onCancelClick={setCancellingAppt}/>)
                     )}
                 </div>
             </div>
@@ -931,6 +1180,14 @@ const AskMentor = () => {
                     instructor={bookingFor}
                     onClose={() => setBookingFor(null)}
                     onBooked={fetchAppointments}
+                />
+            )}
+
+            {cancellingAppt && (
+                <CancelModal
+                    appointment={cancellingAppt}
+                    onClose={() => setCancellingAppt(null)}
+                    onCancelled={fetchAppointments}
                 />
             )}
         </div>

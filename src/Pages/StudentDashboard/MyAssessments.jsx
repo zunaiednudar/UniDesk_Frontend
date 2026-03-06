@@ -1,4 +1,5 @@
 import {useContext, useEffect, useState} from 'react';
+import {useNavigate} from 'react-router';
 import {
     ClipboardCheck, Search, Upload, Download, Calendar,
     CheckCircle2, Clock, AlertCircle, Star, MessageSquare, ChevronDown, ChevronUp,
@@ -468,7 +469,7 @@ const projectStatusConfig = {
     completed: {badge: 'bg-gray-100 text-gray-500', dot: 'bg-gray-400'},
 };
 
-const ProjectModal = ({project, onClose}) => {
+const ProjectModal = ({project, onClose, onBook, onChat}) => {
     const relCfg = relTypeConfig[project.relationshipType] ?? relTypeConfig.project;
     const statusCfg = projectStatusConfig[project.status] ?? projectStatusConfig.active;
     const RelIcon = relCfg.icon;
@@ -561,6 +562,22 @@ const ProjectModal = ({project, onClose}) => {
                             Status: <span className="font-semibold text-gray-600">{project.status}</span>
                         </span>
                     </div>
+
+                    {/* Quick actions */}
+                    <div className="flex gap-3 pt-2 border-t border-gray-100">
+                        <button
+                            onClick={onBook}
+                            className="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm font-semibold bg-green-500 text-white rounded-xl hover:bg-green-600 active:scale-95 transition-all">
+                            <Calendar size={14}/> Set Appointment
+                        </button>
+                        <button
+                            onClick={onChat}
+                            disabled
+                            title="Chat coming soon"
+                            className="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm font-semibold border border-gray-200 text-gray-400 rounded-xl cursor-not-allowed opacity-60">
+                            <MessageSquare size={14}/> Chat
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -637,6 +654,7 @@ const ProjectCard = ({project, onClick}) => {
 
 const MyAssessments = () => {
     const {userData} = useContext(AuthContext);
+    const navigate = useNavigate();
 
     const [assignments, setAssignments] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -1027,7 +1045,35 @@ const MyAssessments = () => {
                         ) : (
                             <>
                                 {selectedProject && (
-                                    <ProjectModal project={selectedProject} onClose={() => setSelectedProject(null)}/>
+                                    <ProjectModal
+                                        project={selectedProject}
+                                        onClose={() => setSelectedProject(null)}
+                                        onBook={() => {
+                                            // Navigate to AskMentor with the supervisor pre-selected
+                                            // BookingModal will auto-open via location.state
+                                            navigate('/dashboard/student/ask-mentor', {
+                                                state: {
+                                                    openBookingFor: {
+                                                        id: selectedProject.supervisorId,
+                                                        name: selectedProject.supervisorName,
+                                                        email: selectedProject.supervisorEmail,
+                                                        photoURL: selectedProject.supervisorPhoto,
+                                                        designation: '',
+                                                        department: '',
+                                                        room: '',
+                                                        status: 'verified',
+                                                        courses: [],
+                                                        totalStudents: 0,
+                                                    }
+                                                }
+                                            });
+                                        }}
+                                        onChat={() => {
+                                            navigate('/dashboard/student/chat', {
+                                                state: {withUser: selectedProject.supervisorId}
+                                            });
+                                        }}
+                                    />
                                 )}
                                 <div className="grid grid-cols-1 gap-4">
                                     {projects.map(p => (
