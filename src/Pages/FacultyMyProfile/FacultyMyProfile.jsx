@@ -13,6 +13,24 @@ const FacultyMyProfile = () => {
     const [imageLoading, setImageLoading] = useState(false);
     const modalRef = useRef(null);
 
+    const [interests, setInterests] = useState(userData?.researchInterests || []);
+    const [interestInput, setInterestInput] = useState("");
+
+    const handleAddInterest = (e) => {
+        if (e.key === "Enter" && interestInput.trim() !== "") {
+            e.preventDefault();
+
+            if (!interests.includes(interestInput.trim()))
+                setInterests([...interests, interestInput.trim()]);
+
+            setInterestInput("");
+        }
+    };
+
+    const handleRemoveInterest = (tag) => {
+        setInterests(interests.filter(i => i !== tag));
+    };
+
     // Image update related
 
     const fileInputRef = useRef(null);
@@ -55,7 +73,7 @@ const FacultyMyProfile = () => {
             e.target.value = "";
             toast.success("Profile image updated successfully");
         } catch (error) {
-            console.log(error);
+            console.log(error.message);
             toast.error("Profile image update failed");
         } finally {
             setImageLoading(false);
@@ -64,7 +82,10 @@ const FacultyMyProfile = () => {
 
     // Profile update
 
-    const handleOpenUpdateModal = () => modalRef.current.showModal();;
+    const handleOpenUpdateModal = () => {
+        setInterests(userData?.researchInterests || []);
+        modalRef.current.showModal();
+    }
     const handleCloseUpdateModal = () => modalRef.current.close();;
 
     const handleProfileUpdate = async (e) => {
@@ -73,14 +94,21 @@ const FacultyMyProfile = () => {
 
         const name = form.name.value;
         const room = form.room.value || null;
+        const biography = form.biography.value.trim();
 
-        let updatedFields={}
+        let updatedFields = {}
 
-        if (name !== userData?.name) 
+        if (name !== userData?.name)
             updatedFields.name = name;
 
         if (room !== userData?.room)
             updatedFields.room = room;
+
+        if (biography !== userData?.biography)
+            updatedFields.biography = biography;
+
+        if (JSON.stringify(interests) !== JSON.stringify(userData?.researchInterests))
+            updatedFields.researchInterests = interests;
 
         if (Object.keys(updatedFields).length === 0) {
             toast.info("No changes detected");
@@ -98,14 +126,13 @@ const FacultyMyProfile = () => {
 
             setUserData(prev => ({
                 ...prev,
-                ...(name && { name }),
-                ...(room && { room })
+                ...updatedFields
             }));
 
             handleCloseUpdateModal();
             toast.success("Profile updated successfully");
         } catch (error) {
-            console.log(error);
+            console.log(error.message);
             handleCloseUpdateModal();
             toast.error("Profile update failed");
         } finally {
@@ -186,7 +213,7 @@ const FacultyMyProfile = () => {
                     <p className='text-xl graphik font-bold'>Research Interests</p>
                     <div className='flex flex-wrap gap-2'>
                         {
-                            userData?.researchInterests ? (userData?.researchInterests.map(interest => <span
+                            userData?.researchInterests.length > 0 ? (userData?.researchInterests.map(interest => <span
                                 key={interest}
                                 className="px-3 py-1 rounded-full text-sm font-medium bg-[#1E40AF]/10 text-[#1E40AF]"
                             >
@@ -230,19 +257,65 @@ const FacultyMyProfile = () => {
                         </div>
 
                         {/* Room */}
-                        {
-                            userData?.role === "faculty" && (
-                                <div className="flex flex-col gap-1">
-                                    <label className="text-sm font-semibold text-gray-700">Room Number</label>
-                                    <input
-                                        type="text"
-                                        name="room"
-                                        defaultValue={userData?.room ?? ""}
-                                        className="input input-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    />
-                                </div>
-                            )
-                        }
+
+                        <div className="flex flex-col gap-1">
+                            <label className="text-sm font-semibold text-gray-700">Room Number</label>
+                            <input
+                                type="text"
+                                name="room"
+                                defaultValue={userData?.room ?? ""}
+                                className="input input-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                        </div>
+
+                        {/* Biography */}
+
+                        <div className="flex flex-col gap-1">
+                            <label className="text-sm font-semibold text-gray-700">Biography</label>
+                            <textarea
+                                type="text"
+                                name="biography"
+                                defaultValue={userData?.biography ?? ""}
+                                className="textarea textarea-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+
+                            ></textarea>
+                        </div>
+
+                        {/* Research Interests */}
+                        <div className="flex flex-col gap-1">
+                            <label className="text-sm font-semibold text-gray-700">
+                                Research Interests
+                            </label>
+
+                            <div className="flex flex-wrap items-center gap-2 border rounded-lg px-3 py-2 focus-within:ring-2 focus-within:ring-blue-500">
+                                {
+                                    interests.map(tag => (
+                                        <span
+                                            key={tag}
+                                            className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm flex items-center gap-1"
+                                        >
+                                            {tag}
+                                            <button
+                                                type="button"
+                                                onClick={() => handleRemoveInterest(tag)}
+                                                className="text-red-500"
+                                            >
+                                                ✕
+                                            </button>
+                                        </span>
+                                    ))
+                                }
+                                <input
+                                    type="text"
+                                    value={interestInput}
+                                    onChange={(e) => setInterestInput(e.target.value)}
+                                    onKeyDown={handleAddInterest}
+                                    placeholder={interests.length === 0 ? "Type interest and press Enter" : ""}
+                                    className="flex-1 min-w-30 outline-none text-sm"
+                                />
+
+                            </div>
+                        </div>
 
                         {/* Buttons */}
                         <div className="flex justify-end gap-3 mt-4">
@@ -266,7 +339,7 @@ const FacultyMyProfile = () => {
                     </form>
                     <div className="mt-5 text-center">
                         <p className="text-xs text-red-500">
-                            You can only update your name {userData?.role === "faculty" && "and room number"}.
+                            You can only update your name, biography, research interests and room number.
                         </p>
                     </div>
                 </div>
