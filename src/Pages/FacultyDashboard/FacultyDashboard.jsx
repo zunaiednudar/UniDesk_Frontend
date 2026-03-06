@@ -36,10 +36,9 @@ const FacultyDashboard = () => {
             try {
                 setLoadingCourses(true);
                 const res = await axiosSecure.get("/courses/my-courses");
-                const data = res.data;
-                console.log(data);
-                setActiveCourses(data.activeCourses);
-                setCompletedCourses(data.completedCourses);
+                // console.log(data);
+                setActiveCourses(res.data.activeCourses);
+                setCompletedCourses(res.data.completedCourses);
 
             } catch (error) {
                 // console.log(error);
@@ -102,41 +101,15 @@ const FacultyDashboard = () => {
     useEffect(() => {
         const fetchAssignments = async () => {
             try {
-                if (!activeCourses.length)
-                    return;
                 setLoadingAssignments(true);
 
-                const assignmentRequests = activeCourses.map(course =>
-                    axiosSecure.get(`/course/${course._id}/assignments`).then(res => ({
-                        assignments: res.data.assignments,
-                        courseName: course.courseName,
-                        courseCode: course.courseCode
-                    }))
-                );
+                const res=await axiosSecure.get("/submission/faculty/pending");
 
-                const res = await Promise.all(assignmentRequests);
+                console.log(res.data.assignments);
 
-                const data = res.flatMap(item =>
-                    item.assignments.map(assignment => ({
-                        ...assignment,
-                        courseName: item.courseName,
-                        courseCode: item.courseCode
-                    }))
-                );
-
-                const assignmentsWithPendingGrading = data.map(item => {
-                    const pendingGrading = item.submissions?.filter(
-                        sub => sub.marks === null
-                    ).length || 0;
-
-                    return {
-                        ...item,
-                        pendingGrading
-                    };
-                }).filter(item => item.pendingGrading > 0);
-
-                setAssignments(assignmentsWithPendingGrading);
+                setAssignments(res.data.assignments);
             } catch (error) {
+                console.log(error);
                 toast.error("Assignments fetch failed")
             } finally {
                 setLoadingAssignments(false);
@@ -144,10 +117,10 @@ const FacultyDashboard = () => {
         };
 
         fetchAssignments();
-    }, [activeCourses]);
+    }, []);
 
     // console.log(activeCourses.length+completedCourses.length);
-    // console.log(assignments);
+    console.log(assignments);
     return (
         <div className='w-full max-w-full p-10 flex flex-col gap-10 gilroy'>
 

@@ -1,4 +1,4 @@
-import { Building2, Cog, Eye, GraduationCap, Search, Users } from 'lucide-react';
+import { Building2, Cog, Eye, GraduationCap, Search, Users, Copy, Check } from 'lucide-react';
 import React, { useContext, useEffect, useRef, useState } from 'react';
 import { IoMdCreate } from 'react-icons/io';
 import axiosSecure from '../../utils/axiosSecure.js';
@@ -6,11 +6,8 @@ import { toast } from 'sonner';
 import { Link } from 'react-router';
 import CardSkeleton from '../../Components/CardSkeleton/CardSkeleton.jsx';
 import PaginationTemplate from '../../Components/PaginationTemplate/PaginationTemplate.jsx';
-import { AuthContext } from '../../Providers/AuthProvider/AuthProvider.jsx';
 
 const FacultyMyCourses = () => {
-    const { userData } = useContext(AuthContext);
-
     // Filtering
     const [search, setSearch] = useState("");
     const [page, setPage] = useState(1);
@@ -18,14 +15,22 @@ const FacultyMyCourses = () => {
 
     // Loading
 
+    const [loadingEditCourse, setLoadingEditCourse] = useState(false);
+    const [loadingGenerateLink, setLoadingGenerateLink] = useState(false);
     const [loadingCourses, setLoadingCourses] = useState(true);
+    const [loadingCreateCourse, setLoadingCreateCourse] = useState(false);
 
-    // Fetching courses
+    // Fetching courses for UI
 
     const [activeCourses, setActiveCourses] = useState([]);
     const [completedCourses, setCompletedCourses] = useState([]);
 
-    // Course creation functions
+    // Modal refs
+
+    const editCourseModalRef = useRef(null);
+    const createCourseModalRef = useRef(null);
+
+    // Course creation
 
     const subjectOptions = [
         { code: "ARCH", name: "Architecture" },
@@ -51,6 +56,8 @@ const FacultyMyCourses = () => {
         { code: "HUM", name: "Humanities" }
     ];
 
+    // Course creation form data
+
     const [subject, setSubject] = useState("");
     const [year, setYear] = useState("");
     const [semester, setSemester] = useState("");
@@ -63,16 +70,54 @@ const FacultyMyCourses = () => {
     const yearNumber = year ? year[0] : "";
     const semesterNumber = semester ? semester[0] : "";
 
-    const courseCode =
-        subject && year && semester && serial
-            ? `${subject} ${yearNumber}${semesterNumber}${serial}`
-            : "";
+    const courseCode = subject && year && semester && serial
+        ?
+        `${subject} ${yearNumber}${semesterNumber}${serial}`
+        :
+        "";
 
-    const createCourseModalRef = useRef(null);
-    const [loadingCreateCourse, setLoadingCreateCourse] = useState(false);
+    // Course creation modal related 
 
     const handleOpenCreateCourseModal = () => createCourseModalRef.current.showModal();
     const handleCloseCreateCourseModal = () => createCourseModalRef.current.close();
+
+    // Edit course modal related
+
+    const handleOpenEditCourseModal = async (id) => {
+        try {
+            setCopied(false);
+            const res = await axiosSecure.get(`/courses/${id}`);
+
+            const course = res.data.course;
+            setSelectedCourse(course);
+            setSelectedCourseDescription(course.description);
+            setStatus(course.status);
+
+            if (course.invitationCode) {
+                const link = `${import.meta.env.VITE_LIVE_LINK}/join-course?code=${course.invitationCode}`;
+                setInviteLink(link);
+            }
+            else
+                setInviteLink("");
+
+            editCourseModalRef.current.showModal();
+        } catch (error) {
+            console.error(error);
+        }
+
+    };
+
+    const handleCloseEditCourseModal = () => {
+        editCourseModalRef.current.close();
+
+        setTimeout(() => {
+            setSelectedCourse(null);
+            setInviteLink("");
+            setCopied(false);
+        }, 200);
+    };
+
+    // Course creation function
 
     const handleCourseCreate = async (e) => {
         e.preventDefault();
@@ -136,6 +181,8 @@ const FacultyMyCourses = () => {
         }
     };
 
+    // Fetch user's courses
+
     useEffect(() => {
         const fetchCourses = async () => {
             try {
@@ -150,17 +197,134 @@ const FacultyMyCourses = () => {
                 // console.log(data);
                 setActiveCourses(data.activeCourses);
                 setCompletedCourses(data.completedCourses);
-                setTotalPages(data.completedCourses.totalPages);
+                setTotalPages(data.completedPagination?.totalPages || 1);
             } catch (error) {
                 toast.error("Course fetch failed");
             } finally {
                 setLoadingCourses(false);
             }
         };
-        fetchCourses();
+
+        // To stop spamming by typing
+
+        const timer = setTimeout(() => {
+            fetchCourses();
+        }, 400);
+
+        return () => clearTimeout(timer);
     }, [page, search]);
 
-    // console.log(activeCourses, completedCourses);
+    // Course edit related
+
+    const [selectedCourse, setSelectedCourse] = useState(null);
+    const [selectedCourseDescription, setSelectedCourseDescription] = useState("");
+    const [status, setStatus] = useState("");
+    const [inviteLink, setInviteLink] = useState("");
+    const [copied, setCopied] = useState(false);
+
+    // Invitation generation function
+
+    const handleGenerateInvite = async () => {
+        if (!selectedCourse)
+            return;
+        try {
+            setLoadingGenerateLink(true);
+
+            const res = await axiosSecure.patch(`/courses/${selectedCourse._id}`, {
+                regenerateInvite: true
+            });
+
+            setInviteLink(res.data.newInvitationLink);
+            handleCloseEditCourseModal();
+            toast.success("Invitation Link updated");
+        } catch (error) {
+            toast.error("Invitation Link update failed");
+        } finally {
+            setLoadingGenerateLink(false);
+        }
+    };
+
+    // Copy invitation link function
+
+    const handleCopyInvite = async () => {
+        if (!inviteLink)
+            return;
+
+        try {
+            await navigator.clipboard.writeText(inviteLink);
+            setCopied(true);
+
+            setTimeout(() => {
+                setCopied(false);
+            }, 2000);
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    // Handle Edit course function
+
+    const handleEditCourse = async (e) => {
+        e.preventDefault();
+        try {
+            setLoadingEditCourse(true);
+
+            if (selectedCourse.status === "completed") {
+                handleCloseEditCourseModal();
+                toast.info("Completed course cannot be  updated");
+                return;
+            }
+
+            let updatedData = {};
+
+            if (selectedCourseDescription === selectedCourse.description && status === selectedCourse.status) {
+                handleCloseEditCourseModal();
+                toast.info("Nothing to update")
+                return;
+            }
+
+            if (selectedCourseDescription !== selectedCourse.description)
+                updatedData.description = selectedCourseDescription;
+
+            if (status !== selectedCourse.status)
+                updatedData.status = status;
+
+            const res = await axiosSecure.patch(`/courses/${selectedCourse._id}`, updatedData);
+
+            if (!res.data.success) {
+                handleCloseEditCourseModal();
+                toast.info(res.data.message);
+                return;
+            }
+
+            const updatedCourse = {
+                ...selectedCourse,
+                ...updatedData
+            };
+
+            setActiveCourses(prev =>
+                prev.filter(c => c._id !== updatedCourse._id)
+            );
+
+            setCompletedCourses(prev =>
+                prev.filter(c => c._id !== updatedCourse._id)
+            );
+
+            if (updatedCourse.status === "active")
+                setActiveCourses(prev => [updatedCourse, ...prev]);
+
+            if (updatedCourse.status === "completed")
+                setCompletedCourses(prev => [updatedCourse, ...prev]);
+
+            handleCloseEditCourseModal();
+            toast.success("Course updated successfully");
+
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Update failed");
+        } finally {
+            setLoadingEditCourse(false);
+        }
+    };
 
     return (
         <div className='w-full max-w-full p-10 flex flex-col gap-10 gilroy'>
@@ -169,7 +333,7 @@ const FacultyMyCourses = () => {
                 <p className='text-gray-500'>Manage and track courses</p>
             </div>
             <div className='w-full flex flex-col items-start md:items-center md:flex-row gap-5'>
-                <div className="flex flex-2 items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-blue-500 transition-all">
+                <div className="w-full flex flex-2 items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-blue-500 transition-all">
                     <Search className="w-4 h-4 text-gray-400" />
                     <input
                         type="text"
@@ -224,8 +388,10 @@ const FacultyMyCourses = () => {
                                             </div>
                                             <hr className='border-gray-200 my-4' />
                                             <div className='flex items-center justify-between gap-5 flex-wrap'>
-                                                <Link className=' flex flex-1 gap-2 items-center bg-[#1E40AF] text-white px-5 py-2 rounded-lg text-center transition-colors hover:bg-blue-600 duration-500 justify-center'><Eye /> View</Link>
-                                                <button className=' flex flex-1 gap-2 items-center bg-black text-white px-5 py-2 rounded-lg cursor-pointer text-center transition-colors hover:bg-gray-800 duration-500 justify-center'><Cog /> Edit </button>
+                                                <Link
+                                                    to={`/courses/${course._id}`}
+                                                    className=' flex flex-1 gap-2 items-center bg-[#1E40AF] text-white px-5 py-2 rounded-lg text-center transition-colors hover:bg-blue-600 duration-500 justify-center'><Eye /> View</Link>
+                                                <button className=' flex flex-1 gap-2 items-center bg-black text-white px-5 py-2 rounded-lg cursor-pointer text-center transition-colors hover:bg-gray-800 duration-500 justify-center' onClick={() => handleOpenEditCourseModal(course._id)}><Cog /> Edit </button>
 
                                             </div>
 
@@ -263,7 +429,7 @@ const FacultyMyCourses = () => {
                                             </div>
                                             <div className='mb-6'>
                                                 <div className='flex items-center gap-2 text-xs md:text-lg font-semibold text-gray-500'>
-                                                    <Building2 className='w-4 h-4' /> {course.department}</div>
+                                                    <Building2 className='w-4 h-4' /> {course.department.toUpperCase()}</div>
                                                 <div className='flex items-center gap-2 text-xs md:text-lg font-semibold text-gray-500'>
                                                     <GraduationCap className='w-4 h-4' /> {course.year} • {course.semester} • {course.session}
                                                 </div>
@@ -272,10 +438,7 @@ const FacultyMyCourses = () => {
                                                 </div>
                                             </div>
                                             <hr className='border-gray-200 my-4' />
-                                            <div className='flex items-center justify-between gap-5 flex-wrap'>
-                                                <Link className=' flex flex-1 gap-2 items-center bg-[#1E40AF] text-white px-5 py-2 rounded-lg text-center transition-colors hover:bg-blue-600 duration-500 justify-center'><Eye /> View</Link>
-                                                <button className=' flex flex-1 gap-2 items-center bg-black text-white px-5 py-2 rounded-lg cursor-pointer text-center transition-colors hover:bg-gray-800 duration-500 justify-center'><Cog /> Edit </button>
-                                            </div>
+                                            <Link to={`/courses/${course._id}`} className=' flex flex-1 gap-2 items-center bg-[#1E40AF] text-white px-5 py-2 rounded-lg text-center transition-colors hover:bg-blue-600 duration-500 justify-center'><Eye /> View</Link>
                                         </div>
                                     )
                                 )
@@ -435,7 +598,6 @@ const FacultyMyCourses = () => {
                                 className="select select-bordered w-full"
                                 name="department"
                                 required
-                                defaultValue=""
                             >
                                 <option value="" disabled>Select Department</option>
                                 <option value="arch">Architecture</option>
@@ -506,6 +668,179 @@ const FacultyMyCourses = () => {
                 </div>
             </dialog>
 
+            {/* Edit course modal */}
+
+            <dialog ref={editCourseModalRef} className="modal modal-bottom sm:modal-middle">
+
+                <div className="modal-box max-w-xl p-8">
+
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-2xl font-bold graphik">
+                            Edit Course
+                        </h3>
+
+                        <button
+                            onClick={handleCloseEditCourseModal}
+                            className="btn btn-sm btn-circle btn-ghost"
+                        >
+                            ✕
+                        </button>
+                    </div>
+
+                    {
+                        selectedCourse && (
+                            <div className="flex flex-col gap-6">
+
+                                {/* Course Info */}
+
+                                <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 flex flex-col gap-3">
+
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-gray-500 text-sm font-medium">
+                                            Course Code
+                                        </span>
+                                        <span className="font-semibold text-gray-900 text-sm tracking-wide">
+                                            {selectedCourse.courseCode}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-gray-500 text-sm font-medium">
+                                            Session
+                                        </span>
+                                        <span className="font-semibold text-gray-900 text-sm">
+                                            {selectedCourse.session}
+                                        </span>
+                                    </div>
+
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-gray-500 text-sm font-medium">
+                                            Year
+                                        </span>
+                                        <span className="font-semibold text-gray-900 text-sm">
+                                            {selectedCourse.year}
+                                        </span>
+                                    </div>
+
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-gray-500 text-sm font-medium">
+                                            Semester
+                                        </span>
+                                        <span className="font-semibold text-gray-900 text-sm">
+                                            {selectedCourse.semester}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* Description + Status Form */}
+
+                                <form
+                                    onSubmit={handleEditCourse}
+                                    className="flex flex-col gap-4"
+                                >
+
+                                    {/* Description */}
+
+                                    <div className="flex flex-col gap-1">
+                                        <label className="text-sm font-semibold text-gray-700">
+                                            Description
+                                        </label>
+
+                                        <textarea
+                                            rows="3"
+                                            value={selectedCourseDescription}
+                                            onChange={(e) => setSelectedCourseDescription(e.target.value)}
+                                            className="textarea textarea-bordered w-full resize-none"
+                                            required
+                                        />
+                                    </div>
+
+                                    {/* Status */}
+
+                                    <div className="flex flex-col gap-1">
+                                        <label className="text-sm font-semibold text-gray-700">
+                                            Status
+                                        </label>
+
+                                        <select
+                                            value={status}
+                                            onChange={(e) => setStatus(e.target.value)}
+                                            className="select select-bordered w-full"
+                                        >
+                                            <option value="active">Active</option>
+                                            <option value="completed">Completed</option>
+                                        </select>
+                                    </div>
+
+                                    {/* Submit Button */}
+
+                                    <button
+                                        disabled={loadingEditCourse}
+                                        className="bg-[#1E40AF] text-white rounded-lg py-2 transition-colors hover:bg-blue-600 duration-500 cursor-pointer"
+                                    >
+                                        {
+                                            loadingEditCourse
+                                                ? <span className="loading loading-dots loading-md"></span>
+                                                : "Update Course"
+                                        }
+                                    </button>
+
+                                </form>
+
+                                {/* Invitation Section */}
+
+                                <div className="border-t pt-4 flex flex-col gap-3">
+
+                                    <h4 className="font-semibold">
+                                        Invitation Link
+                                    </h4>
+
+                                    <div className="flex gap-2">
+
+                                        <input
+                                            readOnly
+                                            value={inviteLink}
+                                            placeholder="Click generate to create invitation link"
+                                            className="input input-bordered w-full"
+                                        />
+
+                                        <button
+                                            type="button"
+                                            disabled={!inviteLink}
+                                            onClick={handleCopyInvite}
+                                            className={`btn flex items-center gap-2 transition-all duration-200 ${copied
+                                                ? "bg-green-600 text-white border-green-600"
+                                                : "btn-soft"
+                                                }`}
+                                        >
+                                            {
+                                                copied ? <Check size={16} /> : <Copy size={16} />
+                                            }
+                                            {
+                                                copied ? "Copied" : "Copy"
+                                            }
+                                        </button>
+
+                                    </div>
+
+                                    <button
+                                        disabled={loadingGenerateLink}
+                                        onClick={handleGenerateInvite}
+                                        className="bg-[#1E40AF] text-white rounded-lg py-2 transition-colors hover:bg-blue-600 duration-500 cursor-pointer"
+                                    >
+                                        {
+                                            loadingGenerateLink
+                                                ? <span className="loading loading-dots loading-md"></span>
+                                                : (inviteLink ? "Regenerate Invitation Link" : "Generate Invitation Link")
+                                        }
+                                    </button>
+                                </div>
+
+                            </div>
+                        )
+                    }
+
+                </div>
+            </dialog>
         </div>
     );
 };
