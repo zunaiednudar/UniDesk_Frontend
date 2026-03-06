@@ -245,7 +245,7 @@ const MyCourses = () => {
             {/* Page title */}
             <div>
                 <h1 className="graphik text-3xl font-semibold text-gray-900">My Courses</h1>
-                <p className="text-sm text-gray-400 mt-1">Manage and track your enrolled courses</p>
+                <p className="text-sm text-gray-400 mt-1">Track your courses, monitor progress, and stay updated with assignments and deadlines</p>
             </div>
 
             {/* Stats */}

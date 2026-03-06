@@ -22,17 +22,17 @@ const StudentDashboard = () => {
             label: 'Courses',
             path: '/dashboard/student/courses'
         },
+        // {
+        //     id: 'projects',
+        //     icon: <FolderKanban className="w-5 h-5" />,
+        //     label: 'Projects',
+        //     path: '/dashboard/student/projects'
+        // },
         {
-            id: 'projects',
-            icon: <FolderKanban className="w-5 h-5" />,
-            label: 'Projects',
-            path: '/dashboard/student/projects'
-        },
-        {
-            id: 'assignments',
+            id: 'assessments',
             icon: <ClipboardCheck className="w-5 h-5" />,
-            label: 'Assignments',
-            path: '/dashboard/student/assignments'
+            label: 'Assessments',
+            path: '/dashboard/student/assessments'
         },
         {
             id: 'mentor',

@@ -11,7 +11,7 @@ import StudentDashboard from "../Pages/StudentDashboard/StudentDashboard.jsx";
 import MyActivity from "../Pages/StudentDashboard/MyActivity.jsx";
 import MyCourses from "../Pages/StudentDashboard/MyCourses.jsx";
 import MyProjects from "../Pages/StudentDashboard/MyProjects.jsx";
-import MyAssignments from "../Pages/StudentDashboard/MyAssignments.jsx";
+import MyAssessments from "../Pages/StudentDashboard/MyAssessments.jsx";
 import AskMentor from "../Pages/StudentDashboard/AskMentor.jsx";
 import PublicRoute from "../Providers/PublicRoute/PublicRoute.jsx";
 import StudentRoute from "../Providers/RoleWiseRoutes/StudentRoute/StudentRoute.jsx";
@@ -73,13 +73,13 @@ export const router = createBrowserRouter([
                 Component: MyCourses
             },
             {
-                path: "projects",
-                Component: MyProjects
+                path: "assessments",
+                Component: MyAssessments
             },
-            {
-                path: "assignments",
-                Component: MyAssignments
-            },
+            // {
+            //     path: "projects",
+            //     Component: MyProjects
+            // },
             {
                 path: "ask-mentor",
                 Component: AskMentor
