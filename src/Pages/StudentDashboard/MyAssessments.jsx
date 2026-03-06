@@ -2,7 +2,7 @@ import {useContext, useEffect, useState} from 'react';
 import {
     ClipboardCheck, Search, Upload, Download, Calendar,
     CheckCircle2, Clock, AlertCircle, Star, MessageSquare, ChevronDown, ChevronUp,
-    GraduationCap, BookOpen, Briefcase, FlaskConical, X, Plus, Trash2
+    GraduationCap, BookOpen, Briefcase, FlaskConical, X, Trash2
 } from 'lucide-react';
 import axiosSecure from "../../utils/axiosSecure.js";
 import formatName from "../../utils/formatName.js";
@@ -138,28 +138,19 @@ const DayColumn = ({day, date, assignments}) => {
 };
 
 const SubmitModal = ({assignment, onClose, onSubmitted}) => {
-    const [urls, setUrls] = useState(['']);   // list of attachment URLs
+    const [submissionURL, setSubmissionURL] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
 
-    const addUrl = () => setUrls(u => [...u, '']);
-    const removeUrl = (i) => setUrls(u => u.filter((_, idx) => idx !== i));
-    const updateUrl = (i, val) => {
-        setError('');
-        setUrls(u => u.map((v, idx) => idx === i ? val : v));
-    };
-
     const handleSubmit = async () => {
-        const filled = urls.map(u => u.trim()).filter(Boolean);
-        if (filled.length === 0) return setError('Please add at least one attachment URL.');
+        if (!submissionURL.trim()) return setError('Please enter a submission URL.');
         setError('');
         setSubmitting(true);
         try {
             await axiosSecure.patch(`/assignment/${assignment.id}/submit`, {
-                submissionURL: filled[0],
-                attachments: filled.map(url => ({url})),
+                submissionURL: submissionURL.trim(),
             });
-            onSubmitted(assignment.id, filled.map(url => ({url})));
+            onSubmitted(assignment.id, submissionURL.trim());
             onClose();
         } catch (err) {
             setError(err.response?.data?.message || 'Submission failed. Please try again.');
@@ -193,39 +184,20 @@ const SubmitModal = ({assignment, onClose, onSubmitted}) => {
                     )}
                 </div>
 
-                {/* Attachment URLs */}
+                {/* Submission URL */}
                 <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                        <label className="text-xs font-semibold text-gray-600">Attachment URLs</label>
-                        <button
-                            onClick={addUrl}
-                            className="inline-flex items-center gap-1 text-xs font-semibold text-orange-500 hover:text-orange-600 transition"
-                        >
-                            <Plus size={12}/> Add another
-                        </button>
-                    </div>
-                    <div className="space-y-2">
-                        {urls.map((url, i) => (
-                            <div key={i} className="flex items-center gap-2">
-                                <input
-                                    type="url"
-                                    placeholder="https://drive.google.com/..."
-                                    value={url}
-                                    onChange={e => updateUrl(i, e.target.value)}
-                                    className="flex-1 px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-400 focus:border-orange-400 outline-none transition"
-                                />
-                                {urls.length > 1 && (
-                                    <button
-                                        onClick={() => removeUrl(i)}
-                                        className="text-gray-300 hover:text-red-400 transition shrink-0"
-                                    >
-                                        <Trash2 size={14}/>
-                                    </button>
-                                )}
-                            </div>
-                        ))}
-                    </div>
-                    <p className="text-[11px] text-gray-400 mt-1.5">Paste links to your work (Google Drive, GitHub,
+                    <label className="block text-xs font-semibold text-gray-600 mb-1.5">Submission URL</label>
+                    <input
+                        type="url"
+                        placeholder="https://drive.google.com/..."
+                        value={submissionURL}
+                        onChange={e => {
+                            setSubmissionURL(e.target.value);
+                            setError('');
+                        }}
+                        className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-400 focus:border-orange-400 outline-none transition"
+                    />
+                    <p className="text-[11px] text-gray-400 mt-1.5">Paste a link to your work (Google Drive, GitHub,
                         Docs, etc.)</p>
                 </div>
 
@@ -239,7 +211,7 @@ const SubmitModal = ({assignment, onClose, onSubmitted}) => {
                     </button>
                     <button
                         onClick={handleSubmit}
-                        disabled={submitting || urls.every(u => !u.trim())}
+                        disabled={submitting || !submissionURL.trim()}
                         className="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2 text-sm font-semibold bg-orange-500 text-white rounded-xl hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition"
                     >
                         {submitting ? (
@@ -257,9 +229,10 @@ const SubmitModal = ({assignment, onClose, onSubmitted}) => {
     );
 };
 
-const AssignmentRow = ({assignment, onSubmitted}) => {
+const AssignmentRow = ({assignment, onSubmitted, onUnsubmitted}) => {
     const [expanded, setExpanded] = useState(false);
     const [submitOpen, setSubmitOpen] = useState(false);
+    const [unsubmitting, setUnsubmitting] = useState(false);
     const cfg = statusConfig[assignment.status] ?? statusConfig.pending;
     const StatusIcon = cfg.icon;
     const isCompleted = assignment.status === 'graded' || assignment.status === 'submitted';
@@ -267,6 +240,19 @@ const AssignmentRow = ({assignment, onSubmitted}) => {
         assignment.status === 'missed' ? 'text-red-500' :
             assignment.status === 'pending' && assignment.dueDateRaw < new Date() ? 'text-orange-500' :
                 'text-gray-400';
+
+    const handleUnsubmit = async (e) => {
+        e.stopPropagation();
+        setUnsubmitting(true);
+        try {
+            await axiosSecure.delete(`/assignment/${assignment.id}/submission`);
+            onUnsubmitted(assignment.id);
+        } catch (error) {
+            console.error('Unsubmit failed:', error);
+        } finally {
+            setUnsubmitting(false);
+        }
+    };
 
     return (
         <>
@@ -279,7 +265,8 @@ const AssignmentRow = ({assignment, onSubmitted}) => {
             )}
             <div
                 className={`border-b border-gray-100 last:border-b-0 transition-colors ${expanded ? 'bg-gray-50' : 'hover:bg-gray-50'}`}>
-                <div className="flex flex-col lg:flex-row items-start lg:items-center gap-3 px-2 py-3 cursor-pointer" onClick={() => setExpanded(e => !e)}>
+                <div className="flex flex-col lg:flex-row items-start lg:items-center gap-3 px-2 py-3 cursor-pointer"
+                     onClick={() => setExpanded(e => !e)}>
                     <div className={`w-5 h-5 rounded-full flex-shrink-0 border-2 flex items-center justify-center transition-all
                         ${isCompleted ? 'border-green-500 bg-green-500' :
                         assignment.status === 'missed' ? 'border-red-400' : 'border-gray-300'}`}>
@@ -352,14 +339,7 @@ const AssignmentRow = ({assignment, onSubmitted}) => {
                                 <div
                                     className="flex items-center gap-1.5 text-xs text-gray-500 bg-white border border-gray-200 rounded-lg px-2.5 py-1.5">
                                     <Download size={12} className="text-gray-400"/>
-                                    <span>{assignment.attachments.length} assignment file{assignment.attachments.length !== 1 ? 's' : ''}</span>
-                                </div>
-                            )}
-                            {assignment.submissionAttachments?.length > 0 && (
-                                <div
-                                    className="flex items-center gap-1.5 text-xs text-gray-500 bg-white border border-blue-100 rounded-lg px-2.5 py-1.5">
-                                    <Upload size={12} className="text-blue-400"/>
-                                    <span>{assignment.submissionAttachments.length} submission file{assignment.submissionAttachments.length !== 1 ? 's' : ''}</span>
+                                    <span>{assignment.attachments.length} file{assignment.attachments.length !== 1 ? 's' : ''}</span>
                                 </div>
                             )}
                         </div>
@@ -375,7 +355,7 @@ const AssignmentRow = ({assignment, onSubmitted}) => {
                                 </div>
                             </div>
                         )}
-                        {/* Assignment files (from faculty) */}
+                        {/* Teacher-provided files */}
                         {assignment.attachments.length > 0 && (
                             <div>
                                 <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Assignment
@@ -385,22 +365,6 @@ const AssignmentRow = ({assignment, onSubmitted}) => {
                                         <a key={att._id ?? i} href={att.url} target="_blank" rel="noopener noreferrer"
                                            className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg px-3 py-1.5 hover:bg-gray-50 transition">
                                             <Download size={11} className="shrink-0"/>
-                                            <span className="truncate">{att.url}</span>
-                                        </a>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-                        {/* Submission files (uploaded by student) */}
-                        {assignment.submissionAttachments?.length > 0 && (
-                            <div>
-                                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Your
-                                    Submission Files</p>
-                                <div className="flex flex-col gap-1.5">
-                                    {assignment.submissionAttachments.map((att, i) => (
-                                        <a key={att._id ?? i} href={att.url} target="_blank" rel="noopener noreferrer"
-                                           className="inline-flex items-center gap-1.5 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-100 rounded-lg px-3 py-1.5 hover:bg-blue-100 transition">
-                                            <Upload size={11} className="shrink-0 text-blue-400"/>
                                             <span className="truncate">{att.url}</span>
                                         </a>
                                     ))}
@@ -426,6 +390,23 @@ const AssignmentRow = ({assignment, onSubmitted}) => {
                                     <Download size={12}/>
                                     View Submission
                                 </a>
+                            )}
+                            {assignment.status === 'submitted' && (
+                                <button
+                                    onClick={handleUnsubmit}
+                                    disabled={unsubmitting}
+                                    className="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold border border-red-200 text-red-500 rounded-lg hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                                >
+                                    {unsubmitting ? (
+                                        <svg className="animate-spin w-3 h-3" viewBox="0 0 24 24" fill="none">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                                    strokeWidth="4"/>
+                                            <path className="opacity-75" fill="currentColor"
+                                                  d="M4 12a8 8 0 018-8v8H4z"/>
+                                        </svg>
+                                    ) : <Trash2 size={12}/>}
+                                    {unsubmitting ? 'Removing…' : 'Unsubmit'}
+                                </button>
                             )}
                         </div>
                     </div>
@@ -722,7 +703,6 @@ const MyAssessments = () => {
                                 })
                                 : null,
                             submissionURL: my?.submissionURL ?? null,
-                            submissionAttachments: Array.isArray(my?.attachments) ? my.attachments : [],
                             marks: my?.marks ?? null,
                             feedback: my?.feedback ?? null,
                         };
@@ -880,7 +860,7 @@ const MyAssessments = () => {
                     {/* divider */}
                     <div className="hidden lg:block bg-gray-100"/>
 
-                    {/* ── Projects side ── */}
+                    {/* Projects side */}
                     <div className="p-5 space-y-3">
                         <div>
                             <h2 className="graphik text-2xl font-semibold text-gray-900">My Projects</h2>
@@ -990,11 +970,26 @@ const MyAssessments = () => {
                                 <AssignmentRow
                                     key={a.id}
                                     assignment={a}
-                                    onSubmitted={(id, attachments) => setAssignments(prev =>
+                                    onSubmitted={(id, url) => setAssignments(prev =>
                                         prev.map(x => x.id === id ? {
                                             ...x,
                                             status: 'submitted',
-                                            submissionAttachments: attachments
+                                            submissionURL: url,
+                                            submittedAt: new Date().toLocaleDateString('en-US', {
+                                                year: 'numeric',
+                                                month: 'short',
+                                                day: 'numeric'
+                                            }),
+                                        } : x)
+                                    )}
+                                    onUnsubmitted={id => setAssignments(prev =>
+                                        prev.map(x => x.id === id ? {
+                                            ...x,
+                                            status: 'pending',
+                                            submissionURL: null,
+                                            submittedAt: null,
+                                            marks: null,
+                                            feedback: null,
                                         } : x)
                                     )}
                                 />

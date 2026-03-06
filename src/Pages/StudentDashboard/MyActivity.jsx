@@ -1,15 +1,10 @@
-import { useContext, useEffect, useState } from 'react';
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
+import {useContext, useEffect, useState} from 'react';
+import {PieChart, Pie, Cell, Tooltip, ResponsiveContainer} from 'recharts';
 import {
-    BookOpen,
-    ClipboardCheck,
-    Calendar,
-    Clock,
-    AlertCircle,
-    Megaphone
+    BookOpen, ClipboardCheck, Calendar, Clock, AlertCircle, Megaphone
 } from 'lucide-react';
 import axiosSecure from "../../utils/axiosSecure.js";
-import { AuthContext } from "../../Providers/AuthProvider/AuthProvider.jsx";
+import {AuthContext} from "../../Providers/AuthProvider/AuthProvider.jsx";
 import RecentNotices from "../../Components/RecentNotices/RecentNotices.jsx";
 import CalendarF from "../../Components/Calendar/Calendar.jsx"
 
@@ -17,7 +12,7 @@ const getDueDateClasses = (dateStr, isCompleted) => {
     if (isCompleted) return 'text-gray-400';
     if (!dateStr) return 'text-gray-400';
     const diff = (new Date(dateStr) - new Date()) / (1000 * 60 * 60 * 24);
-    if (diff < 0)  return 'text-red-500';
+    if (diff < 0) return 'text-red-500';
     if (diff <= 2) return 'text-orange-500';
     if (diff <= 5) return 'text-yellow-500';
     return 'text-gray-500';
@@ -25,82 +20,73 @@ const getDueDateClasses = (dateStr, isCompleted) => {
 
 const getCheckboxClasses = (status) => {
     switch (status) {
-        case 'completed': return 'border-green-500 bg-green-500';
-        case 'late':      return 'border-orange-400 bg-transparent';
-        case 'missed':    return 'border-red-400 bg-transparent';
-        default:          return 'border-yellow-400 bg-transparent'; // pending / in-progress
+        case 'completed':
+            return 'border-green-500 bg-green-500';
+        case 'late':
+            return 'border-red-400 bg-red-400';
+        case 'missed':
+            return 'border-red-400 bg-transparent';
+        default:
+            return 'border-yellow-400 bg-transparent'; // pending / in-progress
     }
 };
 
 const appointmentStatusConfig = {
-    approved:  { badge: 'bg-green-50 border border-green-200',   dot: 'bg-green-500',  label: 'Approved'  },
-    pending:   { badge: 'bg-yellow-50 border border-yellow-200', dot: 'bg-yellow-400', label: 'Pending'   },
-    cancelled: { badge: 'bg-red-50 border border-red-200',       dot: 'bg-red-500',    label: 'Cancelled' },
+    approved: {badge: 'bg-green-50 border border-green-200', dot: 'bg-green-500', label: 'Approved'},
+    pending: {badge: 'bg-yellow-50 border border-yellow-200', dot: 'bg-yellow-400', label: 'Pending'},
+    cancelled: {badge: 'bg-red-50 border border-red-200', dot: 'bg-red-500', label: 'Cancelled'},
 };
 
 const PIE_COLORS = ['#10B981', '#F59E0B', '#EF4444'];
 
-const StatCard = ({ icon: Icon, value, label, iconBg, iconColor }) => (
-    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center gap-5 hover:shadow-md transition-shadow duration-200">
+const StatCard = ({icon: Icon, value, label, iconBg, iconColor}) => (<div
+        className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center gap-5 hover:shadow-md transition-shadow duration-200">
         <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${iconBg}`}>
-            <Icon size={22} className={iconColor} strokeWidth={1.75} />
+            <Icon size={22} className={iconColor} strokeWidth={1.75}/>
         </div>
         <div>
             <div className="text-3xl font-bold text-gray-900 leading-tight">{value ?? '—'}</div>
             <div className="text-sm text-gray-400 mt-0.5 font-medium">{label}</div>
         </div>
-    </div>
-);
+    </div>);
 
-const SectionHeader = ({ icon: Icon, title, iconBg, iconColor, count }) => (
+const SectionHeader = ({icon: Icon, title, iconBg, iconColor, count}) => (
     <div className="flex items-center gap-2.5 mb-5">
         <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${iconBg}`}>
-            <Icon size={16} className={iconColor} strokeWidth={2} />
+            <Icon size={16} className={iconColor} strokeWidth={2}/>
         </div>
         <h2 className="text-base font-bold text-gray-900">{title}</h2>
         {count !== undefined && (
             <span className="ml-1 text-xs font-semibold text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">
                 {count}
-            </span>
-        )}
-    </div>
-);
+            </span>)}
+    </div>);
 
-const TaskItem = ({ task }) => {
+const TaskItem = ({task}) => {
     const isCompleted = task.status === 'completed';
     const isLate = task.status === 'late';
-    const dateClasses = getDueDateClasses(task.dueDate, isCompleted);
+    const dateClasses = getDueDateClasses(task.dueDateRaw, isCompleted);
     const checkboxClasses = getCheckboxClasses(task.status);
 
     const taskStatusConfig = {
         completed: {
-            badge: 'bg-green-50 border border-green-200',
-            dot: 'bg-green-500',
-            label: 'Completed',
-        },
-        late: {
-            badge: 'bg-red-50 border border-red-200',
-            dot: 'bg-red-500',
-            label: 'Late',
-        },
-        pending: {
-            badge: 'bg-gray-50 border border-gray-200',
-            dot: 'bg-gray-400',
-            label: 'Pending',
+            badge: 'bg-green-50 border border-green-200', dot: 'bg-green-500', label: 'Completed',
+        }, late: {
+            badge: 'bg-red-50 border border-red-200', dot: 'bg-red-500', label: 'Late',
+        }, pending: {
+            badge: 'bg-gray-50 border border-gray-200', dot: 'bg-gray-400', label: 'Pending',
         },
     };
 
     const cfg = taskStatusConfig[task.status] || taskStatusConfig.pending;
 
-    return (
-        <div className="flex flex-col justify-between py-3 px-2 border-b border-gray-100 last:border-b-0">
+    return (<div className="flex flex-col justify-between py-3 px-2 border-b border-gray-100 last:border-b-0">
             {/* Top: Checkbox + Title */}
             <div className="flex items-center gap-3">
                 <div
                     className={`w-[18px] h-[18px] rounded-full flex-shrink-0 border-2 flex items-center justify-center transition-all duration-150 ${checkboxClasses}`}
                 >
-                    {isCompleted && (
-                        <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                    {(isCompleted || isLate) && (<svg width="10" height="8" viewBox="0 0 10 8" fill="none">
                             <path
                                 d="M1 4L3.5 6.5L9 1"
                                 stroke="white"
@@ -108,20 +94,15 @@ const TaskItem = ({ task }) => {
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
                             />
-                        </svg>
-                    )}
+                        </svg>)}
                 </div>
                 <div className="flex-1 min-w-0">
                     <p
-                        className={`text-sm font-medium truncate leading-snug ${
-                            isCompleted ? 'line-through text-gray-400' : 'text-gray-900'
-                        }`}
+                        className={`text-sm font-medium truncate leading-snug ${isLate ? 'line-through text-red-400 decoration-red-400' : isCompleted ? 'line-through text-gray-400 decoration-gray-400' : 'text-gray-900'}`}
                     >
                         {task.title}
                     </p>
-                    {task.course && (
-                        <p className="text-xs text-gray-400 mt-0.5 truncate">{task.course}</p>
-                    )}
+                    {task.course && (<p className="text-xs text-gray-400 mt-0.5 truncate">{task.course}</p>)}
                 </div>
             </div>
 
@@ -130,70 +111,61 @@ const TaskItem = ({ task }) => {
                 <div
                     className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 ${cfg.badge}`}
                 >
-                    <div className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+                    <div className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`}/>
                     <span className="text-xs font-semibold text-gray-600 capitalize">
             {cfg.label}
           </span>
                 </div>
 
-                {task.dueDate && (
-                    <div
+                {task.dueDate && (<div
                         className={`flex-shrink-0 flex items-center gap-1 text-xs font-medium ${dateClasses}`}
                     >
-                        <Calendar size={11} strokeWidth={2} />
+                        <Calendar size={11} strokeWidth={2}/>
                         <span>{task.dueDate}</span>
-                    </div>
-                )}
+                    </div>)}
             </div>
-        </div>
-    );
+        </div>);
 };
 
-const AppointmentCard = ({ appointment }) => {
+const AppointmentCard = ({appointment}) => {
     const cfg = appointmentStatusConfig[appointment.status?.toLowerCase()] || appointmentStatusConfig.pending;
 
-    return (
-        <div className="p-4 rounded-xl border border-gray-100 bg-white hover:border-orange-200 hover:shadow-sm transition-all duration-200">
+    return (<div
+            className="p-4 rounded-xl border border-gray-100 bg-white hover:border-orange-200 hover:shadow-sm transition-all duration-200">
             <div className="flex items-start justify-between mb-3">
                 <div>
                     <h3 className="text-sm font-bold text-gray-900 capitalize">{appointment.faculty}</h3>
-                    {appointment.room && (
-                        <p className="text-xs text-gray-400 mt-0.5">Room {appointment.room}</p>
-                    )}
+                    {appointment.room && (<p className="text-xs text-gray-400 mt-0.5">Room {appointment.room}</p>)}
                 </div>
                 <div className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 ${cfg.badge}`}>
-                    <div className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+                    <div className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`}/>
                     <span className="text-xs font-semibold text-gray-600 capitalize">{cfg.label}</span>
                 </div>
             </div>
-            <div className="flex items-center gap-1.5 text-xs font-medium text-gray-500 bg-gray-50 rounded-lg px-3 py-2">
-                <Clock size={13} className="text-orange-400" strokeWidth={2} />
+            <div
+                className="flex items-center gap-1.5 text-xs font-medium text-gray-500 bg-gray-50 rounded-lg px-3 py-2">
+                <Clock size={13} className="text-orange-400" strokeWidth={2}/>
                 <span>{appointment.startTime} – {appointment.endTime}</span>
             </div>
-        </div>
-    );
+        </div>);
 };
 
-const SkeletonBlock = ({ className }) => (
-    <div className={`rounded-xl bg-gray-100 animate-pulse ${className}`} />
-);
+const SkeletonBlock = ({className}) => (<div className={`rounded-xl bg-gray-100 animate-pulse ${className}`}/>);
 
-const EmptyState = ({ message }) => (
-    <div className="flex flex-col items-center py-8 text-gray-400 text-sm">
-        <AlertCircle size={28} className="text-gray-200 mb-2" />
+const EmptyState = ({message}) => (<div className="flex flex-col items-center py-8 text-gray-400 text-sm">
+        <AlertCircle size={28} className="text-gray-200 mb-2"/>
         {message}
-    </div>
-);
+    </div>);
 
 const MyActivity = () => {
-    const { userData } = useContext(AuthContext);
+    const {userData} = useContext(AuthContext);
     console.log("User data: ", userData);
 
     const [stats, setStats] = useState({});
     const [appointments, setAppointments] = useState([]);
     const [taskList, setTaskList] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [submissionStats, setSubmissionStats] = useState({ onTime: 0, late: 0, missed: 0 });
+    const [submissionStats, setSubmissionStats] = useState({onTime: 0, late: 0, missed: 0});
     const [notices, setNotices] = useState([]);
 
     const [isLarge, setIsLarge] = useState(false);
@@ -216,8 +188,10 @@ const MyActivity = () => {
                 const upcomingAppointments = (appointmentsRes.data.appointments || []).map((appointment, index) => ({
                     id: index + 1,
                     faculty: appointment.faculty.name,
-                    startTime: new Date(appointment.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                    endTime: new Date(appointment.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                    startTime: new Date(appointment.startTime).toLocaleTimeString([], {
+                        hour: '2-digit', minute: '2-digit'
+                    }),
+                    endTime: new Date(appointment.endTime).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}),
                     room: appointment.faculty.room,
                     status: appointment.status,
                 }));
@@ -225,10 +199,7 @@ const MyActivity = () => {
 
                 const coursesRes = await axiosSecure.get(`/courses/my-courses`);
                 console.log("Courses data (MyActivity.jsx): ", coursesRes);
-                const courses = [
-                    ...(coursesRes.data.activeCourses || []),
-                    ...(coursesRes.data.completedCourses || [])
-                ];
+                const courses = [...(coursesRes.data.activeCourses || []), ...(coursesRes.data.completedCourses || [])];
 
                 const activeCourses = [...(coursesRes.data.activeCourses || [])];
                 console.log("Active courses: ", activeCourses);
@@ -283,43 +254,44 @@ const MyActivity = () => {
                 const assignmentResponses = await Promise.all(assignmentRequests);
                 const allAssignments = assignmentResponses.flatMap(res => res.data.assignments);
 
-                const userTasks = await Promise.all(
-                    allAssignments.map(async (assignment, idx) => {
-                        const courseRes = await axiosSecure.get(`/courses/${assignment.course}`);
+                const userTasks = await Promise.all(allAssignments.map(async (assignment, idx) => {
+                    console.log("Assignment data (MyActivity.jsx): ", assignment);
+                    const courseRes = await axiosSecure.get(`/courses/${assignment.course}`);
 
-                        const submissions = Array.isArray(assignment.submissions) ? assignment.submissions : [];
-                        const userSubmission = submissions.find(s => s.student === userData._id);
+                    const submissions = Array.isArray(assignment.submissions) ? assignment.submissions : [];
+                    const userSubmission = submissions.find(s => s.student === userData._id);
 
-                        let status = 'missed';
-                        if (userSubmission) {
-                            const diffHrs = (new Date(userSubmission.submittedAt) - new Date(assignment.dueDate)) / (1000 * 60 * 60);
-                            status = diffHrs <= 0 ? 'completed' : 'late';
-                        }
+                    let status = 'pending';
+                    if (userSubmission && userSubmission.submittedAt) {
+                        const diffHrs = (new Date(userSubmission.submittedAt) - new Date(assignment.dueDate)) / (1000 * 60 * 60);
+                        status = diffHrs <= 0 ? 'completed' : 'late';
+                    } else if (new Date() > new Date(assignment.dueDate)) {
+                        status = 'missed';
+                    }
 
-                        return {
-                            id: idx + 1,
-                            title: assignment.title,
-                            description: assignment.description,
-                            course: courseRes.data.name,
-                            dueDate: new Date(assignment.dueDate).toLocaleDateString(),
-                            status,
-                        };
-                    })
-                );
+                    return {
+                        id: idx + 1,
+                        title: assignment.title,
+                        description: assignment.description,
+                        course: courseRes.data.name,
+                        dueDate: new Date(assignment.dueDate).toLocaleDateString(),
+                        dueDateRaw: assignment.dueDate,
+                        status,
+                    };
+                }));
 
                 // Submission stats for pie chart
                 const onTime = userTasks.filter(t => t.status === 'completed').length;
-                const late   = userTasks.filter(t => t.status === 'late').length;
+                const late = userTasks.filter(t => t.status === 'late').length;
                 const missed = userTasks.filter(t => t.status === 'missed').length;
 
                 // setTaskList(userTasks);
 
                 setTaskList(userTasks
-                    .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
-                    .slice(0, 12)
-                );
+                    .sort((a, b) => new Date(a.dueDateRaw) - new Date(b.dueDateRaw))
+                    .slice(0, 12));
 
-                setSubmissionStats({ onTime, late, missed });
+                setSubmissionStats({onTime, late, missed});
 
                 setStats({
                     enrolledCourses: (coursesRes.data.activeCourses || []).length,
@@ -337,18 +309,17 @@ const MyActivity = () => {
 
     const pendingCount = taskList.filter(t => t.status !== 'completed').length;
 
-    const pieData = [
-        { name: 'On-time', value: submissionStats.onTime },
-        { name: 'Late',    value: submissionStats.late   },
-        { name: 'Missed',  value: submissionStats.missed },
-    ];
+    const pieData = [{name: 'On-time', value: submissionStats.onTime}, {
+        name: 'Late',
+        value: submissionStats.late
+    }, {name: 'Missed', value: submissionStats.missed},];
 
-    return (
-        <div className="gilroy space-y-6">
+    return (<div className="gilroy space-y-6">
             {/* Page Title */}
             <div>
                 <h1 className="graphik text-3xl font-semibold text-gray-900">My Activity</h1>
-                <p className="text-sm text-gray-400 mt-1">Visualize your academic performance, manage assignments, and stay ahead with real-time progress insights</p>
+                <p className="text-sm text-gray-400 mt-1">Visualize your academic performance, manage assignments, and
+                    stay ahead with real-time progress insights</p>
             </div>
 
             {/* Header Stats */}
@@ -380,11 +351,12 @@ const MyActivity = () => {
             <div className="grid grid-cols-1 lg:grid-cols-5 lg:grid-rows-6 gap-6 items-start">
                 {/* Recent Announcements */}
                 <div className="w-full h-full lg:col-span-3 lg:row-span-2">
-                    <RecentNotices notices={notices} loading={loading} />
+                    <RecentNotices notices={notices} loading={loading}/>
                 </div>
 
                 {/* Task List */}
-                <div className="w-full h-full lg:col-span-2 lg:row-span-4 bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                <div
+                    className="w-full h-full lg:col-span-2 lg:row-span-4 bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
                     <SectionHeader
                         icon={ClipboardCheck}
                         title="Task List"
@@ -392,27 +364,19 @@ const MyActivity = () => {
                         iconColor="text-orange-500"
                         count={loading ? undefined : pendingCount}
                     />
-                    {loading ? (
-                        <div className="space-y-3">
-                            {[1, 2, 3].map(i => <SkeletonBlock key={i} className="h-12" />)}
-                        </div>
-                    ) : taskList.length === 0 ? (
-                        <EmptyState message="No assignments found." />
-                    ) : (
-                        <div>
-                            {taskList.map(task => (
-                                <TaskItem
+                    {loading ? (<div className="space-y-3">
+                            {[1, 2, 3].map(i => <SkeletonBlock key={i} className="h-12"/>)}
+                        </div>) : taskList.length === 0 ? (<EmptyState message="No assignments found."/>) : (<div>
+                            {taskList.map(task => (<TaskItem
                                     key={task.id}
                                     task={task}
-                                />
-                            ))}
-                        </div>
-                    )}
+                                />))}
+                        </div>)}
                 </div>
 
                 {/* Calendar */}
                 <div className="w-full h-full lg:col-span-3 lg:row-span-4">
-                    <CalendarF />
+                    <CalendarF/>
                 </div>
 
                 {/* Submission Overview */}
@@ -424,10 +388,7 @@ const MyActivity = () => {
                             iconBg="bg-green-50"
                             iconColor="text-green-500"
                         />
-                        {loading ? (
-                            <SkeletonBlock className="h-48" />
-                        ) : (
-                            <>
+                        {loading ? (<SkeletonBlock className="h-48"/>) : (<>
                                 <ResponsiveContainer width="100%" height={360}>
                                     <PieChart>
                                         <Pie
@@ -437,16 +398,15 @@ const MyActivity = () => {
                                             outerRadius={isLarge ? 80 : 50}
                                             innerRadius={isLarge ? 60 : 30}
                                             paddingAngle={3}
-                                            label={({ name, percent }) =>
-                                                percent > 0 ? `${(percent * 100).toFixed(0)}%` : ''
-                                            }
+                                            label={({
+                                                        name,
+                                                        percent
+                                                    }) => percent > 0 ? `${(percent * 100).toFixed(0)}%` : ''}
                                             labelLine={false}
                                         >
-                                            {pieData.map((_, idx) => (
-                                                <Cell key={idx} fill={PIE_COLORS[idx]} />
-                                            ))}
+                                            {pieData.map((_, idx) => (<Cell key={idx} fill={PIE_COLORS[idx]}/>))}
                                         </Pie>
-                                        <Tooltip formatter={(value, name) => [value, name]} />
+                                        <Tooltip formatter={(value, name) => [value, name]}/>
                                     </PieChart>
                                 </ResponsiveContainer>
 
@@ -455,15 +415,14 @@ const MyActivity = () => {
                                     {pieData.map((entry, idx) => (
                                         <div key={idx} className="flex flex-col items-center gap-1">
                                             <div className="flex items-center gap-1.5">
-                                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: PIE_COLORS[idx] }} />
+                                                <div className="w-2 h-2 rounded-full"
+                                                     style={{backgroundColor: PIE_COLORS[idx]}}/>
                                                 <span className="text-xs text-gray-500">{entry.name}</span>
                                             </div>
                                             <span className="text-sm font-bold text-gray-900">{entry.value}</span>
-                                        </div>
-                                    ))}
+                                        </div>))}
                                 </div>
-                            </>
-                        )}
+                            </>)}
                     </div>
                 </div>
             </div>
@@ -476,22 +435,15 @@ const MyActivity = () => {
                     iconBg="bg-purple-50"
                     iconColor="text-purple-500"
                 />
-                {loading ? (
-                    <div className="space-y-3">
-                        {[1, 2].map(i => <SkeletonBlock key={i} className="h-20" />)}
-                    </div>
-                ) : appointments.length === 0 ? (
-                    <EmptyState message="No upcoming appointments scheduled." />
-                ) : (
-                    <div className="space-y-3">
+                {loading ? (<div className="space-y-3">
+                        {[1, 2].map(i => <SkeletonBlock key={i} className="h-20"/>)}
+                    </div>) : appointments.length === 0 ? (
+                    <EmptyState message="No upcoming appointments scheduled."/>) : (<div className="space-y-3">
                         {appointments.map(appointment => (
-                            <AppointmentCard key={appointment.id} appointment={appointment} />
-                        ))}
-                    </div>
-                )}
+                            <AppointmentCard key={appointment.id} appointment={appointment}/>))}
+                    </div>)}
             </div>
-        </div>
-    );
+        </div>);
 };
 
 export default MyActivity;
