@@ -66,9 +66,27 @@ const CourseDetails = () => {
             if (!id || !userData?._id) return;
             setLoading(true);
             try {
-                // Fetch course details directly by ID
-                const courseRes = await axiosSecure.get(`/courses/${id}`);
+                // /courses/:id has no .populate() — faculties come back as raw ObjectIds.
+                // /courses/my-courses already has faculties fully populated (name, email, photoURL).
+                // Fetch both in parallel: use my-courses for faculty data, :id for everything else.
+                const [courseRes, myCoursesRes] = await Promise.all([
+                    axiosSecure.get(`/courses/${id}`),
+                    axiosSecure.get('/courses/my-courses'),
+                ]);
+
                 const raw = courseRes.data.course || courseRes.data;
+
+                // Find matching course in my-courses list to get populated faculty objects
+                const allMyCourses = [
+                    ...(myCoursesRes.data.activeCourses || []),
+                    ...(myCoursesRes.data.completedCourses || []),
+                ];
+                const matched = allMyCourses.find(
+                    c => c._id === id || c._id?.toString() === id
+                );
+                const populatedFaculties = Array.isArray(matched?.faculties)
+                    ? matched.faculties
+                    : [];
 
                 if (raw?._id) {
                     setCourse({
@@ -80,13 +98,11 @@ const CourseDetails = () => {
                         department: raw.department,
                         year: raw.year,
                         semester: raw.semester,
-                        faculties: Array.isArray(raw.faculties)
-                            ? raw.faculties.map(f => ({
-                                name: formatName(f?.name),
-                                email: f?.email ?? "",
-                                photoURL: f?.photoURL ?? null,
-                            }))
-                            : [],
+                        faculties: populatedFaculties.map(f => ({
+                            name: formatName(f?.name),
+                            email: f?.email ?? "",
+                            photoURL: f?.photoURL ?? null,
+                        })),
                         students: Array.isArray(raw.students)
                             ? raw.students.map(s => ({
                                 name: formatName(s?.name),
