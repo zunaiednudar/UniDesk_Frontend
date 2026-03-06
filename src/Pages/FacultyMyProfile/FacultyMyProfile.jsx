@@ -6,12 +6,15 @@ import { toast } from 'sonner';
 import { uploadToCloudinary } from '../../utils/uploadToCloudinary';
 import axiosSecure from '../../utils/axiosSecure';
 import { FaRegEdit } from 'react-icons/fa';
+import { FiLock } from "react-icons/fi";
 
 const FacultyMyProfile = () => {
-    const { userData, setUserData } = useContext(AuthContext);
+    const { userData, setUserData, passwordReset } = useContext(AuthContext);
     const [loading, setLoading] = useState(false);
     const [imageLoading, setImageLoading] = useState(false);
+
     const modalRef = useRef(null);
+    const resetPasswordRef = useRef(null);
 
     const [interests, setInterests] = useState(userData?.researchInterests || []);
     const [interestInput, setInterestInput] = useState("");
@@ -86,7 +89,11 @@ const FacultyMyProfile = () => {
         setInterests(userData?.researchInterests || []);
         modalRef.current.showModal();
     }
-    const handleCloseUpdateModal = () => modalRef.current.close();;
+    const handleCloseUpdateModal = () => modalRef.current.close();
+
+    const handleOpenResetPasswordModal = () => resetPasswordRef.current.showModal();
+
+    const handleCloseResetPasswordModal = () => resetPasswordRef.current.close();
 
     const handleProfileUpdate = async (e) => {
         e.preventDefault();
@@ -140,6 +147,17 @@ const FacultyMyProfile = () => {
         }
     };
 
+    const handleResetPassword = () => {
+        passwordReset(userData.email).then(() => {
+            handleCloseResetPasswordModal();
+            toast.success("Password reset email sent. Check your inbox");
+        })
+            .catch((error) => {
+                handleCloseResetPasswordModal();
+                toast.error("Password reset link cannot be sent");
+            })
+    };
+
     return (
         <div className='w-full max-w-full p-10 flex flex-col gap-10 gilroy'>
 
@@ -149,7 +167,7 @@ const FacultyMyProfile = () => {
             </div>
 
             <div className='w-full flex flex-col p-5 shadow-lg rounded-lg gap-5'>
-                <div className='flex flex-col items-center md:flex-row gap-5'>
+                <div className='flex flex-col items-center md:flex-row gap-5 flex-wrap'>
 
                     {/* Profile Image */}
 
@@ -200,7 +218,11 @@ const FacultyMyProfile = () => {
                         </div>
                         <div className='flex items-center gap-1 text-gray-500 text-sm'><MdOutlinePhone /> {userData?.phone ? userData?.phone : "No phone number found"}</div>
                     </div>
-                    <button className="flex gap-2 items-center bg-[#1E40AF] text-white px-5 py-2 rounded-lg cursor-pointer text-center transition-colors hover:bg-blue-600 duration-500 md:ml-auto" onClick={handleOpenUpdateModal}><FaRegEdit /> Edit Profile</button>
+                    <div className='flex flex-col gap-5 md:ml-auto'>
+                        <button className="w-full flex gap-2 items-center justify-center bg-[#1E40AF] text-white px-5 py-2 rounded-lg cursor-pointer text-center transition-colors hover:bg-blue-600 duration-500 md:ml-auto" onClick={handleOpenUpdateModal}><FaRegEdit /> Edit Profile</button>
+                        <button className="w-full flex gap-2 items-center justify-center bg-[#1E40AF] text-white px-5 py-2 rounded-lg cursor-pointer text-center transition-colors hover:bg-blue-600 duration-500 md:ml-auto" onClick={handleOpenResetPasswordModal}><FiLock /> Reset Password</button>
+                    </div>
+
                 </div>
                 <hr className='text-gray-500' />
                 <div className='flex flex-col items-start gap-2'>
@@ -341,6 +363,43 @@ const FacultyMyProfile = () => {
                         <p className="text-xs text-red-500">
                             You can only update your name, biography, research interests and room number.
                         </p>
+                    </div>
+                </div>
+            </dialog>
+
+            {/* Modal for reset password */}
+
+            <dialog ref={resetPasswordRef} className="modal modal-bottom sm:modal-middle">
+                <div className="modal-box">
+
+                    <h3 className="font-bold text-lg">Reset Password</h3>
+
+                    <p className="py-4 text-gray-600">
+                        A password reset link will be sent to your email address.
+                        Are you sure you want to continue?
+                    </p>
+
+                    <div className="modal-action">
+
+                        <button
+                            onClick={handleResetPassword}
+                            disabled={loading}
+                            className="bg-[#1E40AF] text-white px-5 py-2 rounded-lg cursor-pointer text-center transition-colors hover:bg-blue-600 duration-500"
+                        >
+                            {
+                                loading
+                                    ? <span className="loading loading-dots loading-sm"></span>
+                                    : "Yes, Send Link"
+                            }
+                        </button>
+
+                        <button
+                            onClick={handleCloseResetPasswordModal}
+                            className="btn"
+                        >
+                            Cancel
+                        </button>
+
                     </div>
                 </div>
             </dialog>

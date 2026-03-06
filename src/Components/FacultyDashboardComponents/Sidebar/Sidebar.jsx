@@ -1,5 +1,5 @@
 import { GraduationCap } from 'lucide-react';
-import React from 'react';
+import React, { useRef } from 'react';
 import { FaRegCircleUser } from 'react-icons/fa6';
 import { HiOutlineBookOpen } from 'react-icons/hi';
 import { IoLogOutOutline } from 'react-icons/io5';
@@ -7,8 +7,9 @@ import { MdOutlineCalendarMonth, MdOutlineCalendarToday, MdOutlineDashboard, MdP
 import { NavLink, useNavigate } from 'react-router';
 import { toast } from 'sonner';
 
-const Sidebar = ({logout}) => {
-    const navigate=useNavigate();
+const Sidebar = ({ logout }) => {
+    const navigate = useNavigate();
+    const logoutRef = useRef(null);
 
     const menuItemStyle = "flex items-center gap-3 px-3 py-2 rounded-lg transition-all";
 
@@ -18,8 +19,8 @@ const Sidebar = ({logout}) => {
 
     // Logout functions
 
-    const handleOpenModal = () => document.getElementById("my_modal_5").showModal();
-    const handleCloseModal = () => document.getElementById("my_modal_5").close();
+    const handleOpenModal = () => logoutRef.current.showModal();
+    const handleCloseModal = () => logoutRef.current.close();
 
     const handleLogout = () => {
         handleCloseModal();
@@ -83,14 +84,31 @@ const Sidebar = ({logout}) => {
 
             {/* Modal for logout */}
 
-            <dialog id="my_modal_5" className="modal modal-bottom sm:modal-middle">
+            <dialog ref={logoutRef} className="modal modal-bottom sm:modal-middle">
                 <div className="modal-box">
-                    <p className="py-4">Are you sure you want to logout?</p>
+
+                    <h3 className="font-bold text-lg">Logout</h3>
+
+                    <p className="py-4 text-gray-600">
+                        Are you sure you want to logout from your account?
+                    </p>
+
                     <div className="modal-action">
-                        <form method="dialog">
-                            <button onClick={handleLogout} className="btn mr-3">Yes</button>
-                            <button onClick={handleCloseModal} className="btn">No</button>
-                        </form>
+
+                        <button
+                            onClick={handleLogout}
+                            className="bg-[#1E40AF] text-white px-5 py-2 rounded-lg cursor-pointer text-center transition-colors hover:bg-blue-600 duration-500"
+                        >
+                            Logout
+                        </button>
+
+                        <button
+                            onClick={handleCloseModal}
+                            className="btn"
+                        >
+                            Cancel
+                        </button>
+
                     </div>
                 </div>
             </dialog>
