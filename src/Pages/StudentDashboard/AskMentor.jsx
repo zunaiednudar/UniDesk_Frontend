@@ -66,6 +66,15 @@ const formatTime = (dateStr) => {
     return new Date(dateStr).toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit'});
 };
 
+// Converts "HH:MM" (24hr) to "hh:MM AM/PM" (12hr) for display
+const to12hr = (time24) => {
+    if (!time24) return '';
+    const [h, m] = time24.split(':').map(Number);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const h12 = h % 12 || 12;
+    return `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
+};
+
 const Avatar = ({photoURL, name, size = 'lg'}) => {
     const sz = size === 'lg' ? 'w-16 h-16 text-lg' : size === 'md' ? 'w-10 h-10 text-sm' : 'w-8 h-8 text-xs';
     return photoURL ? (
@@ -131,14 +140,13 @@ const EmptyState = ({message, onClear}) => (
 );
 
 const MEETING_TYPES = [
-    {value: '', label: 'General (default)'},
-    {value: 'academic', label: 'Academic'},
+    {value: 'general', label: 'General (default)'},
     {value: 'thesis', label: 'Thesis'},
     {value: 'project', label: 'Project'},
 ];
 
 // Maps JS getDay() index to schedule day names
-const JS_DAY_TO_SCHEDULE = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const JS_DAY_TO_SCHEDULE = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 // Returns true if time HH:MM falls within any busy slot on that day's schedule
 const isTimeBusy = (schedule, dayName, time) => {
@@ -150,7 +158,7 @@ const isTimeBusy = (schedule, dayName, time) => {
     const busySlots = dayEntry.classes || [];
     return busySlots.some(slot => {
         const slotStart = slot.startTime ?? slot.from;
-        const slotEnd   = slot.endTime   ?? slot.to;
+        const slotEnd = slot.endTime ?? slot.to;
         if (!slotStart || !slotEnd) return false;
         return time >= slotStart && time < slotEnd;
     });
@@ -164,7 +172,7 @@ const rangeOverlapsBusy = (schedule, dayName, from, to) => {
     const busySlots = dayEntry.classes || [];
     return busySlots.some(slot => {
         const slotStart = slot.startTime ?? slot.from;
-        const slotEnd   = slot.endTime   ?? slot.to;
+        const slotEnd = slot.endTime ?? slot.to;
         if (!slotStart || !slotEnd) return false;
         // overlap: from < slotEnd AND to > slotStart
         return from < slotEnd && to > slotStart;
@@ -178,7 +186,7 @@ const BookingModal = ({instructor, onClose, onBooked}) => {
         to: '',
         topic: '',
         format: '',
-        meetingType: '',
+        meetingType: 'general',
     };
 
     const [form, setForm] = useState(emptyForm);
@@ -195,9 +203,15 @@ const BookingModal = ({instructor, onClose, onBooked}) => {
             setScheduleLoading(true);
             try {
                 const r = await axiosSecure.get(`/schedule/${instructor.id}`);
-                setSchedule(r.data.schedule ?? r.data ?? null);
-            } catch {
-                setSchedule(null); // no schedule set — all times open
+                // Backend may return { schedule: {...} } or the object directly
+                const raw = r.data?.schedule ?? r.data ?? null;
+                // Validate it actually has weeklySchedule before storing
+                const parsed = raw?.weeklySchedule ? raw : null;
+                console.log('[Schedule] raw:', raw, '→ parsed:', parsed);
+                setSchedule(parsed);
+            } catch (err) {
+                console.warn('[Schedule] fetch failed:', err?.response?.status, err?.response?.data);
+                setSchedule(null);
             } finally {
                 setScheduleLoading(false);
             }
@@ -206,9 +220,12 @@ const BookingModal = ({instructor, onClose, onBooked}) => {
     }, [instructor.id]);
 
     // Derived: which day of week is the selected date?
-    const selectedDayName = form.date
-        ? JS_DAY_TO_SCHEDULE[new Date(form.date + 'T00:00:00').getDay()]
-        : null;
+    const selectedDayName = (() => {
+        if (!form.date) return null;
+        // Parse yyyy-mm-dd directly to avoid any timezone shifting
+        const [y, m, d] = form.date.split('-').map(Number);
+        return JS_DAY_TO_SCHEDULE[new Date(y, m - 1, d).getDay()];
+    })();
 
     // Busy class slots for the selected day (to render hint list)
     const busySlotsForDay = (() => {
@@ -216,6 +233,29 @@ const BookingModal = ({instructor, onClose, onBooked}) => {
         const dayEntry = schedule.weeklySchedule?.find(d => d.day === selectedDayName);
         return dayEntry?.classes || [];
     })();
+
+    // Free slots for selected day — used for min/max on time inputs
+    const freeSlotsForDay = (() => {
+        if (!schedule || !selectedDayName) return [];
+        const dayEntry = schedule.weeklySchedule?.find(d => d.day === selectedDayName);
+        return dayEntry?.freeSlots || [];
+    })();
+
+    // If a from time is picked, find which free slot it belongs to (to set max on "to")
+    const activeFreeSlot = (() => {
+        if (!form.from || freeSlotsForDay.length === 0) return null;
+        return freeSlotsForDay.find(slot =>
+            form.from >= slot.startTime && form.from < slot.endTime
+        ) || null;
+    })();
+
+    // Frontend guard: check if from/to is strictly inside any free slot
+    const isInsideFreeSlot = (from, to) => {
+        if (!from || !to || freeSlotsForDay.length === 0) return false;
+        return freeSlotsForDay.some(slot =>
+            from >= slot.startTime && to <= slot.endTime
+        );
+    };
 
     const handleChange = (e) => {
         setSuccess(false);
@@ -239,9 +279,15 @@ const BookingModal = ({instructor, onClose, onBooked}) => {
             return;
         }
 
-        // Check against faculty schedule
+        // Check time is inside a free slot (backend enforces this strictly)
+        if (schedule && freeSlotsForDay.length > 0 && !isInsideFreeSlot(from, to)) {
+            setFormError("Please choose a time within the available slots shown above.");
+            return;
+        }
+
+        // Check against faculty schedule class conflicts
         if (schedule && selectedDayName && rangeOverlapsBusy(schedule, selectedDayName, from, to)) {
-            setFormError('This time slot overlaps with the faculty\'s class schedule. Please choose a different time.');
+            setFormError("This time slot overlaps with the faculty's class schedule. Please choose a different time.");
             return;
         }
 
@@ -250,12 +296,14 @@ const BookingModal = ({instructor, onClose, onBooked}) => {
         try {
             const payload = {
                 facultyID: instructor.id,
+                // Send as plain yyyy-mm-dd — backend concatenates date + startTime itself
+                // e.g. new Date(`${date}T${startTime}:00`) so date must stay bare
                 date,
                 startTime: from,
                 endTime: to,
                 purpose: topic.trim(),
                 mode: format,
-                ...(form.meetingType && {meetingType: form.meetingType}),
+                meetingType: form.meetingType || 'general',
             };
 
             const res = await axiosSecure.post('/appointment', payload);
@@ -338,20 +386,43 @@ const BookingModal = ({instructor, onClose, onBooked}) => {
                                 </p>
                                 {busySlotsForDay.map((slot, i) => {
                                     const s = slot.startTime ?? slot.from ?? '';
-                                    const e = slot.endTime   ?? slot.to   ?? '';
+                                    const e = slot.endTime ?? slot.to ?? '';
                                     return (
                                         <p key={i} className="text-xs text-red-500 pl-4">
-                                            {slot.courseName || slot.subject || 'Class'}: {s} – {e}
+                                            {slot.courseName || slot.subject || 'Class'}: {to12hr(s)} – {to12hr(e)}
                                         </p>
                                     );
                                 })}
                             </div>
                         )}
-                        {!scheduleLoading && form.date && busySlotsForDay.length === 0 && selectedDayName && (
-                            <p className="text-xs text-green-600 mt-1.5 flex items-center gap-1">
-                                <CheckCircle2 size={11}/> No classes scheduled on {selectedDayName}
-                            </p>
-                        )}
+                        {/* Free slots hint */}
+                        {!scheduleLoading && form.date && selectedDayName && (() => {
+                            const dayEntry = schedule?.weeklySchedule?.find(d => d.day === selectedDayName);
+                            const freeSlots = dayEntry?.freeSlots || [];
+                            if (!schedule) return null;
+                            if (!dayEntry) return (
+                                <p className="text-xs text-orange-500 mt-1.5 flex items-center gap-1">
+                                    <AlertCircle size={11}/> Faculty has no schedule for {selectedDayName}
+                                </p>
+                            );
+                            return freeSlots.length > 0 ? (
+                                <div
+                                    className="mt-2 bg-green-50 border border-green-100 rounded-xl px-3 py-2.5 space-y-1">
+                                    <p className="text-xs font-semibold text-green-700 flex items-center gap-1.5">
+                                        <CheckCircle2 size={11}/> Available slots on {selectedDayName}
+                                    </p>
+                                    {freeSlots.map((slot, i) => (
+                                        <p key={i} className="text-xs text-green-600 pl-4">
+                                            {to12hr(slot.startTime)} – {to12hr(slot.endTime)}
+                                        </p>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-xs text-orange-500 mt-1.5 flex items-center gap-1">
+                                    <AlertCircle size={11}/> No free slots on {selectedDayName}
+                                </p>
+                            );
+                        })()}
                     </div>
 
                     {/* From / To */}
@@ -362,6 +433,8 @@ const BookingModal = ({instructor, onClose, onBooked}) => {
                             </label>
                             <input type="time" name="from"
                                    value={form.from} onChange={handleChange}
+                                   min={freeSlotsForDay.length === 1 ? freeSlotsForDay[0].startTime : undefined}
+                                   max={freeSlotsForDay.length === 1 ? freeSlotsForDay[0].endTime : undefined}
                                    className={`${inputCls} ${
                                        form.from && selectedDayName && rangeOverlapsBusy(schedule, selectedDayName, form.from, form.to || form.from)
                                            ? 'border-red-400 ring-2 ring-red-100'
@@ -374,6 +447,8 @@ const BookingModal = ({instructor, onClose, onBooked}) => {
                             </label>
                             <input type="time" name="to"
                                    value={form.to} onChange={handleChange}
+                                   min={activeFreeSlot ? activeFreeSlot.startTime : (freeSlotsForDay.length === 1 ? freeSlotsForDay[0].startTime : undefined)}
+                                   max={activeFreeSlot ? activeFreeSlot.endTime : (freeSlotsForDay.length === 1 ? freeSlotsForDay[0].endTime : undefined)}
                                    className={`${inputCls} ${
                                        form.to && selectedDayName && rangeOverlapsBusy(schedule, selectedDayName, form.from || form.to, form.to)
                                            ? 'border-red-400 ring-2 ring-red-100'
@@ -383,7 +458,8 @@ const BookingModal = ({instructor, onClose, onBooked}) => {
                     </div>
                     {/* Real-time overlap warning */}
                     {form.from && form.to && selectedDayName && rangeOverlapsBusy(schedule, selectedDayName, form.from, form.to) && (
-                        <div className="flex items-center gap-2 text-xs text-red-600 bg-red-50 border border-red-100 rounded-xl px-3 py-2 -mt-2">
+                        <div
+                            className="flex items-center gap-2 text-xs text-red-600 bg-red-50 border border-red-100 rounded-xl px-3 py-2 -mt-2">
                             <AlertCircle size={13} className="flex-shrink-0"/>
                             This time overlaps with the faculty's class. Please pick a different slot.
                         </div>
