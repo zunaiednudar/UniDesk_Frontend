@@ -1,4 +1,4 @@
-import { createBrowserRouter } from "react-router";
+import {createBrowserRouter, Navigate} from "react-router";
 import RootLayout from "../Layouts/RootLayout/RootLayout.jsx";
 import Home from "../Pages/Home/Home.jsx";
 import Login from "../Pages/Login/Login.jsx";
@@ -8,8 +8,18 @@ import NotFound from "../Pages/NotFound.jsx/NotFound.jsx";
 
 import DashboardLayout from "../Layouts/DashboardLayout/DashboardLayout.jsx";
 import StudentDashboard from "../Pages/StudentDashboard/StudentDashboard.jsx";
+import MyActivity from "../Pages/StudentDashboard/MyActivity.jsx";
+import MyCourses from "../Pages/StudentDashboard/MyCourses.jsx";
+import MyProjects from "../Pages/StudentDashboard/MyProjects.jsx";
+import MyAssessments from "../Pages/StudentDashboard/MyAssessments.jsx";
+import AskMentor from "../Pages/StudentDashboard/AskMentor.jsx";
 import PublicRoute from "../Providers/PublicRoute/PublicRoute.jsx";
 import StudentRoute from "../Providers/RoleWiseRoutes/StudentRoute/StudentRoute.jsx";
+import Profile from "../Pages/Profile/Profile.jsx";
+import Notification from "../Pages/Notification/Notification.jsx";
+import CourseDetails from "../Components/Course/CourseDetails.jsx";
+import {Component} from "react";
+import * as path from "node:path";
 
 export const router = createBrowserRouter([
     {
@@ -48,18 +58,44 @@ export const router = createBrowserRouter([
     },
     {
         path: "/dashboard/student",
-        element:<StudentRoute>
-            <DashboardLayout></DashboardLayout>
-        </StudentRoute>,
+        Component: StudentDashboard,
         children: [
             {
-                index:true,
-                Component:StudentDashboard
+                index: true,
+                element: <Navigate to="activity" replace />
             },
             {
-                path:"my-activity",
-                Component:StudentDashboard
-            }
+                path: "activity",
+                Component: MyActivity
+            },
+            {
+                path: "courses",
+                Component: MyCourses
+            },
+            {
+                path: "assessments",
+                Component: MyAssessments
+            },
+            // {
+            //     path: "projects",
+            //     Component: MyProjects
+            // },
+            {
+                path: "ask-mentor",
+                Component: AskMentor
+            },
+            {
+                path: "profile",
+                Component: Profile
+            },
+            {
+                path: "notifications",
+                Component: Notification
+            },
+            {
+                path: "courses/:id/details",
+                Component: CourseDetails
+            },
         ]
     },
     {
