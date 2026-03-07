@@ -1,15 +1,88 @@
 @import "tailwindcss";
 @plugin "daisyui";
 
+* {
+    scrollbar-width: thin;
+    scrollbar-color: #d1d5db transparent;
+}
 
-.gilroy {
+.inter {
     font-family: "Inter", sans-serif;
     font-optical-sizing: auto;
     font-style: normal;
 }
 
-.graphik {
+.playfair {
     font-family: "Playfair", serif;
     font-optical-sizing: auto;
     font-style: normal;
 }
+
+@font-face {
+    font-family: 'Graphik';
+    src:  url('./fonts/Graphik Family/Graphik-Bold-Trial.otf') format('opentype');
+    font-weight: 700;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Graphik';
+    src:  url('./fonts/Graphik Family/Graphik-Semibold-Trial.otf') format('opentype');
+    font-weight: 600;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Graphik';
+    src:  url('./fonts/Graphik Family/Graphik-Medium-Trial.otf') format('opentype');
+    font-weight: 500;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Graphik';
+    src:  url('./fonts/Graphik Family/Graphik-Regular-Trial.otf') format('opentype');
+    font-weight: 400;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Gilroy';
+    src:  url('./fonts/Gilroy-Bold.ttf') format('truetype');
+    font-weight: 700;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Gilroy';
+    src:  url('./fonts/Gilroy-SemiBold.ttf') format('truetype');
+    font-weight: 600;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Gilroy';
+    src:  url('./fonts/Gilroy-Medium.ttf') format('truetype');
+    font-weight: 500;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Gilroy';
+    src:  url('./fonts/Gilroy-Regular.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+}
+
+.graphik {
+    font-family: 'Graphik', sans-serif;
+    font-optical-sizing: auto;
+    font-style: normal;
+}
+
+.gilroy {
+    font-family: 'Gilroy', sans-serif;
+    font-optical-sizing: auto;
+    font-style: normal;
+}
+

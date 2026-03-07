@@ -115,11 +115,11 @@ const Home = () => {
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mt-10 md:mt-12 cursor-default">
                             {stats.map((stat, index) => (
                                 <div key={index} className="bg-white/10 backdrop-blur-sm rounded-lg p-4 md:p-6 hover:bg-white/20 transition">
-                                    <p className="text-2xl md:text-4xl font-bold mb-1">
+                                    <p className="graphik text-2xl md:text-4xl font-medium mb-1">
                                         {stat.number}
                                     </p>
 
-                                    <p className="text-xs md:text-md text-gray-300">
+                                    <p className="text-sm md:text-md text-gray-300">
                                         {stat.label}
                                     </p>
                                 </div>
@@ -133,9 +133,9 @@ const Home = () => {
             {/*Features Section*/}
             <div ref={featuresRef} className="max-w-360 mx-auto px-6 py-20 scroll-mt-24">
                 <div className="text-center mb-16">
-                    <h2 className="graphik text-4xl font-extrabold text-gray-900 mb-2">Powerful Features</h2>
+                    <h2 className="graphik text-4xl font-medium text-gray-900 mb-2">Powerful Features</h2>
 
-                    <p className="text-gray-600 text-sm">Everything you need for a complete learning management experience</p>
+                    <p className="text-gray-600 text-md">Everything you need for a complete learning management experience</p>
                 </div>
 
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -143,7 +143,7 @@ const Home = () => {
                         <div key={index} className="bg-white rounded-xl p-6 transition border border-gray-100">
                             <div className="mb-4">{feature.icon}</div>
 
-                            <h3 className="graphik text-2xl font-extrabold text-gray-900 mb-3">{feature.title}</h3>
+                            <h3 className="graphik text-2xl font-medium text-gray-900 mb-3">{feature.title}</h3>
 
                             <p className="text-sm text-gray-600 leading-relaxed">{feature.description}</p>
                         </div>
@@ -164,7 +164,7 @@ const Home = () => {
                         </div>
 
                         <div>
-                            <h2 className="graphik text-4xl font-extrabold text-gray-900 mb-6">About UniDesk</h2>
+                            <h2 className="graphik text-4xl font-medium text-gray-900 mb-6">About UniDesk</h2>
 
                             <p className="text-gray-600 mb-6 leading-relaxed text-justify">
                                 UniDesk is a comprehensive Learning Management System designed specifically for Khulna University of Engineering & Technology (KUET).
@@ -179,7 +179,7 @@ const Home = () => {
                                         </div>
 
                                         <div>
-                                            <h4 className="graphik text-xl font-extrabold text-gray-900">{benefit.title}</h4>
+                                            <h4 className="text-xl font-medium text-gray-900">{benefit.title}</h4>
                                             <p className="text-gray-500">{benefit.description}</p>
                                         </div>
                                     </div>
@@ -193,9 +193,9 @@ const Home = () => {
             {/*CTA Section*/}
             <div className="bg-gradient-to-r from-blue-900 via-blue-750 to-blue-500 text-white py-20">
                 <div className="max-w-4xl mx-auto px-6 text-center">
-                    <h2 className="graphik text-5xl text-white font-extrabold mb-2">Ready to Get Started?</h2>
+                    <h2 className="graphik text-5xl text-white font-regular mb-2">Ready to Get Started?</h2>
 
-                    <p className="text-lg text-gray-100 mb-8">
+                    <p className="text-md text-gray-100 mb-8">
                         Join thousands of students and faculties already using UniDesk
                     </p>
 

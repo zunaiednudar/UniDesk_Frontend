@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const axiosSecure=axios.create({
-    baseURL:import.meta.env.VITE_SERVER_URL
+    baseURL: import.meta.env.VITE_SERVER_URL
 });
 
 axiosSecure.interceptors.request.use((config)=>{
