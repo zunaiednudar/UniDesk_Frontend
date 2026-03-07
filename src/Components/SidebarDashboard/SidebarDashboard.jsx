@@ -82,9 +82,12 @@ const SidebarDashboard = ({ menuItems, isSidebarOpen, setIsSidebarOpen, toggleSi
                             <NavLink to="/dashboard/student" className={({ isActive }) => isActive ? activeClass : normalClass}>
                                 <LayoutDashboard className="w-5 h-5" />
                             </NavLink>
-                            <NavLink to="/repository" className={({ isActive }) => isActive ? activeClass : normalClass}>
-                                <LibraryBig className="w-5 h-5" />
-                            </NavLink>
+
+                            {userData && (
+                                <NavLink to={`/dashboard/student/${userData?._id}/repository`} className={({ isActive }) => isActive ? activeClass : normalClass}>
+                                    <LibraryBig className="w-5 h-5" />
+                                </NavLink>
+                            )}
                         </div>
 
                         <div className="flex flex-col items-center">
