@@ -9,7 +9,7 @@ const Repository = () => {
             {/* stats if user is logged in */}
             {id && (
                 <div>
-                    {id}
+
                 </div>
             )}
 
