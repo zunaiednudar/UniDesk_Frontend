@@ -9,7 +9,7 @@ import {
     Search,
     File,
     FileImage, FileText,
-    Calendar, Download, Eye
+    Calendar, Download, Eye, UsersRound, BookCheck
 } from 'lucide-react';
 import {
     Chart as ChartJS,
@@ -177,11 +177,15 @@ const Repository = () => {
     const {id} = useParams();
     const [contributionPoints, setContributionPoints] = useState(0);
     const [repositoryItems, setRepositoryItems] = useState([]);
-    const [totalUploaded, setTotalUploaded] = useState(0);
+    const [totalApproved, setTotalApproved] = useState(0);
     const [totalRejected, setTotalRejected] = useState(0);
     const [leaderboard, setLeaderboard] = useState([]);
     const [graphData, setGraphData] = useState();
     const [searchQuery, setSearchQuery] = useState('');
+
+    const [totalContributorsCount, setTotalContributorsCount] = useState([]);
+    const [totalUploadCount, setTotalUploadCount] = useState(0);
+    const [totalDownloadCount, setTotalDownloadCount] = useState(0);
 
     const handleDownload = async (url, title) => {
         try {
@@ -253,7 +257,7 @@ const Repository = () => {
                     return sum;
                 }, 0);
 
-                const totalUploaded = repositoryItems.reduce((sum, item) => {
+                const totalApproved = repositoryItems.reduce((sum, item) => {
                     if (item.uploader._id === id) return sum + 1;
                     return sum;
                 }, 0);
@@ -261,6 +265,18 @@ const Repository = () => {
                 const totalRejected = repositoryItems.reduce((sum, item) => {
                     if (item.uploader._id === id && item.rejectedReason) return sum + 1;
                     return sum;
+                }, 0);
+
+                const totalContributors = new Set(
+                    repositoryItems
+                        .filter(item => item.contributionPoints > 0)
+                        .map(item => item.uploader._id)
+                ).size;
+
+                const totalUploaded = repositoryItems.length;
+
+                const totalDownloaded = repositoryItems.reduce((sum, item) => {
+                    return sum + item.downloadCount;
                 }, 0);
 
                 const allPersonalNotes = repositoryItems
@@ -364,8 +380,12 @@ const Repository = () => {
 
                 setContributionPoints(totalContributionPoints);
                 setRepositoryItems(repositoryItems);
-                setTotalUploaded(totalUploaded);
+                setTotalApproved(totalApproved);
                 setTotalRejected(totalRejected);
+
+                setTotalContributorsCount(totalContributors);
+                setTotalUploadCount(totalUploaded);
+                setTotalDownloadCount(totalDownloaded);
 
                 setLeaderboard(leaderboard);
                 setGraphData(data);
@@ -389,15 +409,15 @@ const Repository = () => {
     });
 
     return (
-        <div className="gilroy space-y-6">
+        <div className={`gilroy space-y-6 ${!id ? "m-10" : "m-0"}`}>
             {/* Header */}
-            <div>
+            <div className={`${!id ? "m-5" : "m-0"}`}>
                 <h1 className="graphik text-3xl font-semibold text-gray-900">Repository</h1>
                 <p className="text-sm text-gray-400 mt-1">A collaborative platform for students and instructors to
                     exchange study materials, participate in discussions, and contribute valuable academic resources</p>
             </div>
 
-            {/* Stats */}
+            {/* Registered User - Stats */}
             {id && (
                 <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-4">
                     <StatCard
@@ -408,9 +428,9 @@ const Repository = () => {
                         iconColor="text-emerald-500"/>
 
                     <StatCard
-                        icon={CloudUpload}
-                        value={totalUploaded}
-                        label="Total Uploaded"
+                        icon={BookCheck}
+                        value={totalApproved}
+                        label="Total Approved"
                         iconBg="bg-blue-50"
                         iconColor="text-blue-500"/>
 
@@ -423,11 +443,37 @@ const Repository = () => {
                 </div>
             )}
 
+            {/* Unregistered User - Stats */}
+            {!id && (
+                <div className={`grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-4 ${!id ? "m-5" : "m-0"}`}>
+                    <StatCard
+                        icon={UsersRound}
+                        value={totalContributorsCount}
+                        label="Total Contributors"
+                        iconBg="bg-emerald-50"
+                        iconColor="text-emerald-500"/>
+
+                    <StatCard
+                        icon={CloudUpload}
+                        value={totalUploadCount}
+                        label="Total Uploaded"
+                        iconBg="bg-blue-50"
+                        iconColor="text-blue-500"/>
+
+                    <StatCard
+                        icon={Download}
+                        value={totalDownloadCount}
+                        label="Total Downloaded"
+                        iconBg="bg-orange-50"
+                        iconColor="text-orange-500"/>
+                </div>
+            )}
+
 
             {/* Contribution graph + Leaderboard */}
             <div className="lg:p-5 grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-4">
                 {/* Contribution graph */}
-                {graphData && (
+                {id && graphData && (
                     <div className="h-[500px]">
                         <Line data={graphData} options={options}/>
                     </div>
@@ -511,7 +557,7 @@ const Repository = () => {
             {/* Materials section */}
             <div>
                 {/* Search */}
-                <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+                <div className={`bg-white rounded-2xl p-5 shadow-sm border border-gray-100 ${!id ? "m-5" : "m-0"}`}>
                     <div className="relative">
                         <Search size={15} className="text-gray-400 absolute left-3 top-1/2 -translate-y-1/2"/>
                         <input
