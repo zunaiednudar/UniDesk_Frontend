@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import axiosSecure from '../../utils/axiosSecure.js';
 import Loading from '../../Components/Loading/Loading.jsx';
-import { ArrowLeft, Building2, CalendarClock, Check, Cog, Copy, FolderOpen, GraduationCap, LogOut, LucideClipboardCheck, Megaphone, UserCheck, UserX, Users, Search, UserMinus, Download } from 'lucide-react';
+import { ArrowLeft, Building2, CalendarClock, Check, Cog, Copy, FolderOpen, GraduationCap, LogOut, LucideClipboardCheck, Megaphone, UserCheck, UserX, Users, Search, UserMinus, Download, Trash2 } from 'lucide-react';
 import PaginationTemplate from '../../Components/PaginationTemplate/PaginationTemplate.jsx';
 import { MdManageAccounts, MdOutlineAssignmentTurnedIn } from 'react-icons/md';
 import { FiBookOpen } from "react-icons/fi";
@@ -216,7 +216,7 @@ const FacultyCourseDetails = () => {
             try {
                 setLoading(true);
                 const res = await axiosSecure.get(`/course/${id}/materials`);
-                const resMaterials = res?.data?.materials;
+                const resMaterials = res?.data?.materials || [];
                 const sortedMaterials = [...resMaterials].sort((a, b) =>
                     new Date(b.updatedAt) - new Date(a.updatedAt)
                 );
@@ -263,6 +263,11 @@ const FacultyCourseDetails = () => {
 
     /* Managing students related  */
 
+    const [loadingRemoveStudent, setLoadingRemoveStudent] = useState(false);
+    const [confirmStudent, setConfirmStudent] = useState(null);
+
+    // Manage students modal related
+
     const manageStudentModalRef = useRef(null);
     const confirmRemoveModalRef = useRef(null);
 
@@ -284,14 +289,12 @@ const FacultyCourseDetails = () => {
         setConfirmStudent(null);
     };
 
-    const [studentSearch, setStudentSearch] = useState("");
-    const [studentPage, setStudentPage] = useState(1);
-    const [loadingRemoveStudent, setLoadingRemoveStudent] = useState(false);
-    const [confirmStudent, setConfirmStudent] = useState(null);
-
     const allStudents = course?.students || [];
 
     // Pagination
+
+    const [studentSearch, setStudentSearch] = useState("");
+    const [studentPage, setStudentPage] = useState(1);
 
     const studentsPerPage = 10;
 
@@ -337,9 +340,13 @@ const FacultyCourseDetails = () => {
 
     /* Course materials */
 
-    const [materialSearch, setMaterialSearch] = useState("");
-    const [materialPage, setMaterialPage] = useState(1);
+    const [confirmMaterial, setConfirmMaterial] = useState(null);
+    const [loadingRemoveMaterial, setLoadingRemoveMaterial] = useState(false);
+
+    // Course files modal related
+
     const manageMaterialsModalRef = useRef(null);
+    const confirmRemoveMaterialModalRef = useRef(null);
 
     const handleManageMaterialsOpenModal = () => {
         setMaterialSearch("");
@@ -348,6 +355,21 @@ const FacultyCourseDetails = () => {
     };
 
     const handleManageMaterialsCloseModal = () => manageMaterialsModalRef.current?.close();
+
+    const handleOpenConfirmRemoveMaterial = (material) => {
+        setConfirmMaterial(material);
+        confirmRemoveMaterialModalRef.current?.showModal();
+    };
+
+    const handleCloseConfirmRemoveMaterial = () => {
+        confirmRemoveMaterialModalRef.current?.close();
+        setConfirmMaterial(null);
+    };
+
+    // Pagination
+
+    const [materialSearch, setMaterialSearch] = useState("");
+    const [materialPage, setMaterialPage] = useState(1);
 
     const materialsPerPage = 10;
 
@@ -363,6 +385,30 @@ const FacultyCourseDetails = () => {
     const startMaterial = (safeMaterialPage - 1) * materialsPerPage;
     const paginatedMaterials = filteredMaterials.slice(startMaterial, startMaterial + materialsPerPage);
 
+    // Material deletion function
+
+    const handleRemoveMaterial = async () => {
+        if (!confirmMaterial?._id)
+            return;
+
+        try {
+            setLoadingRemoveMaterial(true);
+
+            await axiosSecure.delete(`/course/material/${confirmMaterial._id}`);
+
+            setMaterials((prev) => prev.filter((m) => m._id !== confirmMaterial._id));
+
+            if (paginatedMaterials.length === 1 && materialPage > 1)
+                setMaterialPage((p) => p - 1);
+
+            handleCloseConfirmRemoveMaterial();
+            toast.success("Material deleted successfully");
+        } catch (error) {
+            toast.error(error?.response?.data?.message || "Failed to delete material");
+        } finally {
+            setLoadingRemoveMaterial(false);
+        }
+    };
 
     if (loading)
         return <Loading></Loading>
@@ -829,12 +875,12 @@ const FacultyCourseDetails = () => {
                 <div className="modal-box max-w-md">
                     <h3 className="font-bold text-lg">Remove Student</h3>
                     <p className="py-3 text-sm text-gray-600">
-                        Are you sure you want to remove <span className="font-semibold">{formatName(confirmStudent?.name)}</span>?
+                        Are you sure you want to remove this student?
                     </p>
                     <div className="flex justify-end gap-2">
                         <button className="btn btn-soft" onClick={handleCloseConfirmRemove}>Cancel</button>
                         <button
-                            className="w-40 bg-[#1E40AF] text-white rounded-lg py-2 transition-colors hover:bg-blue-600 duration-500 cursor-pointer"
+                            className="w-25 bg-[#1E40AF] text-white transition-colors hover:bg-blue-600 duration-500 cursor-pointer"
                             disabled={loadingRemoveStudent}
                             onClick={handleRemoveStudent}
                         >
@@ -879,14 +925,23 @@ const FacultyCourseDetails = () => {
                                 paginatedMaterials.map((material) => (
                                     <div key={material._id} className="flex items-center justify-between gap-3 p-3 rounded-xl border border-gray-200 bg-gray-50">
                                         <p className="text-sm font-semibold truncate">{material?.title}</p>
-                                        <a
-                                            href={material?.url}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="btn btn-sm border-blue-200 text-blue-600 hover:bg-blue-600 hover:text-white shrink-0"
-                                        >
-                                            <Download className="w-4 h-4" />
-                                        </a>
+                                        <div className='flex items-center gap-2'>
+                                            <a
+                                                href={material?.url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="btn btn-sm border-blue-200 text-blue-600 hover:bg-blue-600 hover:text-white shrink-0"
+                                            >
+                                                <Download className="w-4 h-4" />
+                                            </a>
+                                            <button
+                                                onClick={() => handleOpenConfirmRemoveMaterial(material)}
+                                                className="btn btn-sm border-red-200 text-red-600 hover:bg-red-600 hover:text-white"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
+
                                     </div>
                                 ))
                             )
@@ -907,6 +962,36 @@ const FacultyCourseDetails = () => {
                 </div>
             </dialog>
 
+            {/* Material deletion modal */}
+
+            <dialog ref={confirmRemoveMaterialModalRef} className="modal modal-middle">
+                <div className="modal-box max-w-md">
+                    <h3 className="font-bold text-lg">Delete Material</h3>
+                    <p className="py-3 text-sm text-gray-600">
+                        Are you sure you want to delete this material?
+                    </p>
+
+                    <div className="flex justify-end gap-2">
+                        <button className="btn btn-soft" onClick={handleCloseConfirmRemoveMaterial}>
+                            Cancel
+                        </button>
+
+                        <button
+                            className="btn bg-[#1E40AF] text-white transition-colors hover:bg-blue-600 duration-500 cursor-pointer"
+                            disabled={loadingRemoveMaterial}
+                            onClick={handleRemoveMaterial}
+                        >
+                            {
+                                loadingRemoveMaterial ? (
+                                    <span className="loading loading-dots loading-md"></span>
+                                ) : (
+                                    "Delete"
+                                )
+                            }
+                        </button>
+                    </div>
+                </div>
+            </dialog>
         </div>
     );
 };
