@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import axiosSecure from '../../utils/axiosSecure.js';
 import Loading from '../../Components/Loading/Loading.jsx';
-import { ArrowLeft, Building2, CalendarClock, Check, Cog, Copy, FolderOpen, GraduationCap, LogOut, LucideClipboardCheck, Megaphone, UserCheck, UserX, Users, Search, UserMinus, Download, Trash2, Upload } from 'lucide-react';
+import { ArrowLeft, Building2, CalendarClock, Check, Cog, Copy, FolderOpen, GraduationCap, LogOut, LucideClipboardCheck, Megaphone, UserCheck, UserX, Users, Search, UserMinus, Download, Trash2, Upload, X } from 'lucide-react';
 import PaginationTemplate from '../../Components/PaginationTemplate/PaginationTemplate.jsx';
 import { MdManageAccounts, MdOutlineAssignmentTurnedIn } from 'react-icons/md';
 import { FiBookOpen } from "react-icons/fi";
@@ -165,10 +165,9 @@ const FacultyCourseDetails = () => {
         }
     };
 
-    // Course, Announcements and Assignments fetch
+    // Course, Announcements, Materials and Assignments fetch
 
     useEffect(() => {
-
         const fetchCourse = async () => {
             try {
                 setLoading(true);
@@ -185,6 +184,12 @@ const FacultyCourseDetails = () => {
             try {
                 setLoading(true);
                 const res = await axiosSecure.get(`/course/${id}/announcements`);
+
+                if (!res.data.announcements) {
+                    setAnnouncements([])
+                    return;
+                }
+
                 const resAnnouncements = res?.data?.announcements;
                 const sortedAnnouncements = [...resAnnouncements].sort((a, b) =>
                     new Date(b.updatedAt) - new Date(a.updatedAt)
@@ -201,6 +206,11 @@ const FacultyCourseDetails = () => {
             try {
                 setLoading(true);
                 const res = await axiosSecure.get(`/course/${id}/assignments`);
+
+                if (!res.data.assignments) {
+                    setAssignments([])
+                    return;
+                }
                 const resAssignments = res?.data?.assignments;
                 const sortedAssignments = [...resAssignments].sort((a, b) =>
                     new Date(b.updatedAt) - new Date(a.updatedAt)
@@ -217,6 +227,12 @@ const FacultyCourseDetails = () => {
             try {
                 setLoading(true);
                 const res = await axiosSecure.get(`/course/${id}/materials`);
+
+                if (!res.data.materials) {
+                    setMaterials([])
+                    return;
+                }
+
                 const resMaterials = res?.data?.materials || [];
                 const sortedMaterials = [...resMaterials].sort((a, b) =>
                     new Date(b.updatedAt) - new Date(a.updatedAt)
@@ -243,7 +259,7 @@ const FacultyCourseDetails = () => {
         {
             logo: Building2,
             title: "Department",
-            info: course?.department.toUpperCase()
+            info: course?.department?.toUpperCase()
         },
         {
             logo: GraduationCap,
@@ -305,7 +321,7 @@ const FacultyCourseDetails = () => {
             return true;
 
         return (
-            student?.name.toLowerCase().includes(query) || student?.studentID.toLowerCase().includes(query)
+            student?.name?.toLowerCase().includes(query) || student?.studentID?.toLowerCase().includes(query)
         );
     });
 
@@ -349,7 +365,6 @@ const FacultyCourseDetails = () => {
     const [materialTitle, setMaterialTitle] = useState("");
     const [materialDescription, setMaterialDescription] = useState("");
     const [materialFile, setMaterialFile] = useState(null);
-    const [materialURL, setMaterialURL] = useState("");
     const [loadingUploadMaterial, setLoadingUploadMaterial] = useState(false);
 
     // Course materials modal related
@@ -390,7 +405,7 @@ const FacultyCourseDetails = () => {
         const query = materialSearch.toLowerCase().trim();
         if (!query)
             return true;
-        return material?.title.toLowerCase().includes(query);
+        return material?.title?.toLowerCase().includes(query);
     });
 
     const totalMaterialPages = Math.max(1, Math.ceil(filteredMaterials.length / materialsPerPage));
@@ -403,8 +418,7 @@ const FacultyCourseDetails = () => {
     const handleUploadMaterial = async (e) => {
         e.preventDefault();
 
-        const form = e.currentTarget;
-        const file = form.elements.materialFile?.files?.[0];
+        const file = materialFile;
 
         if (!file) {
             toast.error("Please select a file");
@@ -421,8 +435,6 @@ const FacultyCourseDetails = () => {
                 return;
             }
 
-            setMaterialURL(uploadedURL.url);
-
             const newMaterial = {
                 title: materialTitle.trim(),
                 description: materialDescription.trim(),
@@ -438,12 +450,12 @@ const FacultyCourseDetails = () => {
 
             handleCloseUploadMaterialModal();
 
-            form.reset();
+            setMaterialFile(null);
             setMaterialTitle("");
             setMaterialDescription("");
-            setMaterialURL("");
 
-            setMaterials(prev => [{ ...newMaterial }, ...prev])
+            if (res?.data?.material)
+                setMaterials((prev) => [res.data.material, ...prev]);
 
             toast.success("Material uploaded successfully");
 
@@ -479,218 +491,479 @@ const FacultyCourseDetails = () => {
         }
     };
 
+    /* Announcement related */
+
+    const [loadingAnnouncementAction, setLoadingAnnouncementAction] = useState(false);
+
+    // Uploading data
+
+    const [createTitle, setCreateTitle] = useState("");
+    const [createDescription, setCreateDescription] = useState("");
+    const [createAnnouncementFiles, setCreateAnnouncementFiles] = useState([]);
+
+    // Annoucement modal related
+
+    const createAnnouncementModalRef = useRef(null);
+    const viewAnnouncementModalRef = useRef(null);
+    const deleteAnnouncementModalRef = useRef(null);
+
+    const openCreateAnnouncementModal = () => {
+        setCreateTitle("");
+        setCreateDescription("");
+        setCreateAnnouncementFiles([]);
+        createAnnouncementModalRef.current?.showModal();
+    };
+
+    const closeCreateAnnouncementModal = () => {
+        createAnnouncementModalRef.current?.close();
+        setCreateAnnouncementFiles([]);
+    };
+
+    const openViewAnnouncementModal = (announcement) => {
+        setSelectedAnnouncement(announcement);
+        setIsEditMode(false);
+        setEditTitle(announcement?.title || "");
+        setEditDescription(announcement?.description || "");
+        setNewAnnouncementFiles([]);
+        setRemoveAnnouncementAttachmentURLs([]);
+        viewAnnouncementModalRef.current?.showModal();
+    };
+
+    const closeViewAnnouncementModal = () => {
+        viewAnnouncementModalRef.current?.close();
+        setSelectedAnnouncement(null);
+        setIsEditMode(false);
+        setNewAnnouncementFiles([]);
+        setRemoveAnnouncementAttachmentURLs([]);
+    };
+
+
+    // Announcement creation modal
+
+    const handleCreateAnnouncement = async (e) => {
+        e.preventDefault();
+        try {
+            setLoadingAnnouncementAction(true);
+
+            const attachments = await Promise.all(
+                createAnnouncementFiles.map(async (file) => {
+                    const uploaded = await uploadFileToCloudinary(file);
+                    return {
+                        name: file.name,
+                        url: uploaded.url,
+                        cloudinaryId: uploaded.public_id
+                    };
+                })
+            );
+
+            const announcement = {
+                title: createTitle.trim(),
+                description: createDescription.trim()
+            };
+
+            if (attachments.length > 0)
+                announcement.attachments = attachments;
+
+            const res = await axiosSecure.post(`/course/${id}/announcement`, announcement);
+
+            if (!res?.data?.success) {
+                toast.error(res?.data?.message || "Announcement creation failed");
+                return;
+            }
+
+            if (res?.data?.announcement)
+                setAnnouncements(prev => [
+                    res.data.announcement, ...prev
+                ]);
+
+            closeCreateAnnouncementModal();
+            toast.success("Announcement created");
+        } catch (error) {
+            toast.error(error?.response?.data?.message || "Create failed");
+        } finally {
+            setLoadingAnnouncementAction(false);
+        }
+    };
+
+    const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
+    const [isEditMode, setIsEditMode] = useState(false);
+    const [editTitle, setEditTitle] = useState("");
+    const [editDescription, setEditDescription] = useState("");
+    const [announcementToDelete, setAnnouncementToDelete] = useState(null);
+    const [newAnnouncementFiles, setNewAnnouncementFiles] = useState([]);
+    const [removeAnnouncementAttachmentURLs, setRemoveAnnouncementAttachmentURLs] = useState([]);
+
+    const getAttachmentURL = (attachment) => {
+        if (!attachment)
+            return "";
+        if (typeof attachment === "string")
+            return attachment;
+        return attachment?.url || "";
+    };
+
+    const getAttachmentName = (attachment) => {
+        if (attachment?.name)
+            return attachment.name;
+        const url = getAttachmentURL(attachment);
+        if (!url)
+            return "Attachment";
+        try {
+            return decodeURIComponent(url.split("/").pop() || "Attachment");
+        } catch {
+            return url.split("/").pop() || "Attachment";
+        }
+    };
+
+    const handleCloseDeleteAnnouncementModal = () => {
+        deleteAnnouncementModalRef.current?.close();
+        setAnnouncementToDelete(null);
+    };
+
+    const handleOpenDeleteAnnouncementModal = (announcement) => {
+        setAnnouncementToDelete(announcement);
+        deleteAnnouncementModalRef.current?.showModal();
+    };
+
+    const handleToggleRemoveAnnouncementAttachment = (URL) => {
+        setRemoveAnnouncementAttachmentURLs((prev) => {
+            if (prev.includes(URL))
+                return prev.filter((item) => item !== URL);
+            return [...prev, URL];
+        });
+    };
+
+    const handleUpdateAnnouncement = async () => {
+        if (!selectedAnnouncement?._id)
+            return;
+
+        const trimmedTitle = editTitle.trim();
+        const trimmedDescription = editDescription.trim();
+
+        if (!trimmedTitle || !trimmedDescription) {
+            toast.error("Title and description are required");
+            return;
+        }
+
+        try {
+            setLoadingAnnouncementAction(true);
+
+            const addAttachments = await Promise.all(
+                newAnnouncementFiles.map(async (file) => {
+                    const uploaded = await uploadFileToCloudinary(file);
+                    return {
+                        name: file.name,
+                        url: uploaded.url,
+                        cloudinaryId: uploaded.public_id
+                    };
+                })
+            );
+
+            const payload = {
+                title: trimmedTitle,
+                description: trimmedDescription
+            };
+
+            if (addAttachments.length > 0)
+                payload.addAttachments = addAttachments;
+
+            if (removeAnnouncementAttachmentURLs.length > 0)
+                payload.removeAttachments = removeAnnouncementAttachmentURLs;
+
+            const res = await axiosSecure.patch(
+                `/course/${id}/announcement/${selectedAnnouncement._id}`,
+                payload
+            );
+
+            if (!res?.data?.success) {
+                toast.error(res?.data?.message || "Update failed");
+                return;
+            }
+
+            const previousAttachments = selectedAnnouncement?.attachments || [];
+            const filteredExisting = previousAttachments.filter((item) => {
+                const url = getAttachmentURL(item);
+                return !removeAnnouncementAttachmentURLs.includes(url);
+            });
+
+            const nextAttachments = [...filteredExisting, ...addAttachments];
+            const nextUpdatedAt = new Date().toISOString();
+
+            setAnnouncements((prev) => prev.map((item) =>
+                item._id === selectedAnnouncement._id
+                    ? {
+                        ...item,
+                        title: trimmedTitle,
+                        description: trimmedDescription,
+                        attachments: nextAttachments,
+                        updatedAt: nextUpdatedAt
+                    }
+                    : item
+            ));
+
+            setSelectedAnnouncement((prev) => ({
+                ...prev,
+                title: trimmedTitle,
+                description: trimmedDescription,
+                attachments: nextAttachments,
+                updatedAt: nextUpdatedAt
+            }));
+
+            setIsEditMode(false);
+            setNewAnnouncementFiles([]);
+            setRemoveAnnouncementAttachmentURLs([]);
+
+            toast.success("Announcement updated");
+        } catch (error) {
+            toast.error(error?.response?.data?.message || "Update failed");
+        } finally {
+            setLoadingAnnouncementAction(false);
+        }
+    };
+
+    const handleDeleteAnnouncement = async () => {
+        if (!announcementToDelete?._id)
+            return;
+
+        try {
+            setLoadingAnnouncementAction(true);
+
+            const res = await axiosSecure.delete(`/course/announcement/${announcementToDelete._id}`);
+
+            if (!res?.data?.success) {
+                toast.error(res?.data?.message || "Delete failed");
+                return;
+            }
+
+            setAnnouncements((prev) => prev.filter((item) => item._id !== announcementToDelete._id));
+
+            handleCloseDeleteAnnouncementModal();
+            closeViewAnnouncementModal();
+            toast.success("Announcement deleted successfully");
+        } catch (error) {
+            toast.error(error?.response?.data?.message || "Delete failed");
+        } finally {
+            setLoadingAnnouncementAction(false);
+        }
+    };
+
+
     if (loading)
         return <Loading></Loading>
 
-    console.log(announcements, assignments, materials);
     return (
-        <div className='w-full max-w-full p-5 flex flex-col gap-10 gilroy'>
+        <>
+            {/* Page content */}
 
-            {/* First Block */}
+            <div className='w-full max-w-full p-5 flex flex-col gap-10 gilroy'>
 
-            <div className='flex flex-col gap-5'>
+                {/* First Block */}
 
-                {/* Go back button */}
+                <div className='flex flex-col gap-5'>
 
-                <Link to="/dashboard/faculty/my-courses" className='flex items-center gap-1 text-sm text-gray-500'><ArrowLeft className='w-4 h-4' /> <span>Back to Courses</span>
-                </Link>
+                    {/* Go back button */}
 
-                {/* Course name and code */}
+                    <Link to="/dashboard/faculty/my-courses" className='flex items-center gap-1 text-sm text-gray-500'><ArrowLeft className='w-4 h-4' /> <span>Back to Courses</span>
+                    </Link>
 
-                <div className='flex flex-col gap-1'>
-                    <div className='flex items-center gap-2'>
-                        <p className='graphik font-semibold text-xl md:text-2xl lg:text-3xl'>{course?.courseCode}</p>
-                        {
-                            course?.status === "active" ?
-                                <span className="badge bg-green-100 border-green-200 text-xs text-green-600 font-semibold rounded-xl"><div className='bg-green-600 w-2 h-2 rounded-full'></div>Active</span>
-                                :
-                                <span className="badge bg-blue-100 border-blue-200 text-xs text-blue-600 font-semibold rounded-xl"><Check className='text-blue-600 w-3 h-3'></Check>Completed</span>
-                        }
-                    </div>
-                    <p className='text-gray-500'>{course?.courseName}</p>
-                </div>
-            </div>
+                    {/* Course name and code */}
 
-            {/* Second Block of stats cards */}
-
-            <div className='w-full max-w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 justify-items-center gap-3'>
-                {
-                    stats.map(stat =>
-                        <div key={stat.title} className='w-full p-5 rounded-lg shadow-lg flex flex-col gap-2 box-border border border-gray-100 hover:-translate-y-1 transition-all duration-300'>
-                            <div className='flex gap-2 items-center'>
-                                <stat.logo className='w-5 h-5 text-gray-500' />
-                                <p className='text-gray-500 text-xs'>{stat.title}</p>
-
-                            </div>
-                            <p className='graphik text-sm font-medium'>{stat.info}</p>
+                    <div className='flex flex-col gap-1'>
+                        <div className='flex items-center gap-2'>
+                            <p className='graphik font-semibold text-xl md:text-2xl lg:text-3xl'>{course?.courseCode}</p>
+                            {
+                                course?.status === "active" ?
+                                    <span className="badge bg-green-100 border-green-200 text-xs text-green-600 font-semibold rounded-xl"><div className='bg-green-600 w-2 h-2 rounded-full'></div>Active</span>
+                                    :
+                                    <span className="badge bg-blue-100 border-blue-200 text-xs text-blue-600 font-semibold rounded-xl"><Check className='text-blue-600 w-3 h-3'></Check>Completed</span>
+                            }
                         </div>
-                    )
-                }
-            </div>
-
-            {/* Third block of course management buttons */}
-
-            <div className='w-full flex flex-col p-5 rounded-lg shadow-lg gap-5 box-border border border-gray-100'>
-                <div className='flex items-center gap-2'>
-                    <div className='w-10 h-10 bg-gray-100 rounded-lg flex justify-center items-center'>
-                        <MdManageAccounts className='w-5 h-5 text-black' />
+                        <p className='text-gray-500'>{course?.courseName}</p>
                     </div>
-                    <p className='font-semibold'>Manage course</p>
                 </div>
 
-                <div className='w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 p-4 md:p-5 gap-3'>
-                    <button className='w-full min-h-10 justify-center flex items-center gap-2 text-xs md:text-sm text-black border border-black px-3 py-2 rounded-xl whitespace-nowrap transition-colors hover:bg-black hover:text-white duration-500 cursor-pointer' onClick={handleOpenEditCourseModal}><Cog /> Edit </button>
+                {/* Second Block of stats cards */}
 
-                    <button className='w-full min-h-10 justify-center flex items-center gap-2 text-xs md:text-sm text-blue-600 border border-blue-200 px-3 py-2 rounded-xl whitespace-nowrap transition-colors hover:bg-blue-600 hover:text-white duration-500 cursor-pointer' onClick={handleManageStudentOpenModal}>
-                        <RxPeople className='w-4 h-4 shrink-0' /> Manage Students
-                    </button>
-
-                    <button className='w-full min-h-10 justify-center flex items-center gap-2 text-xs md:text-sm text-green-600 border border-red-200 px-3 py-2 rounded-xl whitespace-nowrap transition-colors hover:bg-green-600 hover:text-white duration-500 cursor-pointer' onClick={handleOpenUploadMaterialModal}><Upload className='w-4 h-4 shrink-0' /> Upload Material</button>
-
-                    <button className='w-full min-h-10 justify-center flex items-center gap-2 text-xs md:text-sm text-gray-600 border border-gray-200 px-3 py-2 rounded-xl whitespace-nowrap transition-colors hover:bg-gray-600 hover:text-white duration-500 cursor-pointer' onClick={handleManageMaterialsOpenModal}><FolderOpen className='w-4 h-4 shrink-0' /> Course Materials</button>
-                </div>
-            </div>
-
-            {/* Fourth block of Announcements */}
-
-            <div className='w-full flex flex-col p-5 rounded-lg shadow-lg gap-5 box-border border border-gray-100'>
-                <div className='w-full flex flex-col items-start md:items-center md:justify-between md:flex-row gap-5'>
-                    <div className='flex items-center gap-2'>
-                        <div className='w-10 h-10 bg-blue-100 rounded-lg flex justify-center items-center'>
-                            <Megaphone className='w-5 h-5 text-blue-700' />
-                        </div>
-                        <p className='font-semibold'>Announcements</p>
-                    </div>
-
-                    {/* Announcement creation button */}
-
-                    <button className="flex gap-2 items-center bg-[#1E40AF] text-white px-5 py-2 rounded-lg cursor-pointer text-center transition-colors hover:bg-blue-600 duration-500 text-xs md:text-sm lg:text-md"><IoMdCreate /> Create
-                    </button>
-                </div>
-                <div className='flex flex-col gap-2'>
+                <div className='w-full max-w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 justify-items-center gap-3'>
                     {
-                        announcements.length === 0 ?
-                            <p className='col-span-full text-gray-500 text-sm md:text- md lg:text-lg text-center py-10'>
-                                No announcement found
-                            </p>
-                            :
-                            announcements.map(announcement =>
-                                <div className='flex flex-col gap-1 p-3 rounded-xl bg-gray-50 border border-gray-100 hover:border-blue-100 hover:bg-blue-50/30 transition-all duration-500 cursor-pointer'>
-                                    <div className='flex justify-between'>
-                                        <p className='font-semibold text-xs truncate md:text-sm'>{announcement?.title}</p>
-                                        <p className='text-xs text-gray-500'>{timeAgo(announcement?.updatedAt)}</p>
-                                    </div>
-                                    <p className='text-xs text-gray-500 truncate'>{announcement?.description}</p>
+                        stats.map(stat =>
+                            <div key={stat.title} className='w-full p-5 rounded-lg shadow-lg flex flex-col gap-2 box-border border border-gray-100 hover:-translate-y-1 transition-all duration-300'>
+                                <div className='flex gap-2 items-center'>
+                                    <stat.logo className='w-5 h-5 text-gray-500' />
+                                    <p className='text-gray-500 text-xs'>{stat.title}</p>
+
                                 </div>
-                            )
+                                <p className='graphik text-sm font-medium'>{stat.info}</p>
+                            </div>
+                        )
                     }
                 </div>
-            </div>
 
-            {/* Fifth block of assignments and course's other info */}
+                {/* Third block of course management buttons */}
 
-            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-10'>
+                <div className='w-full flex flex-col p-5 rounded-lg shadow-lg gap-5 box-border border border-gray-100'>
+                    <div className='flex items-center gap-2'>
+                        <div className='w-10 h-10 bg-gray-100 rounded-lg flex justify-center items-center'>
+                            <MdManageAccounts className='w-5 h-5 text-black' />
+                        </div>
+                        <p className='font-semibold'>Manage course</p>
+                    </div>
 
-                {/* Assignments */}
+                    <div className='w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 p-4 md:p-5 gap-3'>
+                        <button className='w-full min-h-10 justify-center flex items-center gap-2 text-xs md:text-sm text-black border border-black px-3 py-2 rounded-xl whitespace-nowrap transition-colors hover:bg-black hover:text-white duration-500 cursor-pointer' onClick={handleOpenEditCourseModal}><Cog /> Edit </button>
 
-                <div className='col-span-1 md:col-span-2 lg:col-span-3 w-full flex flex-col p-4 md:p-5 rounded-lg shadow-lg gap-5 box-border border border-gray-100'>
+                        <button className='w-full min-h-10 justify-center flex items-center gap-2 text-xs md:text-sm text-blue-600 border border-blue-200 px-3 py-2 rounded-xl whitespace-nowrap transition-colors hover:bg-blue-600 hover:text-white duration-500 cursor-pointer' onClick={handleManageStudentOpenModal}>
+                            <RxPeople className='w-4 h-4 shrink-0' /> Manage Students
+                        </button>
+
+                        <button className='w-full min-h-10 justify-center flex items-center gap-2 text-xs md:text-sm text-green-600 border border-red-200 px-3 py-2 rounded-xl whitespace-nowrap transition-colors hover:bg-green-600 hover:text-white duration-500 cursor-pointer' onClick={handleOpenUploadMaterialModal}><Upload className='w-4 h-4 shrink-0' /> Upload Material</button>
+
+                        <button className='w-full min-h-10 justify-center flex items-center gap-2 text-xs md:text-sm text-gray-600 border border-gray-200 px-3 py-2 rounded-xl whitespace-nowrap transition-colors hover:bg-gray-600 hover:text-white duration-500 cursor-pointer' onClick={handleManageMaterialsOpenModal}><FolderOpen className='w-4 h-4 shrink-0' /> Course Materials</button>
+                    </div>
+                </div>
+
+                {/* Fourth block of Announcements */}
+
+                <div className='w-full flex flex-col p-5 rounded-lg shadow-lg gap-5 box-border border border-gray-100'>
                     <div className='w-full flex flex-col items-start md:items-center md:justify-between md:flex-row gap-5'>
                         <div className='flex items-center gap-2'>
-                            <div className='w-10 h-10 bg-orange-100 rounded-lg flex justify-center items-center'>
-                                <LucideClipboardCheck className='w-5 h-5 text-orange-700' />
+                            <div className='w-10 h-10 bg-blue-100 rounded-lg flex justify-center items-center'>
+                                <Megaphone className='w-5 h-5 text-blue-700' />
                             </div>
-                            <p className='font-semibold'>Assignments</p>
+                            <p className='font-semibold'>Announcements</p>
                         </div>
 
-                        {/* Assignment creation button */}
+                        {/* Announcement creation button */}
 
-                        <button className="flex gap-2 items-center bg-[#1E40AF] text-white px-5 py-2 rounded-lg cursor-pointer text-center transition-colors hover:bg-blue-600 duration-500 text-xs md:text-sm lg:text-md"><IoMdCreate /> Create
+                        <button onClick={openCreateAnnouncementModal} className="flex gap-2 items-center bg-[#1E40AF] text-white px-5 py-2 rounded-lg cursor-pointer text-center transition-colors hover:bg-blue-600 duration-500 text-xs md:text-sm lg:text-md"><IoMdCreate /> Create
                         </button>
                     </div>
                     <div className='flex flex-col gap-2'>
                         {
-                            assignments.length === 0 ?
-                                <p className='w-full text-gray-500 text-sm md:text- md lg:text-lg text-center py-10'>
-                                    No assignment found
+                            announcements.length === 0 ?
+                                <p className='col-span-full text-gray-500 text-sm md:text- md lg:text-lg text-center py-10'>
+                                    No announcement found
                                 </p>
                                 :
-                                assignments.map(assignment =>
-                                    <div key={assignment?._id} className='flex flex-col gap-3 p-4 rounded-xl bg-gray-50 border border-gray-100 hover:border-blue-100 hover:bg-blue-50/30 transition-all duration-500 cursor-pointer'>
-                                        <div className='flex items-start justify-between'>
-                                            <p className='font-semibold text-sm md:text-base truncate'>{assignment?.title}</p>
-                                            <p className='text-xs text-gray-500 mt-1'>{timeAgo(assignment?.updatedAt)}</p>
+                                announcements.map(announcement =>
+                                    <div key={announcement?._id} onClick={() => openViewAnnouncementModal(announcement)} className='flex flex-col gap-1 p-3 rounded-xl bg-gray-50 border border-gray-100 hover:border-blue-100 hover:bg-blue-50/30 transition-all duration-500 cursor-pointer'>
+                                        <div className='flex justify-between'>
+                                            <p className='font-semibold text-xs truncate md:text-sm'>{announcement?.title}</p>
+                                            <p className='text-xs text-gray-500'>{timeAgo(announcement?.updatedAt)}</p>
                                         </div>
-
-                                        <p className='text-xs md:text-sm text-gray-600 line-clamp-2'>{assignment?.description}</p>
-
-                                        <div className='grid grid-cols-1 md:grid-cols-3 gap-2 text-xs'>
-                                            <div className='flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-gray-700'>
-                                                <CalendarClock className='w-4 h-4 text-blue-600' />
-                                                <span className='truncate'>{formatDueDate(assignment?.dueDate)}</span>
-                                            </div>
-                                            <div className='flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-green-700'>
-                                                <UserCheck className='w-4 h-4' />
-                                                <span>{assignment?.submissions?.length || 0} Submitted</span>
-                                            </div>
-                                            <div className='flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-red-700'>
-                                                <UserX className='w-4 h-4' />
-                                                <span>{course?.students?.length - assignment?.submissions?.length < 0 ? "0" : course?.students?.length - assignment?.submissions?.length} Missing</span>
-                                            </div>
-                                        </div>
+                                        <p className='text-xs text-gray-500 truncate'>{announcement?.description}</p>
                                     </div>
                                 )
                         }
                     </div>
                 </div>
-                {/* Instructors and description */}
 
-                <div className='col-span-1 md:col-span-2 lg:col-span-1 p-0 md:p-1 lg:p-0'>
+                {/* Fifth block of assignments and course's other info */}
 
-                    {/* Instructors */}
+                <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-10'>
 
-                    <div className='w-full flex flex-col p-4 md:p-5 rounded-lg shadow-lg gap-5 box-border border border-gray-100'>
-                        <div className='flex items-center gap-2'>
-                            <div className='w-10 h-10 bg-purple-100 rounded-lg flex justify-center items-center'>
-                                <GiTeacher className='w-5 h-5 text-purple-700' />
+                    {/* Assignments */}
+
+                    <div className='col-span-1 md:col-span-2 lg:col-span-3 w-full flex flex-col p-4 md:p-5 rounded-lg shadow-lg gap-5 box-border border border-gray-100'>
+                        <div className='w-full flex flex-col items-start md:items-center md:justify-between md:flex-row gap-5'>
+                            <div className='flex items-center gap-2'>
+                                <div className='w-10 h-10 bg-orange-100 rounded-lg flex justify-center items-center'>
+                                    <LucideClipboardCheck className='w-5 h-5 text-orange-700' />
+                                </div>
+                                <p className='font-semibold'>Assignments</p>
                             </div>
-                            <p className='font-semibold'>Instructors</p>
+
+                            {/* Assignment creation button */}
+
+                            <button className="flex gap-2 items-center bg-[#1E40AF] text-white px-5 py-2 rounded-lg cursor-pointer text-center transition-colors hover:bg-blue-600 duration-500 text-xs md:text-sm lg:text-md"><IoMdCreate /> Create
+                            </button>
                         </div>
-                        <div className='flex flex-col gap-1'>
+                        <div className='flex flex-col gap-2'>
                             {
-                                course?.faculties.length === 0
-                                    ?
-                                    <p className='w-full text-gray-500 text-xs text-center py-10'>
-                                        No instructor found
+                                assignments.length === 0 ?
+                                    <p className='w-full text-gray-500 text-sm md:text- md lg:text-lg text-center py-10'>
+                                        No assignment found
                                     </p>
                                     :
-                                    course?.faculties.map(faculty =>
-                                        <div key={faculty?._id || faculty?.email} className='w-full h-auto flex items-center gap-3 min-w-0'>
-                                            <img className='w-10 h-10 rounded-full shrink-0' src={faculty?.photoURL} />
-                                            <div className='flex flex-col min-w-0 w-full'>
-                                                <p className='text-xs font-bold truncate'>{formatName(faculty?.name)}</p>
-                                                <p className='text-xs break-all leading-tight'>{faculty?.email}</p>
+                                    assignments.map(assignment =>
+                                        <div key={assignment?._id} className='flex flex-col gap-3 p-4 rounded-xl bg-gray-50 border border-gray-100 hover:border-blue-100 hover:bg-blue-50/30 transition-all duration-500 cursor-pointer'>
+                                            <div className='flex items-start justify-between'>
+                                                <p className='font-semibold text-sm md:text-base truncate'>{assignment?.title}</p>
+                                                <p className='text-xs text-gray-500 mt-1'>{timeAgo(assignment?.updatedAt)}</p>
+                                            </div>
+
+                                            <p className='text-xs md:text-sm text-gray-600 line-clamp-2'>{assignment?.description}</p>
+
+                                            <div className='grid grid-cols-1 md:grid-cols-3 gap-2 text-xs'>
+                                                <div className='flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-gray-700'>
+                                                    <CalendarClock className='w-4 h-4 text-blue-600' />
+                                                    <span className='truncate'>{formatDueDate(assignment?.dueDate)}</span>
+                                                </div>
+                                                <div className='flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-green-700'>
+                                                    <UserCheck className='w-4 h-4' />
+                                                    <span>{assignment?.submissions?.length || 0} Submitted</span>
+                                                </div>
+                                                <div className='flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-red-700'>
+                                                    <UserX className='w-4 h-4' />
+                                                    <span>{course?.students?.length - assignment?.submissions?.length < 0 ? "0" : course?.students?.length - assignment?.submissions?.length} Missing</span>
+                                                </div>
                                             </div>
                                         </div>
                                     )
                             }
                         </div>
                     </div>
+                    {/* Instructors and description */}
 
-                    {/* Description */}
+                    <div className='col-span-1 md:col-span-2 lg:col-span-1 p-0 md:p-1 lg:p-0'>
 
-                    <div className='w-full flex flex-col p-4 md:p-5 rounded-lg shadow-lg gap-5 box-border border border-gray-100'>
-                        <div className='flex items-center gap-2'>
-                            <div className='w-10 h-10 bg-gray-100 rounded-lg flex justify-center items-center'>
-                                <FiBookOpen className='w-5 h-5 text-gray-700' />
+                        {/* Instructors */}
+
+                        <div className='w-full flex flex-col p-4 md:p-5 rounded-lg shadow-lg gap-5 box-border border border-gray-100'>
+                            <div className='flex items-center gap-2'>
+                                <div className='w-10 h-10 bg-purple-100 rounded-lg flex justify-center items-center'>
+                                    <GiTeacher className='w-5 h-5 text-purple-700' />
+                                </div>
+                                <p className='font-semibold'>Instructors</p>
                             </div>
-                            <p className='font-semibold'>Description</p>
+                            <div className='flex flex-col gap-1'>
+                                {
+                                    (!course?.faculties || course.faculties.length === 0)
+                                        ?
+                                        <p className='w-full text-gray-500 text-xs text-center py-10'>
+                                            No instructor found
+                                        </p>
+                                        :
+                                        course?.faculties.map(faculty =>
+                                            <div key={faculty?._id || faculty?.email} className='w-full h-auto flex items-center gap-3 min-w-0'>
+                                                <img className='w-10 h-10 rounded-full shrink-0' src={faculty?.photoURL} />
+                                                <div className='flex flex-col min-w-0 w-full'>
+                                                    <p className='text-xs font-bold truncate'>{formatName(faculty?.name)}</p>
+                                                    <p className='text-xs break-all leading-tight'>{faculty?.email}</p>
+                                                </div>
+                                            </div>
+                                        )
+                                }
+                            </div>
                         </div>
-                        <p className='w-full text-gray-500 text-sm'>
-                            {!course?.description ? "No description found" : course?.description}
-                        </p>
+
+                        {/* Description */}
+
+                        <div className='w-full flex flex-col p-4 md:p-5 rounded-lg shadow-lg gap-5 box-border border border-gray-100'>
+                            <div className='flex items-center gap-2'>
+                                <div className='w-10 h-10 bg-gray-100 rounded-lg flex justify-center items-center'>
+                                    <FiBookOpen className='w-5 h-5 text-gray-700' />
+                                </div>
+                                <p className='font-semibold'>Description</p>
+                            </div>
+                            <p className='w-full text-gray-500 text-sm'>
+                                {!course?.description ? "No description found" : course?.description}
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>
+
+            {/* Modals */}
 
             {/* Edit course modal */}
 
@@ -699,9 +972,9 @@ const FacultyCourseDetails = () => {
                 <div className="modal-box max-w-xl p-8">
 
                     <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-2xl font-bold graphik">
+                        <p className="text-2xl font-bold graphik">
                             Edit Course
-                        </h3>
+                        </p>
 
                         <button
                             onClick={handleCloseEditCourseModal}
@@ -866,12 +1139,232 @@ const FacultyCourseDetails = () => {
                 </div>
             </dialog>
 
+            {/* Announcement creation modal */}
+
+            <dialog ref={createAnnouncementModalRef} className="modal modal-bottom sm:modal-middle">
+                <div className="modal-box max-w-xl p-6">
+                    <div className="flex items-center justify-between mb-4">
+                        <p className="text-xl font-bold graphik">Create Announcement</p>
+                        <button className="btn btn-sm btn-circle btn-ghost" onClick={closeCreateAnnouncementModal}>✕</button>
+                    </div>
+
+                    <form onSubmit={handleCreateAnnouncement} className="flex flex-col gap-4">
+                        <div className="flex flex-col gap-1">
+                            <label className="text-sm font-semibold text-gray-700">Title</label>
+                            <input
+                                type="text"
+                                className="input input-bordered w-full"
+                                value={createTitle}
+                                onChange={(e) => setCreateTitle(e.target.value)}
+                                required
+                            />
+                        </div>
+
+                        <div className="flex flex-col gap-1">
+                            <label className="text-sm font-semibold text-gray-700">Description</label>
+                            <textarea
+                                rows="5"
+                                className="textarea textarea-bordered w-full resize-none"
+                                value={createDescription}
+                                onChange={(e) => setCreateDescription(e.target.value)}
+                                required
+                            />
+                        </div>
+
+                        <div className="flex flex-col gap-1">
+                            <label className="text-sm font-semibold text-gray-700">Attachments (optional)</label>
+                            <input
+                                type="file"
+                                multiple
+                                className="file-input w-full"
+                                onChange={(e) => setCreateAnnouncementFiles(Array.from(e.target.files || []))}
+                            />
+                        </div>
+
+                        <div className="flex justify-end gap-2">
+                            <button type="button" className="btn btn-soft" onClick={closeCreateAnnouncementModal}>Cancel</button>
+                            <button type="submit" className="w-25 btn bg-[#1E40AF] text-white hover:bg-blue-600" disabled={loadingAnnouncementAction}>
+                                {
+                                    loadingAnnouncementAction
+                                        ? <span className="loading loading-dots loading-md"></span>
+                                        : "Create"
+                                }
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </dialog>
+
+            {/* View and edit announcement modal */}
+
+            <dialog ref={viewAnnouncementModalRef} className="modal modal-bottom sm:modal-middle">
+                <div className="modal-box max-w-2xl p-6">
+                    {
+                        selectedAnnouncement && (
+                            <div className="flex flex-col gap-4">
+                                <div className="flex items-center justify-between gap-2">
+                                    <p className="text-lg md:text-xl font-bold graphik">
+                                        {
+                                            isEditMode ? "Edit Announcement" : "Announcement Details"
+                                        }
+                                    </p>
+                                    <button className="btn btn-sm btn-circle btn-ghost" onClick={closeViewAnnouncementModal}>✕</button>
+                                </div>
+
+                                {
+                                    !isEditMode ? (
+                                        <>
+                                            <p className="text-xl font-semibold">{selectedAnnouncement?.title}</p>
+                                            <p className="text-xs text-gray-500">Updated {timeAgo(selectedAnnouncement?.updatedAt)}</p>
+                                            <p className="text-sm text-gray-700 whitespace-pre-wrap">{selectedAnnouncement?.description}</p>
+
+                                            {
+                                                selectedAnnouncement?.attachments?.length > 0 && (
+                                                    <div className="flex flex-col gap-2">
+                                                        <p className="text-sm font-semibold">Attachments</p>
+                                                        {
+                                                            selectedAnnouncement.attachments.map((attachment, idx) => {
+                                                                const url = getAttachmentURL(attachment);
+                                                                const name = getAttachmentName(attachment);
+                                                                return (
+                                                                    <div key={`${url}-${idx}`} className="flex items-center justify-between gap-3 p-3 rounded-xl border border-gray-200 bg-gray-50">
+                                                                        <p className="text-sm font-semibold truncate">{name}</p>
+                                                                        <a
+                                                                            href={url}
+                                                                            target="_blank"
+                                                                            rel="noopener noreferrer"
+                                                                            className="btn btn-sm border-blue-200 text-blue-600 hover:bg-blue-600 hover:text-white shrink-0"
+                                                                        >
+                                                                            <Download className="w-4 h-4" />
+                                                                        </a>
+                                                                    </div>
+                                                                );
+                                                            })
+                                                        }
+                                                    </div>
+                                                )
+                                            }
+
+                                            <div className="flex justify-end gap-2">
+                                                <button className="btn btn-soft" onClick={() => setIsEditMode(true)}>Edit</button>
+                                                <button className="btn btn-error text-white" onClick={() => handleOpenDeleteAnnouncementModal(selectedAnnouncement)}>Delete</button>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <div className="flex flex-col gap-1">
+                                                <label className="text-sm font-semibold text-gray-700">Title</label>
+                                                <input
+                                                    type="text"
+                                                    className="input input-bordered w-full"
+                                                    value={editTitle}
+                                                    onChange={(e) => setEditTitle(e.target.value)}
+                                                    required
+                                                />
+                                            </div>
+
+                                            <div className="flex flex-col gap-1">
+                                                <label className="text-sm font-semibold text-gray-700">Description</label>
+                                                <textarea
+                                                    rows="5"
+                                                    className="textarea textarea-bordered w-full resize-none"
+                                                    value={editDescription}
+                                                    onChange={(e) => setEditDescription(e.target.value)}
+                                                    required
+                                                />
+                                            </div>
+
+                                            <div className="flex flex-col gap-1">
+                                                <label className="text-sm font-semibold text-gray-700">Add New Attachments</label>
+                                                <input
+                                                    type="file"
+                                                    multiple
+                                                    className="file-input w-full"
+                                                    onChange={(e) => setNewAnnouncementFiles(Array.from(e.target.files || []))}
+                                                />
+                                            </div>
+
+                                            {
+                                                selectedAnnouncement?.attachments?.length > 0 && (
+                                                    <div className="flex flex-col gap-2">
+                                                        <p className="text-sm font-semibold">Existing Attachments</p>
+                                                        {
+                                                            selectedAnnouncement.attachments.map((attachment, idx) => {
+                                                                const url = getAttachmentURL(attachment);
+                                                                const marked = removeAnnouncementAttachmentURLs.includes(url);
+                                                                return (
+                                                                    <div key={`${url}-${idx}`} className={`flex items-center justify-between rounded-lg border px-3 py-2 text-sm ${marked ? "bg-blue-50 border-blue-300 text-blue-700" : "bg-gray-50 border-gray-200 text-gray-700"}`}>
+                                                                        <span className="truncate pr-3">{getAttachmentName(attachment)} {marked ? "(Will be removed)" : ""}</span>
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => handleToggleRemoveAnnouncementAttachment(url)}
+                                                                            className={`p-1 rounded-full border transition-colors ${marked ? "border-blue-300 text-blue-700 hover:bg-blue-100" : "border-gray-300 text-gray-500 hover:bg-gray-100"}`}
+                                                                            title={marked ? "Undo remove" : "Mark to remove"}
+                                                                        >
+                                                                            <X className="w-4 h-4" />
+                                                                        </button>
+                                                                    </div>
+                                                                );
+                                                            })
+                                                        }
+                                                    </div>
+                                                )
+                                            }
+
+                                            <div className="flex justify-end gap-2">
+                                                <button type="button" className="btn btn-soft" onClick={() => {
+                                                    setIsEditMode(false);
+                                                    setEditTitle(selectedAnnouncement?.title || "");
+                                                    setEditDescription(selectedAnnouncement?.description || "");
+                                                    setNewAnnouncementFiles([]);
+                                                    setRemoveAnnouncementAttachmentURLs([]);
+                                                }}>
+                                                    Cancel
+                                                </button>
+                                                <button type="button" className="w-40 btn bg-[#1E40AF] text-white hover:bg-blue-600" onClick={handleUpdateAnnouncement} disabled={loadingAnnouncementAction}>
+                                                    {
+                                                        loadingAnnouncementAction
+                                                            ? <span className="loading loading-dots loading-md"></span>
+                                                            : "Save Changes"
+                                                    }
+                                                </button>
+                                            </div>
+                                        </>
+                                    )
+                                }
+                            </div>
+                        )
+                    }
+                </div>
+            </dialog>
+
+            {/* Delete announcement confirmation modal */}
+
+            <dialog ref={deleteAnnouncementModalRef} className="modal modal-middle">
+                <div className="modal-box max-w-md">
+                    <p className="font-bold text-lg">Delete Announcement</p>
+                    <p className="py-3 text-sm text-gray-600">
+                        Are you sure you want to delete this announcement?
+                    </p>
+                    <div className="flex justify-end gap-2">
+                        <button className="btn btn-soft" onClick={handleCloseDeleteAnnouncementModal}>Cancel</button>
+                        <button className="w-25 bg-[#1E40AF] text-white transition-colors hover:bg-blue-600 duration-500 cursor-pointer" onClick={handleDeleteAnnouncement} disabled={loadingAnnouncementAction}>
+                            {
+                                loadingAnnouncementAction
+                                    ? <span className="loading loading-dots loading-md"></span>
+                                    : "Delete"
+                            }
+                        </button>
+                    </div>
+                </div>
+            </dialog>
+
             {/* Manage student modal */}
 
             <dialog ref={manageStudentModalRef} className="modal modal-bottom sm:modal-middle">
                 <div className="modal-box max-w-3xl p-6">
                     <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-xl font-bold graphik">Manage Students</h3>
+                        <p className="text-xl font-bold graphik">Manage Students</p>
                         <button
                             className="btn btn-sm btn-circle btn-ghost"
                             onClick={handleManageStudentCloseModal}
@@ -942,7 +1435,7 @@ const FacultyCourseDetails = () => {
 
             <dialog ref={confirmRemoveModalRef} className="modal modal-middle">
                 <div className="modal-box max-w-md">
-                    <h3 className="font-bold text-lg">Remove Student</h3>
+                    <p className="font-bold text-lg">Remove Student</p>
                     <p className="py-3 text-sm text-gray-600">
                         Are you sure you want to remove this student?
                     </p>
@@ -966,7 +1459,7 @@ const FacultyCourseDetails = () => {
             <dialog ref={manageMaterialsModalRef} className="modal modal-bottom sm:modal-middle">
                 <div className="modal-box max-w-3xl p-6">
                     <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-xl font-bold graphik">Course Materials</h3>
+                        <p className="text-xl font-bold graphik">Course Materials</p>
                         <button className="btn btn-sm btn-circle btn-ghost" onClick={handleManageMaterialsCloseModal}>✕</button>
                     </div>
 
@@ -1035,7 +1528,7 @@ const FacultyCourseDetails = () => {
 
             <dialog ref={confirmRemoveMaterialModalRef} className="modal modal-middle">
                 <div className="modal-box max-w-md">
-                    <h3 className="font-bold text-lg">Delete Material</h3>
+                    <p className="font-bold text-lg">Delete Material</p>
                     <p className="py-3 text-sm text-gray-600">
                         Are you sure you want to delete this material?
                     </p>
@@ -1067,7 +1560,7 @@ const FacultyCourseDetails = () => {
             <dialog ref={uploadMaterialModalRef} className="modal modal-bottom sm:modal-middle">
                 <div className="modal-box max-w-xl p-6">
                     <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-xl font-bold graphik">Upload Material</h3>
+                        <p className="text-xl font-bold graphik">Upload Material</p>
                         <button className="btn btn-sm btn-circle btn-ghost" onClick={handleCloseUploadMaterialModal}>
                             ✕
                         </button>
@@ -1124,8 +1617,7 @@ const FacultyCourseDetails = () => {
                     </form>
                 </div>
             </dialog>
-
-        </div>
+        </>
     );
 };
 
