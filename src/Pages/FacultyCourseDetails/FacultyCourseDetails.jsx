@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import axiosSecure from '../../utils/axiosSecure.js';
 import Loading from '../../Components/Loading/Loading.jsx';
-import { ArrowLeft, Building2, CalendarClock, Check, Cog, Copy, FolderOpen, GraduationCap, LogOut, LucideClipboardCheck, Megaphone, UserCheck, UserX, Users, Search, UserMinus, Download, Trash2 } from 'lucide-react';
+import { ArrowLeft, Building2, CalendarClock, Check, Cog, Copy, FolderOpen, GraduationCap, LogOut, LucideClipboardCheck, Megaphone, UserCheck, UserX, Users, Search, UserMinus, Download, Trash2, Upload } from 'lucide-react';
 import PaginationTemplate from '../../Components/PaginationTemplate/PaginationTemplate.jsx';
 import { MdManageAccounts, MdOutlineAssignmentTurnedIn } from 'react-icons/md';
 import { FiBookOpen } from "react-icons/fi";
@@ -13,6 +13,7 @@ import { RxPeople } from "react-icons/rx";
 import { formatDueDate } from '../../utils/formatDueDate.js';
 import { toast } from 'sonner';
 import formatName from '../../utils/formatName.js';
+import { uploadFileToCloudinary } from '../../utils/uploadToCloudinary.js';
 
 const FacultyCourseDetails = () => {
     const { id } = useParams();
@@ -343,9 +344,18 @@ const FacultyCourseDetails = () => {
     const [confirmMaterial, setConfirmMaterial] = useState(null);
     const [loadingRemoveMaterial, setLoadingRemoveMaterial] = useState(false);
 
-    // Course files modal related
+    // Uploading data
+
+    const [materialTitle, setMaterialTitle] = useState("");
+    const [materialDescription, setMaterialDescription] = useState("");
+    const [materialFile, setMaterialFile] = useState(null);
+    const [materialURL, setMaterialURL] = useState("");
+    const [loadingUploadMaterial, setLoadingUploadMaterial] = useState(false);
+
+    // Course materials modal related
 
     const manageMaterialsModalRef = useRef(null);
+    const uploadMaterialModalRef = useRef(null);
     const confirmRemoveMaterialModalRef = useRef(null);
 
     const handleManageMaterialsOpenModal = () => {
@@ -355,6 +365,9 @@ const FacultyCourseDetails = () => {
     };
 
     const handleManageMaterialsCloseModal = () => manageMaterialsModalRef.current?.close();
+
+    const handleOpenUploadMaterialModal = () => uploadMaterialModalRef.current?.showModal();
+    const handleCloseUploadMaterialModal = () => uploadMaterialModalRef.current?.close();
 
     const handleOpenConfirmRemoveMaterial = (material) => {
         setConfirmMaterial(material);
@@ -384,6 +397,62 @@ const FacultyCourseDetails = () => {
     const safeMaterialPage = Math.min(materialPage, totalMaterialPages);
     const startMaterial = (safeMaterialPage - 1) * materialsPerPage;
     const paginatedMaterials = filteredMaterials.slice(startMaterial, startMaterial + materialsPerPage);
+
+    // Material upload function
+
+    const handleUploadMaterial = async (e) => {
+        e.preventDefault();
+
+        const form = e.currentTarget;
+        const file = form.elements.materialFile?.files?.[0];
+
+        if (!file) {
+            toast.error("Please select a file");
+            return;
+        }
+
+        try {
+            setLoadingUploadMaterial(true);
+
+            const uploadedURL = await uploadFileToCloudinary(file);
+
+            if (!uploadedURL) {
+                toast.error("Material upload failed. Try again");
+                return;
+            }
+
+            setMaterialURL(uploadedURL.url);
+
+            const newMaterial = {
+                title: materialTitle.trim(),
+                description: materialDescription.trim(),
+                url: uploadedURL.url,
+            };
+
+            const res = await axiosSecure.post(`/course/${id}/material`, newMaterial);
+
+            if (!res?.data?.success) {
+                toast.error(res?.data?.message || "Material save failed");
+                return;
+            }
+
+            handleCloseUploadMaterialModal();
+
+            form.reset();
+            setMaterialTitle("");
+            setMaterialDescription("");
+            setMaterialURL("");
+
+            setMaterials(prev => [{ ...newMaterial }, ...prev])
+
+            toast.success("Material uploaded successfully");
+
+        } catch (error) {
+            toast.error(error?.response?.data?.message || "Material upload failed");
+        } finally {
+            setLoadingUploadMaterial(false);
+        }
+    };
 
     // Material deletion function
 
@@ -476,9 +545,9 @@ const FacultyCourseDetails = () => {
                         <RxPeople className='w-4 h-4 shrink-0' /> Manage Students
                     </button>
 
-                    <button className='w-full min-h-10 justify-center flex items-center gap-2 text-xs md:text-sm text-gray-600 border border-gray-200 px-3 py-2 rounded-xl whitespace-nowrap transition-colors hover:bg-gray-600 hover:text-white duration-500 cursor-pointer' onClick={handleManageMaterialsOpenModal}><FolderOpen className='w-4 h-4 shrink-0' /> Course Files</button>
+                    <button className='w-full min-h-10 justify-center flex items-center gap-2 text-xs md:text-sm text-green-600 border border-red-200 px-3 py-2 rounded-xl whitespace-nowrap transition-colors hover:bg-green-600 hover:text-white duration-500 cursor-pointer' onClick={handleOpenUploadMaterialModal}><Upload className='w-4 h-4 shrink-0' /> Upload Material</button>
 
-                    <button className='w-full min-h-10 justify-center flex items-center gap-2 text-xs md:text-sm text-red-600 border border-red-200 px-3 py-2 rounded-xl whitespace-nowrap transition-colors hover:bg-red-600 hover:text-white duration-500 cursor-pointer'><LogOut className='w-4 h-4 shrink-0' /> Leave Course</button>
+                    <button className='w-full min-h-10 justify-center flex items-center gap-2 text-xs md:text-sm text-gray-600 border border-gray-200 px-3 py-2 rounded-xl whitespace-nowrap transition-colors hover:bg-gray-600 hover:text-white duration-500 cursor-pointer' onClick={handleManageMaterialsOpenModal}><FolderOpen className='w-4 h-4 shrink-0' /> Course Materials</button>
                 </div>
             </div>
 
@@ -992,6 +1061,70 @@ const FacultyCourseDetails = () => {
                     </div>
                 </div>
             </dialog>
+
+            {/* Material upload modal */}
+
+            <dialog ref={uploadMaterialModalRef} className="modal modal-bottom sm:modal-middle">
+                <div className="modal-box max-w-xl p-6">
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-xl font-bold graphik">Upload Material</h3>
+                        <button className="btn btn-sm btn-circle btn-ghost" onClick={handleCloseUploadMaterialModal}>
+                            ✕
+                        </button>
+                    </div>
+
+                    <form onSubmit={handleUploadMaterial} className="flex flex-col gap-4">
+                        <div className="flex flex-col gap-1">
+                            <label className="text-sm font-semibold text-gray-700">Title</label>
+                            <input
+                                type="text"
+                                className="input input-bordered w-full"
+                                value={materialTitle}
+                                onChange={(e) => setMaterialTitle(e.target.value)}
+                                required
+                            />
+                        </div>
+
+                        <div className="flex flex-col gap-1">
+                            <label className="text-sm font-semibold text-gray-700">Description</label>
+                            <textarea
+                                rows="3"
+                                className="textarea textarea-bordered w-full resize-none"
+                                value={materialDescription}
+                                onChange={(e) => setMaterialDescription(e.target.value)}
+                                required
+                            />
+                        </div>
+
+                        <div className="flex flex-col gap-1">
+                            <label className="text-sm font-semibold text-gray-700">File</label>
+
+                            <input
+                                id="materialFile"
+                                name="materialFile"
+                                type="file"
+                                className="file-input"
+                                required
+                                onChange={(e) => setMaterialFile(e.target.files?.[0] || null)}
+                            />
+                            <label className="label text-xs">Max size 20MB</label>
+                        </div>
+
+                        <button
+                            type="submit"
+                            disabled={loadingUploadMaterial}
+                            className="bg-[#1E40AF] text-white rounded-lg py-2 transition-colors hover:bg-blue-600 duration-500 cursor-pointer"
+                        >
+                            {
+                                loadingUploadMaterial ?
+                                    <span className="loading loading-dots loading-md"></span>
+                                    : "Upload"
+                            }
+                        </button>
+                    </form>
+                </div>
+            </dialog>
+
         </div>
     );
 };
