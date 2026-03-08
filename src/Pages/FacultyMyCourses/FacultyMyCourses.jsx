@@ -223,7 +223,7 @@ const FacultyMyCourses = () => {
                                         <div key={course._id} className='w-full flex flex-col p-6 rounded-xl box-border shadow-md  hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-gray-200'>
                                             <div className='mb-6 flex flex-col gap-2'>
                                                 <p className='graphik font-semibold text-xl md:text-2xl lg:text-3xl'>{course.courseCode}</p>
-                                                <p className='text-md md:text-lg font-semibold text-gray-500'>{course.courseName}</p>
+                                                <p className='text-md md:text-lg font-semibold text-gray-500 truncate'>{course.courseName}</p>
                                             </div>
                                             <div className='mb-6'>
                                                 <div className='flex items-center gap-2 text-xs md:text-lg font-semibold text-gray-500'>
@@ -237,7 +237,7 @@ const FacultyMyCourses = () => {
                                             </div>
                                             <hr className='border-gray-200 my-4' />
                                             <Link to={`/dashboard/faculty/my-courses/${course._id}`}
-                                                className=' flex flex-1 gap-2 items-center bg-[#1E40AF] text-white px-5 py-2 rounded-lg text-center transition-colors hover:bg-blue-600 duration-500 justify-center'><Eye /> View</Link>
+                                                className=' flex gap-2 items-center bg-[#1E40AF] text-white px-5 py-2 rounded-lg text-center transition-colors hover:bg-blue-600 duration-500 justify-center'><Eye /> View</Link>
                                         </div>
                                     )
                                 )
@@ -268,7 +268,7 @@ const FacultyMyCourses = () => {
                                         <div key={course._id} className='w-full flex flex-col p-6 rounded-xl box-border shadow-md  hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 border border-gray-200'>
                                             <div className='mb-6 flex flex-col gap-2'>
                                                 <p className='graphik font-semibold text-xl md:text-2xl lg:text-3xl'>{course.courseCode}</p>
-                                                <p className='text-md md:text-lg font-semibold text-gray-500'>{course.courseName}</p>
+                                                <p className='text-md md:text-lg font-semibold text-gray-500 truncate'>{course.courseName}</p>
                                             </div>
                                             <div className='mb-6'>
                                                 <div className='flex items-center gap-2 text-xs md:text-lg font-semibold text-gray-500'>
@@ -281,7 +281,7 @@ const FacultyMyCourses = () => {
                                                 </div>
                                             </div>
                                             <hr className='border-gray-200 my-4' />
-                                            <Link to={`/dashboard/faculty/my-courses/${course._id}`} className=' flex flex-1 gap-2 items-center bg-[#1E40AF] text-white px-5 py-2 rounded-lg text-center transition-colors hover:bg-blue-600 duration-500 justify-center'><Eye /> View</Link>
+                                            <Link to={`/dashboard/faculty/my-courses/${course._id}`} className=' flex gap-2 items-center bg-[#1E40AF] text-white px-5 py-2 rounded-lg text-center transition-colors hover:bg-blue-600 duration-500 justify-center'><Eye /> View</Link>
                                         </div>
                                     )
                                 )

@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import axiosSecure from '../../utils/axiosSecure.js';
 import Loading from '../../Components/Loading/Loading.jsx';
-import { ArrowLeft, Building2, CalendarClock, Check, Cog, Copy, FolderOpen, GraduationCap, LogOut, LucideClipboardCheck, Megaphone, UserCheck, UserX, Users, Search, UserMinus } from 'lucide-react';
+import { ArrowLeft, Building2, CalendarClock, Check, Cog, Copy, FolderOpen, GraduationCap, LogOut, LucideClipboardCheck, Megaphone, UserCheck, UserX, Users, Search, UserMinus, Download } from 'lucide-react';
 import PaginationTemplate from '../../Components/PaginationTemplate/PaginationTemplate.jsx';
 import { MdManageAccounts, MdOutlineAssignmentTurnedIn } from 'react-icons/md';
 import { FiBookOpen } from "react-icons/fi";
@@ -19,6 +19,7 @@ const FacultyCourseDetails = () => {
     const [course, setCourse] = useState(null);
     const [announcements, setAnnouncements] = useState([]);
     const [assignments, setAssignments] = useState([]);
+    const [materials, setMaterials] = useState([]);
     const [loading, setLoading] = useState(true);
 
     /* Course edit related */
@@ -211,10 +212,27 @@ const FacultyCourseDetails = () => {
             }
         };
 
+        const fetchMaterials = async () => {
+            try {
+                setLoading(true);
+                const res = await axiosSecure.get(`/course/${id}/materials`);
+                const resMaterials = res?.data?.materials;
+                const sortedMaterials = [...resMaterials].sort((a, b) =>
+                    new Date(b.updatedAt) - new Date(a.updatedAt)
+                );
+                setMaterials(sortedMaterials);
+            } catch (error) {
+                console.error(error.message);
+            } finally {
+                setLoading(false);
+            }
+        };
+
         if (id) {
             fetchCourse();
             fetchAnnouncements();
             fetchAssignments();
+            fetchMaterials();
         }
     }, [id]);
 
@@ -289,8 +307,8 @@ const FacultyCourseDetails = () => {
 
     const totalStudentPages = Math.max(1, Math.ceil(filteredStudents.length / studentsPerPage));
     const safeStudentPage = Math.min(studentPage, totalStudentPages);
-    const start = (safeStudentPage - 1) * studentsPerPage;
-    const paginatedStudents = filteredStudents.slice(start, start + studentsPerPage);
+    const startStudent = (safeStudentPage - 1) * studentsPerPage;
+    const paginatedStudents = filteredStudents.slice(startStudent, startStudent + studentsPerPage);
 
     // Student removal function
 
@@ -317,10 +335,39 @@ const FacultyCourseDetails = () => {
         }
     };
 
+    /* Course materials */
+
+    const [materialSearch, setMaterialSearch] = useState("");
+    const [materialPage, setMaterialPage] = useState(1);
+    const manageMaterialsModalRef = useRef(null);
+
+    const handleManageMaterialsOpenModal = () => {
+        setMaterialSearch("");
+        setMaterialPage(1);
+        manageMaterialsModalRef.current?.showModal();
+    };
+
+    const handleManageMaterialsCloseModal = () => manageMaterialsModalRef.current?.close();
+
+    const materialsPerPage = 10;
+
+    const filteredMaterials = materials.filter((material) => {
+        const query = materialSearch.toLowerCase().trim();
+        if (!query)
+            return true;
+        return material?.title.toLowerCase().includes(query);
+    });
+
+    const totalMaterialPages = Math.max(1, Math.ceil(filteredMaterials.length / materialsPerPage));
+    const safeMaterialPage = Math.min(materialPage, totalMaterialPages);
+    const startMaterial = (safeMaterialPage - 1) * materialsPerPage;
+    const paginatedMaterials = filteredMaterials.slice(startMaterial, startMaterial + materialsPerPage);
+
+
     if (loading)
         return <Loading></Loading>
 
-    // console.log(announcements, assignments);
+    console.log(announcements, assignments, materials);
     return (
         <div className='w-full max-w-full p-5 flex flex-col gap-10 gilroy'>
 
@@ -383,7 +430,7 @@ const FacultyCourseDetails = () => {
                         <RxPeople className='w-4 h-4 shrink-0' /> Manage Students
                     </button>
 
-                    <button className='w-full min-h-10 justify-center flex items-center gap-2 text-xs md:text-sm text-gray-600 border border-gray-200 px-3 py-2 rounded-xl whitespace-nowrap transition-colors hover:bg-gray-600 hover:text-white duration-500 cursor-pointer'><FolderOpen className='w-4 h-4 shrink-0' /> Course Files</button>
+                    <button className='w-full min-h-10 justify-center flex items-center gap-2 text-xs md:text-sm text-gray-600 border border-gray-200 px-3 py-2 rounded-xl whitespace-nowrap transition-colors hover:bg-gray-600 hover:text-white duration-500 cursor-pointer' onClick={handleManageMaterialsOpenModal}><FolderOpen className='w-4 h-4 shrink-0' /> Course Files</button>
 
                     <button className='w-full min-h-10 justify-center flex items-center gap-2 text-xs md:text-sm text-red-600 border border-red-200 px-3 py-2 rounded-xl whitespace-nowrap transition-colors hover:bg-red-600 hover:text-white duration-500 cursor-pointer'><LogOut className='w-4 h-4 shrink-0' /> Leave Course</button>
                 </div>
@@ -792,12 +839,74 @@ const FacultyCourseDetails = () => {
                             onClick={handleRemoveStudent}
                         >
                             {
-                                loadingRemoveStudent ? <span className="loading loading-dots loading-md"></span>: "Remove"
+                                loadingRemoveStudent ? <span className="loading loading-dots loading-md"></span> : "Remove"
                             }
                         </button>
                     </div>
                 </div>
             </dialog>
+
+            {/* Managing material modal */}
+
+            <dialog ref={manageMaterialsModalRef} className="modal modal-bottom sm:modal-middle">
+                <div className="modal-box max-w-3xl p-6">
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-xl font-bold graphik">Course Materials</h3>
+                        <button className="btn btn-sm btn-circle btn-ghost" onClick={handleManageMaterialsCloseModal}>✕</button>
+                    </div>
+
+                    {/* Search bar */}
+
+                    <div className="w-full flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-blue-500 transition-all mb-4">
+                        <Search className="w-4 h-4 text-gray-400" />
+                        <input
+                            type="text"
+                            value={materialSearch}
+                            onChange={(e) => {
+                                setMaterialSearch(e.target.value);
+                                setMaterialPage(1);
+                            }}
+                            placeholder="Search material by title"
+                            className="w-full outline-none text-sm text-gray-700 placeholder-gray-400"
+                        />
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                        {
+                            filteredMaterials.length === 0 ? (
+                                <p className="text-gray-500 text-sm text-center py-10">No material found</p>
+                            ) : (
+                                paginatedMaterials.map((material) => (
+                                    <div key={material._id} className="flex items-center justify-between gap-3 p-3 rounded-xl border border-gray-200 bg-gray-50">
+                                        <p className="text-sm font-semibold truncate">{material?.title}</p>
+                                        <a
+                                            href={material?.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="btn btn-sm border-blue-200 text-blue-600 hover:bg-blue-600 hover:text-white shrink-0"
+                                        >
+                                            <Download className="w-4 h-4" />
+                                        </a>
+                                    </div>
+                                ))
+                            )
+                        }
+                    </div>
+
+                    {
+                        filteredMaterials.length > 0 && (
+                            <div className="mt-4 flex justify-center">
+                                <PaginationTemplate
+                                    page={safeMaterialPage}
+                                    totalPages={totalMaterialPages}
+                                    onChange={setMaterialPage}
+                                />
+                            </div>
+                        )
+                    }
+                </div>
+            </dialog>
+
         </div>
     );
 };
