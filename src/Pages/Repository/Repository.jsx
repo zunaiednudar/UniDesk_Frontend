@@ -1,5 +1,16 @@
 import React, {useEffect, useState} from 'react';
-import {ChartNoAxesCombined, Trophy, Upload, CheckCircle, CloudUpload, Ban} from 'lucide-react';
+import {
+    ChartNoAxesCombined,
+    Trophy,
+    Upload,
+    CheckCircle,
+    CloudUpload,
+    Ban,
+    Search,
+    File,
+    FileImage, FileText,
+    Calendar, Download, Eye
+} from 'lucide-react';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -48,13 +59,157 @@ const StatCard = ({icon: Icon, value, label, iconBg, iconColor}) => (
     </div>
 );
 
+const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+        day: "numeric",
+        month: "short",
+        year: "numeric"
+    });
+};
+
+// File helper designs
+
+const fileTypeConfig = {
+    pdf: {icon: FileText, bg: "bg-red-50", text: "text-red-500", label: "PDF"},
+    doc: {icon: FileText, bg: "bg-blue-50", text: "text-blue-500", label: "Document"},
+    jpg: {icon: FileImage, bg: "bg-green-50", text: "text-green-500", label: "Image"},
+    jpeg: {icon: FileImage, bg: "bg-green-50", text: "text-green-500", label: "Image"},
+    png: {icon: FileImage, bg: "bg-green-50", text: "text-green-500", label: "Image"},
+    zip: {icon: File, bg: "bg-gray-100", text: "text-gray-500", label: "Archive"}
+};
+
+const defaultFileType = {icon: File, bg: "bg-gray-100", text: "text-gray-500", label: "File"};
+
+const ItemCard = ({item, onDownload, onView}) => {
+    const extension = item.url?.split(".").pop().split("?")[0].toLowerCase() ?? "";
+    const fileConfig = fileTypeConfig[extension] ?? defaultFileType;
+    const FileIcon = fileConfig.icon;
+
+    return (
+        <div className="bg-white border border-gray-200 rounded-2xl p-5 flex flex-col gap-4 hover:shadow-sm transition-shadow duration-200">
+            {/* File icon + Category + Title */}
+            <div className="shrink-0 w-10 h-10 rounded-xl flex items-center justify-center bg-gray-100">
+                <FileIcon className={`w-5 h-5 ${fileConfig.text}`} strokeWidth={1.75}/>
+            </div>
+            <div className="flex-1 min-w-0">
+                <span className={`text-[10px] font-semibold uppercase tracking-wide ${fileConfig.text}`}>
+                    {item.itemType ?? fileConfig.label}
+                </span>
+                <p className="text-sm font-semibold text-gray-900 leading-snug line-clamp-2 mt-0.5">
+                    {item.title}
+                </p>
+            </div>
+
+            {/* Description */}
+            {item.description && (
+                <p className="h-full max-h-[200px] text-xs text-gray-400 overflow-y-auto">
+                    {item.description}
+                </p>
+            )}
+
+            {/* Course Code + Course Name */}
+            <div className="flex flex-col items-start justify-between text-xs text-gray-400">
+                <span className="font-semibold text-gray-900">{item?.courseCode}</span>
+                <span className="text-xs font-medium text-gray-500 capitalize">{item?.courseName}</span>
+            </div>
+
+            {/* Uploader + Date */}
+            <div className="flex flex-col items-start justify-between text-xs text-gray-400">
+                <div className="flex items-center gap-2 min-w-0">
+                    <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-[10px] font-bold shrink-0 uppercase overflow-hidden">
+                        {item.uploader?.photoURL
+                            ? <img src={item.uploader.photoURL} alt={item.uploader.name} className="w-full h-full object-cover" />
+                            : item.uploader?.name?.[0] ?? "?"
+                        }
+                    </div>
+                    <span className="font-medium text-gray-500">
+                        {formatName(item.uploader?.name) ?? "Unknown"}
+                    </span>
+                </div>
+                <div className="flex items-center gap-2 shrink-0 ml-1">
+                    <Calendar className="w-3 h-3" />
+                    <span>{formatDate(item.approvedAt)}</span>
+                </div>
+            </div>
+
+            {/* Divider */}
+            <div className="border-t border-gray-100" />
+
+            {/* Stats + actions */}
+            <div className="flex flex-col items-center justify-between gap-2">
+                <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-1 text-xs text-gray-400">
+                        <Download className="w-3.5 h-3.5" />
+                        <span className="font-medium text-gray-600">{item.downloadCount ?? 0}</span>
+                    </div>
+                    <div className="flex items-center gap-1 text-xs text-gray-400">
+                        <ChartNoAxesCombined className="w-3.5 h-3.5" />
+                        <span className="font-medium text-blue-600">{item.contributionPoints ?? 0}</span>
+                        <span>pts</span>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-1.5">
+                    <button
+                        onClick={() => {
+                            onView?.(item);
+                        }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
+                        <Eye className="w-3.5 h-3.5" />
+                        View
+                    </button>
+                    <button
+                        onClick={() => {
+                            onDownload?.(item);
+                        }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-blue-700 rounded-lg hover:bg-blue-800 transition">
+                        <Download className="w-3.5 h-3.5" />
+                        Download
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const Repository = () => {
     const {id} = useParams();
     const [contributionPoints, setContributionPoints] = useState(0);
+    const [repositoryItems, setRepositoryItems] = useState([]);
     const [totalUploaded, setTotalUploaded] = useState(0);
     const [totalRejected, setTotalRejected] = useState(0);
     const [leaderboard, setLeaderboard] = useState([]);
     const [graphData, setGraphData] = useState();
+    const [searchQuery, setSearchQuery] = useState('');
+
+    const handleDownload = async (url, title) => {
+        try {
+            const res = await fetch(url);
+            const blob = await res.blob();
+            const ext = url.split('?')[0].split('.').pop().toLowerCase();
+            const fileName = `${title.replace(/\s+/g, '_')}.${ext}`;
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = fileName;
+            a.click();
+            URL.revokeObjectURL(a.href);
+        } catch {
+            window.open(url, '_blank', 'noopener,noreferrer');
+        }
+    };
+
+    const handleView = (url) => {
+        const ext = url.split('?')[0].split('.').pop().toLowerCase();
+        const imageTypes = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+
+        if (imageTypes.includes(ext)) {
+            window.open(url, '_blank', 'noopener,noreferrer');
+        } else {
+            window.open(`https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`, '_blank');
+        }
+    }
+
 
     // Graph UI options
     const options = {
@@ -77,21 +232,21 @@ const Repository = () => {
 
     useEffect(() => {
         const months = [
-            "Jan","Feb","Mar","Apr","May","Jun",
-            "Jul","Aug","Sep","Oct","Nov","Dec"
+            "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
         ];
 
         const fetchData = async () => {
             try {
-                const [contributionRes, leaderboardRes] = await Promise.all([
-                    await axiosSecure.get('/repository'),
-                    await axiosSecure.get('/repository/leaderboard')
+                const [repositoryRes, leaderboardRes] = await Promise.all([
+                    axiosSecure.get('/repository'),
+                    axiosSecure.get('/repository/leaderboard'),
                 ]);
 
-                console.log("Contribution data (Repository.jsx): ", contributionRes.data);
+                console.log("Repository data (Repository.jsx): ", repositoryRes.data);
                 console.log("Leaderboard data (Repository.jsx): ", leaderboardRes.data);
 
-                const repositoryItems = contributionRes.data.items;
+                const repositoryItems = repositoryRes.data.items;
 
                 const totalContributionPoints = repositoryItems.reduce((sum, item) => {
                     if (item.uploader._id === id) return sum + item.contributionPoints;
@@ -104,7 +259,7 @@ const Repository = () => {
                 }, 0);
 
                 const totalRejected = repositoryItems.reduce((sum, item) => {
-                    if (item.uploader._id === id && !item.rejectedReason) return sum + 1;
+                    if (item.uploader._id === id && item.rejectedReason) return sum + 1;
                     return sum;
                 }, 0);
 
@@ -126,9 +281,9 @@ const Repository = () => {
                 const otherMaterials = repositoryItems
                     .filter(item => {
                         return (item.uploader._id === id) && (item.itemType.toLowerCase() !== "personal note")
-                            &&  (item.itemType.toLowerCase() !== "question bank")
-                            &&  (item.itemType.toLowerCase() !== "answer")
-                            &&  (item.itemType.toLowerCase() !== "ebook");
+                            && (item.itemType.toLowerCase() !== "question bank")
+                            && (item.itemType.toLowerCase() !== "answer")
+                            && (item.itemType.toLowerCase() !== "ebook");
                     });
 
                 console.log("All question banks (Repository.jsx): ", allQuestionBanksAnswers);
@@ -208,6 +363,7 @@ const Repository = () => {
                 // leaderboard.sort((a, b) => a.rank - b.rank)
 
                 setContributionPoints(totalContributionPoints);
+                setRepositoryItems(repositoryItems);
                 setTotalUploaded(totalUploaded);
                 setTotalRejected(totalRejected);
 
@@ -220,6 +376,17 @@ const Repository = () => {
 
         fetchData();
     }, [id]);
+
+    const filteredMaterials = repositoryItems.filter(item => {
+        const q = searchQuery.toLowerCase();
+        return (
+            item.title.toLowerCase().includes(q) ||
+            item.courseCode.toLowerCase().includes(q) ||
+            item.courseName.toLowerCase().includes(q) ||
+            item.itemType.toLowerCase().includes(q) ||
+            item.uploader.name.toLowerCase().includes(q)
+        );
+    });
 
     return (
         <div className="gilroy space-y-6">
@@ -258,11 +425,11 @@ const Repository = () => {
 
 
             {/* Contribution graph + Leaderboard */}
-            <div className="p-5 grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-4">
+            <div className="lg:p-5 grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-4">
                 {/* Contribution graph */}
                 {graphData && (
-                    <div className="h-full">
-                        <Line data={graphData} options={options} />
+                    <div className="h-[500px]">
+                        <Line data={graphData} options={options}/>
                     </div>
                 )}
 
@@ -271,7 +438,7 @@ const Repository = () => {
 
                     {/* Leaderboard */}
                     {leaderboard?.length > 0 ? (
-                        <div className="p-5 space-y-2.5">
+                        <div className="lg:p-5 space-y-2.5">
                             {leaderboard.map((person) => {
                                 const style = rankStyles[person.rank] ?? defaultStyle;
                                 return (
@@ -292,7 +459,7 @@ const Repository = () => {
                                         {/* Avatar + Name */}
                                         <div className="flex items-center gap-3 shrink-0">
                                             <div
-                                                className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-sm font-bold shrink-0 uppercase">
+                                                className="overflow-hidden w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-sm font-bold shrink-0 uppercase">
                                                 {person.user.photoURL
                                                     ? <img src={person.user.photoURL} alt={person.user.name}
                                                            className="w-full h-full object-cover"/>
@@ -309,12 +476,14 @@ const Repository = () => {
                                         <div className="hidden sm:flex sm:flex-1 sm:justify-end items-center gap-5">
                                             <div className="flex items-center gap-1.5 text-xs text-gray-500">
                                                 <Upload className="w-3.5 h-3.5 text-blue-400"/>
-                                                <span className="font-medium text-gray-700">{person.itemsUploaded}</span>
+                                                <span
+                                                    className="font-medium text-gray-700">{person.itemsUploaded}</span>
                                                 <span>uploads</span>
                                             </div>
                                             <div className="flex items-center gap-1.5 text-xs text-gray-500">
                                                 <CheckCircle className="w-3.5 h-3.5 text-emerald-400"/>
-                                                <span className="font-medium text-gray-700">{person.itemsApproved}</span>
+                                                <span
+                                                    className="font-medium text-gray-700">{person.itemsApproved}</span>
                                                 <span>approved</span>
                                             </div>
                                         </div>
@@ -337,6 +506,42 @@ const Repository = () => {
                         </div>
                     )}
                 </div>
+            </div>
+
+            {/* Materials section */}
+            <div>
+                {/* Search */}
+                <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+                    <div className="relative">
+                        <Search size={15} className="text-gray-400 absolute left-3 top-1/2 -translate-y-1/2"/>
+                        <input
+                            type="text"
+                            placeholder="Search by course title, course code, course name, material type or uploader name…"
+                            value={searchQuery}
+                            onChange={e => setSearchQuery(e.target.value)}
+                            className="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                        />
+                    </div>
+                </div>
+
+                {filteredMaterials.length > 0 ? (
+                    <div className="p-5 grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4">
+                        {filteredMaterials.map( material => (
+                            <ItemCard
+                                key={material._id}
+                                item={material}
+                                onView={(item) => handleView(item.url)}
+                                onDownload={(item) => handleDownload(item.url, item.title)}
+                            />
+                        ))}
+                    </div>
+                ): (
+                    <div
+                        className="bg-white border border-gray-200 rounded-2xl py-14 flex flex-col items-center justify-center text-center">
+                        <File className="w-8 h-8 text-gray-200 mb-3"/>
+                        <p className="text-sm font-medium text-gray-400">No study material found</p>
+                    </div>
+                )}
             </div>
         </div>
     );

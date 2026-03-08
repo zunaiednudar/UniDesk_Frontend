@@ -67,16 +67,16 @@ const EmptyState = ({message}) => (
 const CourseCard = ({course, onFilesClick, navigate}) => (
     <div
         onClick={() => navigate(`/dashboard/student/courses/${course.id}/details`)}
-        className="group bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md hover:border-orange-200 transition-all duration-200 cursor-pointer relative overflow-hidden"
+        className="group bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md hover:border-blue-200 transition-all duration-200 cursor-pointer relative overflow-hidden"
     >
         {/* Hover accent bar */}
         <div
-            className="absolute top-0 left-6 right-6 h-0.5 bg-gradient-to-r from-orange-400 to-orange-300 rounded-b-full opacity-0 group-hover:opacity-100 transition-opacity duration-200"/>
+            className="absolute top-0 left-6 right-6 h-0.5 bg-gradient-to-r from-blue-400 to-blue-300 rounded-b-full opacity-0 group-hover:opacity-100 transition-opacity duration-200"/>
 
         {/* Header */}
         <div className="flex items-start justify-between mb-4">
             <div className="min-w-0 flex-1">
-                <h3 className="text-base font-bold text-gray-900 truncate group-hover:text-orange-600 transition-colors duration-150">
+                <h3 className="text-base font-bold text-gray-900 truncate group-hover:text-blue-600 transition-colors duration-150">
                     {course.code}
                 </h3>
                 <p className="text-sm text-gray-500 mt-0.5 truncate">{course.name}</p>
@@ -218,7 +218,7 @@ const JoinCourseModal = ({onClose, onJoined}) => {
                             value={code}
                             onChange={e => { setCode(e.target.value); setError(''); setSuccess(''); }}
                             onKeyDown={e => e.key === 'Enter' && handleJoin()}
-                            className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-400 focus:border-orange-400 outline-none transition"
+                            className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none transition"
                             autoFocus
                         />
                     </div>
@@ -244,7 +244,7 @@ const JoinCourseModal = ({onClose, onJoined}) => {
                         Cancel
                     </button>
                     <button onClick={handleJoin} disabled={loading || !!success}
-                            className="flex-1 py-2.5 text-sm font-semibold bg-orange-500 text-white rounded-xl hover:bg-orange-600 disabled:opacity-60 transition flex items-center justify-center gap-2">
+                            className="flex-1 py-2.5 text-sm font-semibold bg-blue-500 text-white rounded-xl hover:bg-blue-600 disabled:opacity-60 transition flex items-center justify-center gap-2">
                         {loading
                             ? <><Loader2 size={13} className="animate-spin"/> Joining…</>
                             : <><LogIn size={13}/> Join Course</>
@@ -384,7 +384,7 @@ const MyCourses = () => {
                 </div>
                 <button
                     onClick={() => setJoinOpen(true)}
-                    className="flex-shrink-0 flex items-center gap-2 px-4 py-2.5 bg-orange-500 text-white text-sm font-semibold rounded-xl hover:bg-orange-600 active:scale-95 transition-all duration-150 shadow-sm"
+                    className="flex-shrink-0 flex items-center gap-2 px-4 py-2.5 bg-blue-500 text-white text-sm font-semibold rounded-xl hover:bg-blue-600 active:scale-95 transition-all duration-150 shadow-sm"
                 >
                     <Plus size={15} strokeWidth={2.5}/>
                     Join Course
@@ -410,7 +410,7 @@ const MyCourses = () => {
                         placeholder="Search by name, code, department, or instructor…"
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
-                        className="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-400 focus:border-orange-400 outline-none transition"
+                        className="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
                     />
                 </div>
             </div>
