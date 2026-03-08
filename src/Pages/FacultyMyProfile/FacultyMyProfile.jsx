@@ -9,7 +9,7 @@ import { FaRegEdit } from 'react-icons/fa';
 import { FiLock } from "react-icons/fi";
 
 const FacultyMyProfile = () => {
-    const { userData, setUserData, passwordReset } = useContext(AuthContext);
+    const { userData, setUserData, passwordReset,updateUser } = useContext(AuthContext);
     const [loading, setLoading] = useState(false);
     const [imageLoading, setImageLoading] = useState(false);
 
@@ -67,6 +67,8 @@ const FacultyMyProfile = () => {
                 toast.error("Profile image update failed");
                 return;
             }
+
+            await updateUser({ photoURL: uploadedData.url });
 
             setUserData(prev => ({
                 ...prev,
@@ -130,6 +132,9 @@ const FacultyMyProfile = () => {
                 toast.error("Profile update failed");
                 return;
             }
+            
+            if(updatedFields.name)
+                await updateUser({displayName:updatedFields.name});
 
             setUserData(prev => ({
                 ...prev,
@@ -159,7 +164,7 @@ const FacultyMyProfile = () => {
     };
 
     return (
-        <div className='w-full max-w-full p-10 flex flex-col gap-10 gilroy'>
+        <div className='w-full max-w-full p-5 flex flex-col gap-10 gilroy'>
 
             <div className='w-full max-w-full'>
                 <p className='text-3xl graphik font-bold text-black'>My Profile</p>
@@ -204,7 +209,7 @@ const FacultyMyProfile = () => {
                     />
 
                     <div className='flex flex-col items-center md:items-start gap-2'>
-                        <p className='graphik text-xl md:text-2xl font-extrabold'>{userData?.name.split(" ")
+                        <p className='graphik text-xl md:text-2xl font-bold'>{userData?.name.split(" ")
                             .map(word => word.charAt(0).toUpperCase() + word.slice(1))
                             .join(" ")}
                         </p>

@@ -28,6 +28,7 @@ import Notification from "../Pages/Notification/Notification.jsx";
 import CourseDetails from "../Components/Course/CourseDetails.jsx";
 import {Component} from "react";
 import * as path from "node:path";
+import FacultyCourseDetails from "../Pages/FacultyCourseDetails/FacultyCourseDetails.jsx";
 
 export const router = createBrowserRouter([
     {
@@ -139,6 +140,10 @@ export const router = createBrowserRouter([
             {
                 path:"my-schedule",
                 Component:FacultyMySchedule
+            },
+            {
+                path:"my-courses/:id",
+                Component:FacultyCourseDetails
             }
         ]
     },

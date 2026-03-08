@@ -55,10 +55,7 @@ const CardSkeleton = ({ variant = "list", lines = 3 }) => {
 
                 <hr className="border-gray-200 my-4" />
 
-                <div className="flex gap-5">
-                    <div className="h-10 flex-1 bg-gray-200 rounded-lg"></div>
-                    <div className="h-10 flex-1 bg-gray-200 rounded-lg"></div>
-                </div>
+                <div className="w-full h-10 bg-gray-200 rounded-lg"></div>
 
             </div>
         );

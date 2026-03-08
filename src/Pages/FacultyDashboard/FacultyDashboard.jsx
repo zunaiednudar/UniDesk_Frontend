@@ -7,7 +7,7 @@ import { VscLayersActive } from 'react-icons/vsc';
 import { SiGoogleclassroom } from 'react-icons/si';
 import { formatAppointmentDate } from '../../utils/formatAppointmentDate.js';
 import CardSkeleton from '../../Components/CardSkeleton/CardSkeleton.jsx';
-import { NavLink } from 'react-router';
+import { Link, NavLink } from 'react-router';
 import { toast } from 'sonner';
 
 const FacultyDashboard = () => {
@@ -122,7 +122,7 @@ const FacultyDashboard = () => {
     // console.log(activeCourses.length+completedCourses.length);
     console.log(assignments);
     return (
-        <div className='w-full max-w-full p-10 flex flex-col gap-10 gilroy'>
+        <div className='w-full max-w-full p-5 flex flex-col gap-10 gilroy'>
 
             {/* Welcome texts */}
 
@@ -185,7 +185,7 @@ const FacultyDashboard = () => {
             <div className='w-full max-w-full flex flex-col md:flex-row justify-items-center gap-10'>
                 {/* Recent Courses */}
                 <div className='w-full md:flex-2 shadow-xl p-5 flex flex-col gap-5'>
-                    <p className='text-xl md:text-2xl lg:text-3xl font-extrabold graphik'>Recent Courses</p>
+                    <p className='text-xl md:text-2xl lg:text-3xl font-bold graphik'>Recent Courses</p>
                     <div className='flex flex-col gap-3'>
                         {
                             dashboardLoading ? (
@@ -200,7 +200,7 @@ const FacultyDashboard = () => {
                                 ) :
                                 (
                                     activeCourses.map((course) => (
-                                        <div
+                                        <Link to={`/dashboard/faculty/my-courses/${course._id}`}
                                             key={course._id}
                                             className="w-full p-6 rounded-xl bg-white shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 flex flex-col gap-4"
                                         >
@@ -234,7 +234,7 @@ const FacultyDashboard = () => {
                                                 </div>
                                                 <span>{course.session}</span>
                                             </div>
-                                        </div>
+                                        </Link>
                                     )
                                     )
                                 )
@@ -244,7 +244,7 @@ const FacultyDashboard = () => {
 
                 {/* Upcoming Appointments */}
                 <div className='w-full md:flex-1 shadow-xl p-5 flex flex-col gap-5'>
-                    <p className='text-xl md:text-2xl lg:text-3xl font-extrabold graphik'>Upcoming Appointments</p>
+                    <p className='text-xl md:text-2xl lg:text-3xl font-bold graphik'>Upcoming Appointments</p>
                     <div className='flex flex-col gap-3'>
                         {
                             dashboardLoading ? (
@@ -290,7 +290,7 @@ const FacultyDashboard = () => {
             {/* Pending Grading course wise */}
 
             <div className='w-full shadow-xl p-5 flex flex-col gap-5'>
-                <p className='text-xl md:text-2xl lg:text-3xl font-extrabold graphik'>Pending Grading</p>
+                <p className='text-xl md:text-2xl lg:text-3xl font-bold graphik'>Pending Grading</p>
                 {
                     dashboardLoading ? (
                         Array.from({ length: 3 }).map((_, i) => (
