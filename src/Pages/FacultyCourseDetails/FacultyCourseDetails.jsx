@@ -2,7 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import axiosSecure from '../../utils/axiosSecure.js';
 import Loading from '../../Components/Loading/Loading.jsx';
-import { ArrowLeft, Building2, CalendarClock, Check, Cog, Copy, FolderOpen, GraduationCap, LogOut, LucideClipboardCheck, Megaphone, UserCheck, UserX, Users } from 'lucide-react';
+import { ArrowLeft, Building2, CalendarClock, Check, Cog, Copy, FolderOpen, GraduationCap, LogOut, LucideClipboardCheck, Megaphone, UserCheck, UserX, Users, Search, UserMinus } from 'lucide-react';
+import PaginationTemplate from '../../Components/PaginationTemplate/PaginationTemplate.jsx';
 import { MdManageAccounts, MdOutlineAssignmentTurnedIn } from 'react-icons/md';
 import { FiBookOpen } from "react-icons/fi";
 import { GiTeacher } from "react-icons/gi";
@@ -11,6 +12,7 @@ import timeAgo from '../../utils/timeAgo.js';
 import { RxPeople } from "react-icons/rx";
 import { formatDueDate } from '../../utils/formatDueDate.js';
 import { toast } from 'sonner';
+import formatName from '../../utils/formatName.js';
 
 const FacultyCourseDetails = () => {
     const { id } = useParams();
@@ -19,11 +21,10 @@ const FacultyCourseDetails = () => {
     const [assignments, setAssignments] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    /* Course edit related */
+
     const [loadingEditCourse, setLoadingEditCourse] = useState(false);
     const [loadingGenerateLink, setLoadingGenerateLink] = useState(false);
-
-
-    // Course edit related
 
     const [description, setDescription] = useState("");
     const [status, setStatus] = useState("");
@@ -242,10 +243,84 @@ const FacultyCourseDetails = () => {
         }
     ];
 
+    /* Managing students related  */
+
+    const manageStudentModalRef = useRef(null);
+    const confirmRemoveModalRef = useRef(null);
+
+    const handleManageStudentOpenModal = () => {
+        setStudentSearch("");
+        setStudentPage(1);
+        manageStudentModalRef.current.showModal();
+    };
+
+    const handleManageStudentCloseModal = () => manageStudentModalRef.current.close();
+
+    const handleOpenConfirmRemove = (student) => {
+        setConfirmStudent(student);
+        confirmRemoveModalRef.current?.showModal();
+    };
+
+    const handleCloseConfirmRemove = () => {
+        confirmRemoveModalRef.current?.close();
+        setConfirmStudent(null);
+    };
+
+    const [studentSearch, setStudentSearch] = useState("");
+    const [studentPage, setStudentPage] = useState(1);
+    const [loadingRemoveStudent, setLoadingRemoveStudent] = useState(false);
+    const [confirmStudent, setConfirmStudent] = useState(null);
+
+    const allStudents = course?.students || [];
+
+    // Pagination
+
+    const studentsPerPage = 10;
+
+    const filteredStudents = allStudents.filter((student) => {
+        const query = studentSearch.toLowerCase().trim();
+        if (!query)
+            return true;
+
+        return (
+            student?.name.toLowerCase().includes(query) || student?.studentID.toLowerCase().includes(query)
+        );
+    });
+
+    const totalStudentPages = Math.max(1, Math.ceil(filteredStudents.length / studentsPerPage));
+    const safeStudentPage = Math.min(studentPage, totalStudentPages);
+    const start = (safeStudentPage - 1) * studentsPerPage;
+    const paginatedStudents = filteredStudents.slice(start, start + studentsPerPage);
+
+    // Student removal function
+
+    const handleRemoveStudent = async () => {
+        if (!confirmStudent?._id)
+            return;
+        try {
+            setLoadingRemoveStudent(true);
+
+            await axiosSecure.delete(`/courses/${id}/students/${confirmStudent._id}`);
+
+            setCourse((prev) => ({
+                ...prev,
+                students: prev?.students.filter((s) => s._id !== confirmStudent._id),
+            }));
+
+            handleCloseConfirmRemove();
+            handleManageStudentCloseModal();
+            toast.success("Student removed successfully");
+        } catch (error) {
+            toast.error(error?.response?.data?.message || "Failed to remove student");
+        } finally {
+            setLoadingRemoveStudent(false);
+        }
+    };
+
     if (loading)
         return <Loading></Loading>
 
-    console.log(announcements, assignments);
+    // console.log(announcements, assignments);
     return (
         <div className='w-full max-w-full p-5 flex flex-col gap-10 gilroy'>
 
@@ -290,6 +365,9 @@ const FacultyCourseDetails = () => {
                     )
                 }
             </div>
+
+            {/* Third block of course management buttons */}
+
             <div className='w-full flex flex-col p-5 rounded-lg shadow-lg gap-5 box-border border border-gray-100'>
                 <div className='flex items-center gap-2'>
                     <div className='w-10 h-10 bg-gray-100 rounded-lg flex justify-center items-center'>
@@ -301,7 +379,9 @@ const FacultyCourseDetails = () => {
                 <div className='w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 p-4 md:p-5 gap-3'>
                     <button className='w-full min-h-10 justify-center flex items-center gap-2 text-xs md:text-sm text-black border border-black px-3 py-2 rounded-xl whitespace-nowrap transition-colors hover:bg-black hover:text-white duration-500 cursor-pointer' onClick={handleOpenEditCourseModal}><Cog /> Edit </button>
 
-                    <button className='w-full min-h-10 justify-center flex items-center gap-2 text-xs md:text-sm text-blue-600 border border-blue-200 px-3 py-2 rounded-xl whitespace-nowrap transition-colors hover:bg-blue-600 hover:text-white duration-500 cursor-pointer'><RxPeople className='w-4 h-4 shrink-0' /> Manage Students</button>
+                    <button className='w-full min-h-10 justify-center flex items-center gap-2 text-xs md:text-sm text-blue-600 border border-blue-200 px-3 py-2 rounded-xl whitespace-nowrap transition-colors hover:bg-blue-600 hover:text-white duration-500 cursor-pointer' onClick={handleManageStudentOpenModal}>
+                        <RxPeople className='w-4 h-4 shrink-0' /> Manage Students
+                    </button>
 
                     <button className='w-full min-h-10 justify-center flex items-center gap-2 text-xs md:text-sm text-gray-600 border border-gray-200 px-3 py-2 rounded-xl whitespace-nowrap transition-colors hover:bg-gray-600 hover:text-white duration-500 cursor-pointer'><FolderOpen className='w-4 h-4 shrink-0' /> Course Files</button>
 
@@ -309,7 +389,7 @@ const FacultyCourseDetails = () => {
                 </div>
             </div>
 
-            {/* Third block of Announcements */}
+            {/* Fourth block of Announcements */}
 
             <div className='w-full flex flex-col p-5 rounded-lg shadow-lg gap-5 box-border border border-gray-100'>
                 <div className='w-full flex flex-col items-start md:items-center md:justify-between md:flex-row gap-5'>
@@ -345,7 +425,7 @@ const FacultyCourseDetails = () => {
                 </div>
             </div>
 
-            {/* Fourth block of assignments and course's other info */}
+            {/* Fifth block of assignments and course's other info */}
 
             <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-10'>
 
@@ -425,9 +505,7 @@ const FacultyCourseDetails = () => {
                                         <div key={faculty?._id || faculty?.email} className='w-full h-auto flex items-center gap-3 min-w-0'>
                                             <img className='w-10 h-10 rounded-full shrink-0' src={faculty?.photoURL} />
                                             <div className='flex flex-col min-w-0 w-full'>
-                                                <p className='text-xs font-bold truncate'>{faculty?.name.split(" ")
-                                                    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                                                    .join(" ")}</p>
+                                                <p className='text-xs font-bold truncate'>{formatName(faculty?.name)}</p>
                                                 <p className='text-xs break-all leading-tight'>{faculty?.email}</p>
                                             </div>
                                         </div>
@@ -623,6 +701,101 @@ const FacultyCourseDetails = () => {
                         )
                     }
 
+                </div>
+            </dialog>
+
+            {/* Manage student modal */}
+
+            <dialog ref={manageStudentModalRef} className="modal modal-bottom sm:modal-middle">
+                <div className="modal-box max-w-3xl p-6">
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-xl font-bold graphik">Manage Students</h3>
+                        <button
+                            className="btn btn-sm btn-circle btn-ghost"
+                            onClick={handleManageStudentCloseModal}
+                        >
+                            ✕
+                        </button>
+                    </div>
+
+                    {/* Search bar */}
+
+                    <div className="w-full flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-blue-500 transition-all mb-4">
+                        <Search className="w-4 h-4 text-gray-400" />
+                        <input
+                            type="text"
+                            value={studentSearch}
+                            onChange={(e) => {
+                                setStudentSearch(e.target.value);
+                                setStudentPage(1);
+                            }}
+                            placeholder="Search by name or student ID"
+                            className="w-full outline-none text-sm text-gray-700 placeholder-gray-400"
+                        />
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                        {
+                            filteredStudents.length === 0 ? (
+                                <p className="text-gray-500 text-sm text-center py-10">No student found</p>
+                            ) : (
+                                paginatedStudents.map((student) => (
+                                    <div key={student._id} className="flex items-center justify-between gap-3 p-3 rounded-xl border border-gray-200 bg-gray-50">
+                                        <div className="flex items-center gap-3 min-w-0">
+                                            <img src={student?.photoURL} alt={student?.name || "student"} className="w-10 h-10 rounded-full shrink-0" />
+                                            <div className="min-w-0">
+                                                <p className="text-sm font-semibold truncate">{formatName(student?.name)}</p>
+                                                <p className="text-xs text-gray-500 break-all">{student?.studentID}</p>
+                                            </div>
+                                        </div>
+
+                                        <button
+                                            disabled={course?.status === "completed"}
+                                            onClick={() => handleOpenConfirmRemove(student)}
+                                            className="btn btn-sm border-red-200 text-red-600 hover:bg-red-600 hover:text-white"
+                                        >
+                                            <UserMinus className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                ))
+                            )
+                        }
+                    </div>
+
+                    {
+                        filteredStudents.length > 0 && (
+                            <div className="mt-4 flex justify-center">
+                                <PaginationTemplate
+                                    page={safeStudentPage}
+                                    totalPages={totalStudentPages}
+                                    onChange={setStudentPage}
+                                />
+                            </div>
+                        )
+                    }
+                </div>
+            </dialog>
+
+            {/* Remove student confirmation from course */}
+
+            <dialog ref={confirmRemoveModalRef} className="modal modal-middle">
+                <div className="modal-box max-w-md">
+                    <h3 className="font-bold text-lg">Remove Student</h3>
+                    <p className="py-3 text-sm text-gray-600">
+                        Are you sure you want to remove <span className="font-semibold">{formatName(confirmStudent?.name)}</span>?
+                    </p>
+                    <div className="flex justify-end gap-2">
+                        <button className="btn btn-soft" onClick={handleCloseConfirmRemove}>Cancel</button>
+                        <button
+                            className="w-40 bg-[#1E40AF] text-white rounded-lg py-2 transition-colors hover:bg-blue-600 duration-500 cursor-pointer"
+                            disabled={loadingRemoveStudent}
+                            onClick={handleRemoveStudent}
+                        >
+                            {
+                                loadingRemoveStudent ? <span className="loading loading-dots loading-md"></span>: "Remove"
+                            }
+                        </button>
+                    </div>
                 </div>
             </dialog>
         </div>
