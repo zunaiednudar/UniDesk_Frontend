@@ -818,6 +818,7 @@ const FacultyCourseDetails = () => {
     const uploadAssignmentModalRef = useRef(null);
     const viewAssignmentModalRef = useRef(null);
     const gradeSubmissionModalRef = useRef(null);
+    const deleteAssignmentModalRef = useRef(null);
 
     // Assignment upload opening modal function
 
@@ -1088,6 +1089,47 @@ const FacultyCourseDetails = () => {
             toast.error(error?.response?.data?.message || "Grading failed");
         } finally {
             setLoadingGrade(false);
+        }
+    };
+
+    // Assignment deletion modal opening function
+
+    const openDeleteAssignmentModal = (assignment) => deleteAssignmentModalRef.current?.showModal();
+
+    // Assignment deletion modal closing function
+
+    const closeDeleteAssignmentModal = () => deleteAssignmentModalRef.current?.close();
+
+    // Assignment deletion function
+
+    const handleDeleteAssignment = async () => {
+        if (!selectedAssignment?._id)
+            return;
+
+        try {
+            setLoadingAssignmentModal(true);
+
+            const res = await axiosSecure.delete(`/assignment/${selectedAssignment._id}`);
+
+            if (!res?.data?.success) {
+                toast.error(res?.data?.message || "Delete failed");
+                return;
+            }
+
+            setAssignments((prev) => prev.filter((a) => a._id !== selectedAssignment._id));
+
+            closeDeleteAssignmentModal();
+            closeViewAssignmentModal();
+
+            setTimeout(() => {
+                selectedAssignment(null);
+            }, 100);
+
+            toast.success("Assignment deleted successfully");
+        } catch (error) {
+            toast.error(error?.response?.data?.message || "Delete failed");
+        } finally {
+            setLoadingAssignmentModal(false);
         }
     };
 
@@ -2135,7 +2177,15 @@ const FacultyCourseDetails = () => {
                                                 )
                                             }
 
-                                            <div className="flex justify-end">
+                                            <div className="flex justify-end gap-2">
+                                                <button
+                                                    type="button"
+                                                     className="btn btn-error text-white"
+                                                    onClick={() => openDeleteAssignmentModal(selectedAssignment)}
+                                                    disabled={loadingAssignmentModal}
+                                                >
+                                                    Delete
+                                                </button>
                                                 <button
                                                     className="w-40 btn bg-[#1E40AF] text-white hover:bg-blue-600"
                                                     onClick={handleUpdateAssignment}
@@ -2175,7 +2225,7 @@ const FacultyCourseDetails = () => {
 
                                                             return new Date(b?.submittedAt) - new Date(a?.submittedAt);
                                                         })
-                                                        .map((s) => 
+                                                        .map((s) =>
                                                             <div key={s._id} className="flex items-center justify-between gap-3 p-3 rounded-xl border border-gray-200 bg-gray-50">
                                                                 <div className="min-w-0">
                                                                     <p className="text-sm font-semibold truncate">{formatName(s?.student?.name)}</p>
@@ -2257,6 +2307,37 @@ const FacultyCourseDetails = () => {
                                     <span className="loading loading-dots loading-md"></span>
                                     :
                                     "Save Grade"
+                            }
+                        </button>
+                    </div>
+                </div>
+            </dialog>
+
+            {/* Assignment deletion confirmation modal */}
+
+            <dialog ref={deleteAssignmentModalRef} className="modal modal-middle">
+                <div className="modal-box max-w-md">
+                    <p className="font-bold text-lg">Delete Assignment</p>
+                    <p className="py-3 text-sm text-gray-600">
+                        Are you sure you want to delete this assignment?
+                    </p>
+
+                    <div className="flex justify-end gap-2">
+                        <button className="btn btn-soft" onClick={closeDeleteAssignmentModal}>
+                            Cancel
+                        </button>
+
+                        <button
+                            className="w-25 btn bg-[#1E40AF] text-white transition-colors hover:bg-blue-600 duration-500 cursor-pointer"
+                            onClick={handleDeleteAssignment}
+                            disabled={loadingAssignmentModal}
+                        >
+                            {
+                                loadingAssignmentModal ? (
+                                    <span className="loading loading-dots loading-md"></span>
+                                ) : (
+                                    "Delete"
+                                )
                             }
                         </button>
                     </div>
