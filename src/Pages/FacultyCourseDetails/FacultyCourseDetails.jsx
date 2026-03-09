@@ -561,7 +561,7 @@ const FacultyCourseDetails = () => {
             setIsEditMode(false);
             setNewAnnouncementFiles([]);
             setRemoveAnnouncementAttachmentURLs([]);
-        },100);
+        }, 100);
     };
 
 
@@ -822,8 +822,64 @@ const FacultyCourseDetails = () => {
 
     // Assignment upload function
 
-    const handleUploadAssignment = (e) => {
+    const handleUploadAssignment = async (e) => {
         e.preventDefault();
+
+        const title = uploadAssignmentTitle.trim();
+        const description = uploadAssignmentDescription.trim();
+
+        if (!title || !description || !uploadAssignmentDueDate) {
+            closeUploadAssignmentModal();
+            toast.error("Title,description and due date are required");
+            return;
+        }
+        const totalMarks = Number(uploadAssignmentTotalMarks);
+
+        if (!Number.isFinite(totalMarks) || totalMarks <= 0) {
+            closeUploadAssignmentModal();
+            toast.error("Total marks must be greater than 0");
+            return;
+        }
+        try {
+            setLoadingAssignment(true);
+            const attachments = await Promise.all(
+                uploadAssignmentFiles.map(async (file) => {
+                    const uploaded = await uploadFileToCloudinary(file);
+                    return {
+                        name: file.name,
+                        url: uploaded.url,
+                        cloudinaryId: uploaded.public_id,
+                        resourceType: uploaded.resource_type
+                    };
+                })
+            );
+
+            const assignment = {
+                title,
+                description,
+                dueDate: new Date(uploadAssignmentDueDate).toISOString(),
+                totalMarks
+            };
+
+            if (attachments.length > 0)
+                assignment.attachments = attachments;
+
+            const res = await axiosSecure.post(`/course/${id}/assignment`, assignment);
+
+            if (!res?.data?.success) {
+                toast.error(res?.data?.message || "Assignment upload failed");
+                return;
+            }
+
+            setAssignments((prev) => [res.data.assignment, ...prev]);
+
+            closeUploadAssignmentModal();
+            toast.success("Assignment uploaded successfully");
+        } catch (error) {
+            toast.error(error?.response?.data?.message || "Assignment upload failed");
+        } finally{
+            setLoadingAssignment(false);
+        }
     };
 
     if (loading)
@@ -1107,7 +1163,7 @@ const FacultyCourseDetails = () => {
                                     </div>
                                 </div>
 
-                                {/* Description + Status Form */}
+                                {/* Description and Status Form */}
 
                                 <form
                                     onSubmit={handleEditCourse}
@@ -1125,7 +1181,7 @@ const FacultyCourseDetails = () => {
                                             rows="3"
                                             value={description}
                                             onChange={(e) => setDescription(e.target.value)}
-                                            className="textarea textarea-bordered w-full resize-none"
+                                            className="textarea textarea-bordered w-full resize-none outline-none focus:ring-2 focus:ring-blue-500"
                                             required
                                         />
                                     </div>
@@ -1140,7 +1196,7 @@ const FacultyCourseDetails = () => {
                                         <select
                                             value={status}
                                             onChange={(e) => setStatus(e.target.value)}
-                                            className="select select-bordered w-full"
+                                            className="select select-bordered w-full outline-none focus:ring-2 focus:ring-blue-500"
                                         >
                                             <option value="active">Active</option>
                                             <option value="completed">Completed</option>
@@ -1176,7 +1232,7 @@ const FacultyCourseDetails = () => {
                                             readOnly
                                             value={inviteLink}
                                             placeholder="Click generate to create invitation link"
-                                            className="input input-bordered w-full"
+                                            className="input input-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         />
 
                                         <button
@@ -1232,7 +1288,7 @@ const FacultyCourseDetails = () => {
                             <label className="text-sm font-semibold text-gray-700">Title</label>
                             <input
                                 type="text"
-                                className="input input-bordered w-full"
+                                className="input input-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 value={createTitle}
                                 onChange={(e) => setCreateTitle(e.target.value)}
                                 required
@@ -1243,7 +1299,7 @@ const FacultyCourseDetails = () => {
                             <label className="text-sm font-semibold text-gray-700">Description</label>
                             <textarea
                                 rows="5"
-                                className="textarea textarea-bordered w-full resize-none"
+                                className="textarea textarea-bordered w-full resize-none outline-none focus:ring-2 focus:ring-blue-500"
                                 value={createDescription}
                                 onChange={(e) => setCreateDescription(e.target.value)}
                                 required
@@ -1255,7 +1311,7 @@ const FacultyCourseDetails = () => {
                             <input
                                 type="file"
                                 multiple
-                                className="file-input w-full"
+                                className="file-input w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 onChange={(e) => setCreateAnnouncementFiles(Array.from(e.target.files || []))}
                             />
                         </div>
@@ -1335,7 +1391,7 @@ const FacultyCourseDetails = () => {
                                                 <label className="text-sm font-semibold text-gray-700">Title</label>
                                                 <input
                                                     type="text"
-                                                    className="input input-bordered w-full"
+                                                    className="input input-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
                                                     value={editTitle}
                                                     onChange={(e) => setEditTitle(e.target.value)}
                                                     required
@@ -1346,7 +1402,7 @@ const FacultyCourseDetails = () => {
                                                 <label className="text-sm font-semibold text-gray-700">Description</label>
                                                 <textarea
                                                     rows="5"
-                                                    className="textarea textarea-bordered w-full resize-none"
+                                                    className="textarea textarea-bordered w-full resize-none outline-none focus:ring-2 focus:ring-blue-500"
                                                     value={editDescription}
                                                     onChange={(e) => setEditDescription(e.target.value)}
                                                     required
@@ -1358,7 +1414,7 @@ const FacultyCourseDetails = () => {
                                                 <input
                                                     type="file"
                                                     multiple
-                                                    className="file-input w-full"
+                                                    className="file-input w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
                                                     onChange={(e) => setNewAnnouncementFiles(Array.from(e.target.files || []))}
                                                 />
                                             </div>
@@ -1554,7 +1610,7 @@ const FacultyCourseDetails = () => {
                                 setMaterialPage(1);
                             }}
                             placeholder="Search material by title"
-                            className="w-full outline-none text-sm text-gray-700 placeholder-gray-400"
+                            className="w-full outline-none text-sm text-gray-700 placeholder-gray-400 focus:ring-blue-500"
                         />
                     </div>
 
@@ -1650,7 +1706,7 @@ const FacultyCourseDetails = () => {
                             <label className="text-sm font-semibold text-gray-700">Title</label>
                             <input
                                 type="text"
-                                className="input input-bordered w-full"
+                                className="input input-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 value={materialTitle}
                                 onChange={(e) => setMaterialTitle(e.target.value)}
                                 required
@@ -1661,7 +1717,7 @@ const FacultyCourseDetails = () => {
                             <label className="text-sm font-semibold text-gray-700">Description</label>
                             <textarea
                                 rows="3"
-                                className="textarea textarea-bordered w-full resize-none"
+                                className="textarea textarea-bordered w-full resize-none outline-none focus:ring-2 focus:ring-blue-500"
                                 value={materialDescription}
                                 onChange={(e) => setMaterialDescription(e.target.value)}
                                 required
@@ -1675,7 +1731,7 @@ const FacultyCourseDetails = () => {
                                 id="materialFile"
                                 name="materialFile"
                                 type="file"
-                                className="w-full file-input"
+                                className="w-full file-input focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 required
                                 onChange={(e) => setMaterialFile(e.target.files?.[0] || null)}
                             />
@@ -1712,14 +1768,14 @@ const FacultyCourseDetails = () => {
 
                         <div className="flex flex-col gap-1">
                             <label className="text-sm font-semibold text-gray-700">Title</label>
-                            <input type="text" className="input input-bordered w-full" value={uploadAssignmentTitle} onChange={(e) => setUploadAssignmentTitle(e.target.value)} required />
+                            <input type="text" className="input input-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500" value={uploadAssignmentTitle} onChange={(e) => setUploadAssignmentTitle(e.target.value)} required />
                         </div>
 
                         {/* Description */}
 
                         <div className="flex flex-col gap-1">
                             <label className="text-sm font-semibold text-gray-700">Description</label>
-                            <textarea rows="5" className="textarea textarea-bordered w-full resize-none" value={uploadAssignmentDescription} onChange={(e) => setUploadAssignmentDescription(e.target.value)} required />
+                            <textarea rows="5" className="textarea textarea-bordered w-full resize-none outline-none focus:ring-2 focus:ring-blue-500" value={uploadAssignmentDescription} onChange={(e) => setUploadAssignmentDescription(e.target.value)} required />
                         </div>
 
                         {/* Due date */}
@@ -1727,14 +1783,14 @@ const FacultyCourseDetails = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div className="flex flex-col gap-1">
                                 <label className="text-sm font-semibold text-gray-700">Due Date</label>
-                                <input type="datetime-local" className="input input-bordered w-full" value={uploadAssignmentDueDate} onChange={(e) => setUploadAssignmentDueDate(e.target.value)} required />
+                                <input type="datetime-local" min={new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16)} className="input input-bordered w-full outline-none focus:ring-blue-500" value={uploadAssignmentDueDate} onChange={(e) => setUploadAssignmentDueDate(e.target.value)} required />
                             </div>
 
                             {/* Total marks */}
 
                             <div className="flex flex-col gap-1">
                                 <label className="text-sm font-semibold text-gray-700">Total Marks</label>
-                                <input type="number" min="1" step="1" className="input input-bordered w-full" value={uploadAssignmentTotalMarks} onChange={(e) => setUploadAssignmentTotalMarks(e.target.value)} required />
+                                <input type="number" min="1" step="1" className="input input-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500" value={uploadAssignmentTotalMarks} onChange={(e) => setUploadAssignmentTotalMarks(e.target.value)} required />
                             </div>
                         </div>
 
@@ -1742,7 +1798,7 @@ const FacultyCourseDetails = () => {
 
                         <div className="flex flex-col gap-1">
                             <label className="text-sm font-semibold text-gray-700">Attachments (optional)</label>
-                            <input type="file" multiple className="file-input w-full" onChange={(e) => setUploadAssignmentFiles(Array.from(e.target.files || []))} />
+                            <input type="file" multiple className="file-input w-full focus:outline-none focus:ring-2 focus:ring-blue-500" onChange={(e) => setUploadAssignmentFiles(Array.from(e.target.files || []))} />
                         </div>
 
                         <div className="flex justify-end gap-2">
@@ -1758,7 +1814,6 @@ const FacultyCourseDetails = () => {
                     </form>
                 </div>
             </dialog>
-
         </>
     );
 };
