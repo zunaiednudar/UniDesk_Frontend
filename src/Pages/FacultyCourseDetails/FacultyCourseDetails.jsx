@@ -2163,20 +2163,56 @@ const FacultyCourseDetails = () => {
                                                 ) : assignmentSubmissions.length === 0 ? (
                                                     <p className="text-sm text-gray-500 text-center py-6">No submission found</p>
                                                 ) : (
-                                                    assignmentSubmissions.map((s) => (
-                                                        <div key={s._id} className="flex items-center justify-between gap-3 p-3 rounded-xl border border-gray-200 bg-gray-50">
-                                                            <div className="min-w-0">
-                                                                <p className="text-sm font-semibold truncate">{s?.student?.name || "Student"}</p>
-                                                                <p className="text-xs text-gray-500 break-all">{s?.student?.email}</p>
-                                                                <p className="text-xs text-gray-500">Submitted: {new Date(s.submittedAt).toLocaleString()}</p>
+                                                    [...assignmentSubmissions]
+                                                        .sort((a, b) => {
+                                                            const aEvaluated = a?.isGraded || a?.marks !== null;
+                                                            const bEvaluated = b?.isGraded || b?.marks !== null;
+
+                                                            // Unevaluated first
+
+                                                            if (aEvaluated !== bEvaluated)
+                                                                return aEvaluated ? 1 : -1;
+
+                                                            return new Date(b?.submittedAt) - new Date(a?.submittedAt);
+                                                        })
+                                                        .map((s) => 
+                                                            <div key={s._id} className="flex items-center justify-between gap-3 p-3 rounded-xl border border-gray-200 bg-gray-50">
+                                                                <div className="min-w-0">
+                                                                    <p className="text-sm font-semibold truncate">{formatName(s?.student?.name)}</p>
+                                                                    <p className="text-xs text-gray-500 break-all">{s?.student?.email}</p>
+                                                                    <p className="text-xs text-gray-500">Submitted: {new Date(s.submittedAt).toLocaleString()}</p>
+                                                                    {
+                                                                        s?.isGraded && (
+                                                                            <p className="text-xs text-green-600 mt-1">
+                                                                                Evaluated: {s?.marks ?? 0}/{selectedAssignment?.totalMarks}
+                                                                            </p>
+                                                                        )
+                                                                    }
+                                                                </div>
+
+                                                                <div className="flex items-center gap-2">
+                                                                    <a
+                                                                        href={s.submissionURL}
+                                                                        target="_blank"
+                                                                        rel="noreferrer"
+                                                                        className="btn btn-sm border-blue-200 text-blue-600 hover:bg-blue-600 hover:text-white"
+                                                                    >
+                                                                        Download
+                                                                    </a>
+
+                                                                    {
+                                                                        !s?.isGraded && (
+                                                                            <button
+                                                                                onClick={() => openGradeSubmissionModal(s)}
+                                                                                className="btn btn-sm border-green-200 text-green-600 hover:bg-green-600 hover:text-white"
+                                                                            >
+                                                                                Grade
+                                                                            </button>
+                                                                        )
+                                                                    }
+                                                                </div>
                                                             </div>
-                                                            <div className="flex items-center gap-2">
-                                                                <a href={s.submissionURL} target="_blank" rel="noreferrer" className="btn btn-sm border-blue-200 text-blue-600 hover:bg-blue-600 hover:text-white">Download</a>
-                                                                <button onClick={() => openGradeSubmissionModal(s)} className="btn btn-sm border-green-200 text-green-600 hover:bg-green-600 hover:text-white">Grade</button>
-                                                            </div>
-                                                        </div>
-                                                    )
-                                                    )
+                                                        )
                                                 )
                                             }
                                         </div>
