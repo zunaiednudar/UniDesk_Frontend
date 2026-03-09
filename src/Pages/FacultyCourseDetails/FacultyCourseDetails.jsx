@@ -546,9 +546,8 @@ const FacultyCourseDetails = () => {
 
     const openViewAnnouncementModal = (announcement) => {
         setSelectedAnnouncement(announcement);
-        setIsEditMode(false);
-        setEditTitle(announcement?.title || "");
-        setEditDescription(announcement?.description || "");
+        setEditTitle(announcement?.title);
+        setEditDescription(announcement?.description);
         setNewAnnouncementFiles([]);
         setRemoveAnnouncementAttachmentURLs([]);
         viewAnnouncementModalRef.current?.showModal();
@@ -560,7 +559,6 @@ const FacultyCourseDetails = () => {
         viewAnnouncementModalRef.current?.close();
         setTimeout(() => {
             setSelectedAnnouncement(null);
-            setIsEditMode(false);
             setNewAnnouncementFiles([]);
             setRemoveAnnouncementAttachmentURLs([]);
         }, 100);
@@ -606,7 +604,7 @@ const FacultyCourseDetails = () => {
                 ]);
 
             closeCreateAnnouncementModal();
-            toast.success("Announcement created");
+            toast.success("Announcement created successfully");
         } catch (error) {
             toast.error(error?.response?.data?.message || "Create failed");
         } finally {
@@ -615,26 +613,18 @@ const FacultyCourseDetails = () => {
     };
 
     const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
-    const [isEditMode, setIsEditMode] = useState(false);
     const [editTitle, setEditTitle] = useState("");
     const [editDescription, setEditDescription] = useState("");
-    const [announcementToDelete, setAnnouncementToDelete] = useState(null);
     const [newAnnouncementFiles, setNewAnnouncementFiles] = useState([]);
     const [removeAnnouncementAttachmentURLs, setRemoveAnnouncementAttachmentURLs] = useState([]);
 
     // Announcement deletion confirmation modal opening function
 
-    const handleOpenDeleteAnnouncementModal = (announcement) => {
-        setAnnouncementToDelete(announcement);
-        deleteAnnouncementModalRef.current?.showModal();
-    };
+    const handleOpenDeleteAnnouncementModal = () => deleteAnnouncementModalRef.current?.showModal();
 
     // Announcement deletion confirmation modal closing function
 
-    const handleCloseDeleteAnnouncementModal = () => {
-        deleteAnnouncementModalRef.current?.close();
-        setAnnouncementToDelete(null);
-    };
+    const handleCloseDeleteAnnouncementModal = () => deleteAnnouncementModalRef.current?.close();
 
     // Announcement attachments deletion toggling function
 
@@ -657,6 +647,15 @@ const FacultyCourseDetails = () => {
 
         if (!trimmedTitle || !trimmedDescription) {
             toast.error("Title and description are required");
+            return;
+        }
+
+        const noCoreChange = trimmedTitle === (selectedAnnouncement?.title || "") && trimmedDescription === (selectedAnnouncement?.description || "");
+
+        const noAttachmentChange = (newAnnouncementFiles?.length === 0) && (removeAnnouncementAttachmentURLs?.length === 0);
+
+        if (noCoreChange && noAttachmentChange) {
+            toast.info("Nothing to update");
             return;
         }
 
@@ -725,11 +724,15 @@ const FacultyCourseDetails = () => {
                 updatedAt: nextUpdatedAt
             }));
 
-            setIsEditMode(false);
-            setNewAnnouncementFiles([]);
-            setRemoveAnnouncementAttachmentURLs([]);
+            closeViewAnnouncementModal();
 
-            toast.success("Announcement updated");
+            toast.success("Announcement updated successfully");
+
+            setTimeout(() => {
+                setSelectedAnnouncement(null);
+                setNewAnnouncementFiles([]);
+                setRemoveAnnouncementAttachmentURLs([]);
+            }, 100)
         } catch (error) {
             toast.error(error?.response?.data?.message || "Update failed");
         } finally {
@@ -740,24 +743,28 @@ const FacultyCourseDetails = () => {
     // Delete announcement function
 
     const handleDeleteAnnouncement = async () => {
-        if (!announcementToDelete?._id)
+        if (!selectedAnnouncement?._id)
             return;
 
         try {
             setLoadingAnnouncementAction(true);
 
-            const res = await axiosSecure.delete(`/course/announcement/${announcementToDelete._id}`);
+            const res = await axiosSecure.delete(`/course/announcement/${selectedAnnouncement._id}`);
 
             if (!res?.data?.success) {
                 toast.error(res?.data?.message || "Delete failed");
                 return;
             }
 
-            setAnnouncements((prev) => prev.filter((item) => item._id !== announcementToDelete._id));
+            setAnnouncements((prev) => prev.filter((item) => item._id !== selectedAnnouncement._id));
 
             handleCloseDeleteAnnouncementModal();
             closeViewAnnouncementModal();
             toast.success("Announcement deleted successfully");
+
+            setTimeout(() => {
+                selectedAnnouncement(null);
+            });
         } catch (error) {
             toast.error(error?.response?.data?.message || "Delete failed");
         } finally {
@@ -1025,7 +1032,7 @@ const FacultyCourseDetails = () => {
             );
 
             closeViewAssignmentModal();
-            toast.success("Assignment updated");
+            toast.success("Assignment updated successfully");
             setTimeout(() => {
                 setNewAssignmentFiles([]);
                 setRemoveAssignmentAttachmentURLs([]);
@@ -1094,7 +1101,7 @@ const FacultyCourseDetails = () => {
 
     // Assignment deletion modal opening function
 
-    const openDeleteAssignmentModal = (assignment) => deleteAssignmentModalRef.current?.showModal();
+    const openDeleteAssignmentModal = () => deleteAssignmentModalRef.current?.showModal();
 
     // Assignment deletion modal closing function
 
@@ -1589,135 +1596,90 @@ const FacultyCourseDetails = () => {
                         selectedAnnouncement && (
                             <div className="flex flex-col gap-4">
                                 <div className="flex items-center justify-between gap-2">
-                                    <p className="text-lg md:text-xl font-bold graphik">
-                                        {
-                                            isEditMode ? "Edit Announcement" : "Announcement Details"
-                                        }
-                                    </p>
+                                    <p className="text-lg md:text-xl font-bold graphik">Edit Announcement</p>
                                     <button className="btn btn-sm btn-circle btn-ghost" onClick={closeViewAnnouncementModal}>✕</button>
                                 </div>
 
+                                <div className="flex flex-col gap-1">
+                                    <label className="text-sm font-semibold text-gray-700">Title</label>
+                                    <input
+                                        type="text"
+                                        className="input input-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        value={editTitle}
+                                        onChange={(e) => setEditTitle(e.target.value)}
+                                        required
+                                    />
+                                </div>
+
+                                <div className="flex flex-col gap-1">
+                                    <label className="text-sm font-semibold text-gray-700">Description</label>
+                                    <textarea
+                                        rows="5"
+                                        className="textarea textarea-bordered w-full resize-none outline-none focus:ring-2 focus:ring-blue-500"
+                                        value={editDescription}
+                                        onChange={(e) => setEditDescription(e.target.value)}
+                                        required
+                                    />
+                                </div>
+
+                                <div className="flex flex-col gap-1">
+                                    <label className="text-sm font-semibold text-gray-700">Add New Attachments</label>
+                                    <input
+                                        type="file"
+                                        multiple
+                                        className="file-input w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        onChange={(e) => setNewAnnouncementFiles(Array.from(e.target.files || []))}
+                                    />
+                                </div>
+
                                 {
-                                    !isEditMode ? (
-                                        <>
-                                            <p className="text-xl font-semibold">{selectedAnnouncement?.title}</p>
-                                            <p className="text-xs text-gray-500">Updated {timeAgo(selectedAnnouncement?.updatedAt)}</p>
-                                            <p className="text-sm text-gray-700 whitespace-pre-wrap">{selectedAnnouncement?.description}</p>
-
+                                    selectedAnnouncement?.attachments?.length > 0 && (
+                                        <div className="flex flex-col gap-2">
+                                            <p className="text-sm font-semibold">Existing Attachments</p>
                                             {
-                                                selectedAnnouncement?.attachments?.length > 0 && (
-                                                    <div className="flex flex-col gap-2">
-                                                        <p className="text-sm font-semibold">Attachments</p>
-                                                        {
-                                                            selectedAnnouncement.attachments.map((attachment, idx) => {
-                                                                const url = getAttachmentURL(attachment);
-                                                                const name = getAttachmentName(attachment);
-                                                                return (
-                                                                    <div key={`${url}-${idx}`} className="flex items-center justify-between gap-3 p-3 rounded-xl border border-gray-200 bg-gray-50">
-                                                                        <p className="text-sm font-semibold truncate">{name}</p>
-                                                                        <a
-                                                                            href={url}
-                                                                            target="_blank"
-                                                                            rel="noopener noreferrer"
-                                                                            className="btn btn-sm border-blue-200 text-blue-600 hover:bg-blue-600 hover:text-white shrink-0"
-                                                                        >
-                                                                            <Download className="w-4 h-4" />
-                                                                        </a>
-                                                                    </div>
-                                                                );
-                                                            })
-                                                        }
-                                                    </div>
-                                                )
+                                                selectedAnnouncement.attachments.map((attachment, idx) => {
+                                                    const url = getAttachmentURL(attachment);
+                                                    const marked = removeAnnouncementAttachmentURLs.includes(url);
+                                                    return (
+                                                        <div key={`${url}-${idx}`} className={`flex items-center justify-between rounded-lg border px-3 py-2 text-sm ${marked ? "bg-blue-50 border-blue-300 text-blue-700" : "bg-gray-50 border-gray-200 text-gray-700"}`}>
+                                                            <span className="truncate pr-3">{getAttachmentName(attachment)} {marked ? "(Will be removed)" : ""}</span>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleToggleRemoveAnnouncementAttachment(url)}
+                                                                className={`p-1 rounded-full border transition-colors ${marked ? "border-blue-300 text-blue-700 hover:bg-blue-100" : "border-gray-300 text-gray-500 hover:bg-gray-100"} cursor-pointer`}
+                                                            >
+                                                                <X className="w-4 h-4" />
+                                                            </button>
+                                                        </div>
+                                                    );
+                                                })
                                             }
-
-                                            <div className="flex justify-end gap-2">
-                                                <button className="w-20 btn bg-[#1E40AF] text-white hover:bg-blue-600" onClick={() => setIsEditMode(true)}>Edit</button>
-                                                <button className="btn btn-error text-white" onClick={() => handleOpenDeleteAnnouncementModal(selectedAnnouncement)}>Delete</button>
-                                            </div>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <div className="flex flex-col gap-1">
-                                                <label className="text-sm font-semibold text-gray-700">Title</label>
-                                                <input
-                                                    type="text"
-                                                    className="input input-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                                    value={editTitle}
-                                                    onChange={(e) => setEditTitle(e.target.value)}
-                                                    required
-                                                />
-                                            </div>
-
-                                            <div className="flex flex-col gap-1">
-                                                <label className="text-sm font-semibold text-gray-700">Description</label>
-                                                <textarea
-                                                    rows="5"
-                                                    className="textarea textarea-bordered w-full resize-none outline-none focus:ring-2 focus:ring-blue-500"
-                                                    value={editDescription}
-                                                    onChange={(e) => setEditDescription(e.target.value)}
-                                                    required
-                                                />
-                                            </div>
-
-                                            <div className="flex flex-col gap-1">
-                                                <label className="text-sm font-semibold text-gray-700">Add New Attachments</label>
-                                                <input
-                                                    type="file"
-                                                    multiple
-                                                    className="file-input w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                                    onChange={(e) => setNewAnnouncementFiles(Array.from(e.target.files || []))}
-                                                />
-                                            </div>
-
-                                            {
-                                                selectedAnnouncement?.attachments?.length > 0 && (
-                                                    <div className="flex flex-col gap-2">
-                                                        <p className="text-sm font-semibold">Existing Attachments</p>
-                                                        {
-                                                            selectedAnnouncement.attachments.map((attachment, idx) => {
-                                                                const url = getAttachmentURL(attachment);
-                                                                const marked = removeAnnouncementAttachmentURLs.includes(url);
-                                                                return (
-                                                                    <div key={`${url}-${idx}`} className={`flex items-center justify-between rounded-lg border px-3 py-2 text-sm ${marked ? "bg-blue-50 border-blue-300 text-blue-700" : "bg-gray-50 border-gray-200 text-gray-700"}`}>
-                                                                        <span className="truncate pr-3">{getAttachmentName(attachment)} {marked ? "(Will be removed)" : ""}</span>
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={() => handleToggleRemoveAnnouncementAttachment(url)}
-                                                                            className={`p-1 rounded-full border transition-colors ${marked ? "border-blue-300 text-blue-700 hover:bg-blue-100" : "border-gray-300 text-gray-500 hover:bg-gray-100"} cursor-pointer`}
-                                                                            title={marked ? "Undo remove" : "Mark to remove"}
-                                                                        >
-                                                                            <X className="w-4 h-4" />
-                                                                        </button>
-                                                                    </div>
-                                                                );
-                                                            })
-                                                        }
-                                                    </div>
-                                                )
-                                            }
-
-                                            <div className="flex justify-end gap-2">
-                                                <button type="button" className="btn btn-soft" onClick={() => {
-                                                    setIsEditMode(false);
-                                                    setEditTitle(selectedAnnouncement?.title || "");
-                                                    setEditDescription(selectedAnnouncement?.description || "");
-                                                    setNewAnnouncementFiles([]);
-                                                    setRemoveAnnouncementAttachmentURLs([]);
-                                                }}>
-                                                    Cancel
-                                                </button>
-                                                <button type="button" className="w-40 btn bg-[#1E40AF] text-white hover:bg-blue-600" onClick={handleUpdateAnnouncement} disabled={loadingAnnouncementAction}>
-                                                    {
-                                                        loadingAnnouncementAction
-                                                            ? <span className="loading loading-dots loading-md"></span>
-                                                            : "Save Changes"
-                                                    }
-                                                </button>
-                                            </div>
-                                        </>
+                                        </div>
                                     )
                                 }
+
+                                <div className="flex justify-end gap-2">
+                                    <button
+                                        type="button"
+                                        className="btn btn-error text-white"
+                                        onClick={() => handleOpenDeleteAnnouncementModal(selectedAnnouncement)}
+                                    >
+                                        Delete
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        className="w-40 btn bg-[#1E40AF] text-white hover:bg-blue-600"
+                                        onClick={handleUpdateAnnouncement}
+                                        disabled={loadingAnnouncementAction}
+                                    >
+                                        {
+                                            loadingAnnouncementAction
+                                                ? <span className="loading loading-dots loading-md"></span>
+                                                : "Save Changes"
+                                        }
+                                    </button>
+                                </div>
                             </div>
                         )
                     }
@@ -1734,7 +1696,7 @@ const FacultyCourseDetails = () => {
                     </p>
                     <div className="flex justify-end gap-2">
                         <button className="btn btn-soft" onClick={handleCloseDeleteAnnouncementModal}>Cancel</button>
-                        <button className="w-25 bg-[#1E40AF] text-white transition-colors hover:bg-blue-600 duration-500 cursor-pointer" onClick={handleDeleteAnnouncement} disabled={loadingAnnouncementAction}>
+                        <button className="w-25 btn bg-[#1E40AF] text-white transition-colors hover:bg-blue-600 duration-500 cursor-pointer" onClick={handleDeleteAnnouncement} disabled={loadingAnnouncementAction}>
                             {
                                 loadingAnnouncementAction
                                     ? <span className="loading loading-dots loading-md"></span>
@@ -2034,7 +1996,7 @@ const FacultyCourseDetails = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div className="flex flex-col gap-1">
                                 <label className="text-sm font-semibold text-gray-700">Due Date</label>
-                                <input type="datetime-local" min={new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16)} className="input input-bordered w-full outline-none focus:ring-blue-500" value={uploadAssignmentDueDate} onChange={(e) => setUploadAssignmentDueDate(e.target.value)} required />
+                                <input type="datetime-local" min={new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16)} className="input input-bordered w-full outline-none focus:ring-2 focus:ring-blue-500" value={uploadAssignmentDueDate} onChange={(e) => setUploadAssignmentDueDate(e.target.value)} required />
                             </div>
 
                             {/* Total marks */}
@@ -2067,11 +2029,7 @@ const FacultyCourseDetails = () => {
             </dialog>
 
             {/* Assignment view Modal */}
-            <dialog
-                ref={viewAssignmentModalRef}
-                className="modal modal-bottom sm:modal-middle"
-                onClose={closeViewAssignmentModal}
-            >
+            <dialog ref={viewAssignmentModalRef} className="modal modal-bottom sm:modal-middle">
                 <div className="modal-box max-w-3xl p-6">
                     {
                         selectedAssignment && (
@@ -2092,43 +2050,55 @@ const FacultyCourseDetails = () => {
 
                                             {/* Title */}
 
-                                            <input
-                                                className="input input-bordered w-full"
-                                                value={editAssignmentTitle}
-                                                onChange={(e) => setEditAssignmentTitle(e.target.value)}
-                                            />
+                                            <div className="flex flex-col gap-1">
+                                                <label className="text-sm font-semibold text-gray-700">Title</label>
+                                                <input
+                                                    className="input input-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                    value={editAssignmentTitle}
+                                                    onChange={(e) => setEditAssignmentTitle(e.target.value)}
+                                                />
+                                            </div>
 
                                             {/* Description */}
 
-                                            <textarea
-                                                className="textarea textarea-bordered w-full resize-none"
-                                                rows="4"
-                                                value={editAssignmentDescription}
-                                                onChange={(e) => setEditAssignmentDescription(e.target.value)}
-                                            />
+                                            <div className="flex flex-col gap-1">
+                                                <label className="text-sm font-semibold text-gray-700">Description</label>
+                                                <textarea
+                                                    className="textarea textarea-bordered w-full resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                    rows="4"
+                                                    value={editAssignmentDescription}
+                                                    onChange={(e) => setEditAssignmentDescription(e.target.value)}
+                                                />
+                                            </div>
 
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
 
                                                 {/* Due date */}
 
-                                                <input
-                                                    type="datetime-local"
-                                                    className="input input-bordered w-full"
-                                                    value={editAssignmentDueDate}
-                                                    min={new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16)}
-                                                    onChange={(e) => setEditAssignmentDueDate(e.target.value)}
-                                                />
+                                                <div className="flex flex-col gap-1">
+                                                    <label className="text-sm font-semibold text-gray-700">Due Date</label>
+                                                    <input
+                                                        type="datetime-local"
+                                                        className="input input-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                        value={editAssignmentDueDate}
+                                                        min={new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16)}
+                                                        onChange={(e) => setEditAssignmentDueDate(e.target.value)}
+                                                    />
+                                                </div>
 
                                                 {/* Total marks */}
 
-                                                <input
-                                                    type="number"
-                                                    min="1"
-                                                    step="1"
-                                                    className="input input-bordered w-full"
-                                                    value={editAssignmentTotalMarks}
-                                                    onChange={(e) => setEditAssignmentTotalMarks(e.target.value)}
-                                                />
+                                                <div className="flex flex-col gap-1">
+                                                    <label className="text-sm font-semibold text-gray-700">Total Marks</label>
+                                                    <input
+                                                        type="number"
+                                                        min="1"
+                                                        step="1"
+                                                        className="input input-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                        value={editAssignmentTotalMarks}
+                                                        onChange={(e) => setEditAssignmentTotalMarks(e.target.value)}
+                                                    />
+                                                </div>
                                             </div>
 
                                             {/* New attachments */}
@@ -2138,7 +2108,7 @@ const FacultyCourseDetails = () => {
                                                 <input
                                                     type="file"
                                                     multiple
-                                                    className="file-input w-full"
+                                                    className="file-input w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
                                                     onChange={(e) => setNewAssignmentFiles(Array.from(e.target.files || []))}
                                                 />
                                             </div>
@@ -2163,8 +2133,7 @@ const FacultyCourseDetails = () => {
                                                                         <button
                                                                             type="button"
                                                                             onClick={() => toggleRemoveAssignmentAttachment(url)}
-                                                                            className="p-1 rounded-full border"
-                                                                            title={marked ? "Undo remove" : "Mark to remove"}
+                                                                            className={`p-1 rounded-full border transition-colors ${marked ? "border-blue-300 text-blue-700 hover:bg-blue-100" : "border-gray-300 text-gray-500 hover:bg-gray-100"} cursor-pointer`}
                                                                         >
                                                                             <X className="w-4 h-4" />
                                                                         </button>
@@ -2180,7 +2149,7 @@ const FacultyCourseDetails = () => {
                                             <div className="flex justify-end gap-2">
                                                 <button
                                                     type="button"
-                                                     className="btn btn-error text-white"
+                                                    className="btn btn-error text-white"
                                                     onClick={() => openDeleteAssignmentModal(selectedAssignment)}
                                                     disabled={loadingAssignmentModal}
                                                 >
@@ -2285,14 +2254,14 @@ const FacultyCourseDetails = () => {
                             type="number"
                             min="0"
                             max={Number(selectedAssignment?.totalMarks || 0)}
-                            className="input input-bordered w-full"
+                            className="input input-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
                             placeholder="Marks"
                             value={gradeMarks}
                             onChange={(e) => setGradeMarks(e.target.value)}
                         />
                         <textarea
                             rows="4"
-                            className="textarea textarea-bordered w-full"
+                            className="textarea textarea-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
                             placeholder="Feedback"
                             value={gradeFeedback}
                             onChange={(e) => setGradeFeedback(e.target.value)}
@@ -2348,3 +2317,6 @@ const FacultyCourseDetails = () => {
 };
 
 export default FacultyCourseDetails;
+
+
+
