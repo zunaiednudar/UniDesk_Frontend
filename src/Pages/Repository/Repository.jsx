@@ -9,7 +9,7 @@ import {
     Search,
     File,
     FileImage, FileText,
-    Calendar, Download, Eye, UsersRound, BookCheck
+    Calendar, Download, Eye, UsersRound, BookCheck, FolderOpen
 } from 'lucide-react';
 import {
     Chart as ChartJS,
@@ -25,6 +25,7 @@ import {Line} from "react-chartjs-2"
 import {useParams} from "react-router";
 import axiosSecure from "../../utils/axiosSecure.js";
 import formatName from "../../utils/formatName.js";
+import {toast} from "sonner";
 
 ChartJS.register(
     CategoryScale,
@@ -186,6 +187,11 @@ const Repository = () => {
     const [totalContributorsCount, setTotalContributorsCount] = useState([]);
     const [totalUploadCount, setTotalUploadCount] = useState(0);
     const [totalDownloadCount, setTotalDownloadCount] = useState(0);
+
+    const [statusFilter, setStatusFilter] = useState('all');
+    const [itemType, setItemType] = useState('personal notes');
+
+    const [uploadStatus, setUploadStatus] = useState("idle");
 
     const handleDownload = async (url, title) => {
         try {
@@ -399,19 +405,93 @@ const Repository = () => {
 
     const filteredMaterials = repositoryItems.filter(item => {
         const q = searchQuery.toLowerCase();
-        return (
-            item.title.toLowerCase().includes(q) ||
+
+        const matchedSearch = item.title.toLowerCase().includes(q) ||
             item.courseCode.toLowerCase().includes(q) ||
             item.courseName.toLowerCase().includes(q) ||
             item.itemType.toLowerCase().includes(q) ||
-            item.uploader.name.toLowerCase().includes(q)
-        );
+            item.uploader.name.toLowerCase().includes(q);
+
+        const matchedStatus = (statusFilter === 'all') || (statusFilter === item.status && item.uploader._id === id);
+
+        return matchedSearch && matchedStatus;
     });
 
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+
+        const formData = new FormData(e.target);
+
+        const data = {
+            title: formData.get("title")?.trim(),
+            description: formData.get("description")?.trim(),
+            url: formData.get("url")?.trim(),
+            courseCode: formData.get("course-code")?.trim(),
+            courseName: formData.get("course-name")?.trim(),
+            year: formData.get("year")?.trim(),
+            semester: formData.get("semester")?.trim(),
+            itemType: itemType
+        };
+
+        console.log("Data (Repository.jsx): ", data);
+
+        if (!data.title) {
+            toast.error("You must give a title of the study material!");
+            return;
+        }
+
+        if (!data.description) {
+            toast.error("You must give a valid description of the study material!");
+            return;
+        }
+
+        if (!data.url) {
+            toast.error("You must give a valid URL of the study material!");
+            return;
+        }
+
+        if (!data.courseCode || !data.courseName) {
+            toast.error("You must give valid course details related to the study material!");
+            return;
+        }
+
+        if (!data.year || !data.semester) {
+            toast.error("You must give valid session details related to the study material!");
+            return;
+        }
+
+        if (!data.itemType) {
+            toast.error("Please select a valid type for the study material!");
+            return;
+        }
+
+
+        try {
+            const submissionRes = await axiosSecure.post(`/repository`, data);
+            console.log(submissionRes.status);
+
+            if (submissionRes.status === 201) {
+                setUploadStatus("success");
+                document.getElementById("my_modal_1").close();
+                e.target.reset();
+                setItemType("personal notes");
+            }
+        } catch (error) {
+            console.log("Submission Error (Repository.jsx): ", error);
+            toast.error("Failed to submit material");
+            setUploadStatus("error");
+        }
+    }
+
+    // Design for form fields
+    const labelCls = "block text-sm font-semibold text-gray-600 mb-1.5";
+    const inputCls = "w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none transition bg-white mb-3";
+    const optionCls = "text-sm px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none";
+
     return (
-        <div className={`gilroy space-y-6 ${!id ? "m-10" : "m-0"}`}>
+        <div className={`gilroy space-y-6 ${!id ? "mx-15" : "m-0"}`}>
             {/* Header */}
-            <div className={`${!id ? "m-5" : "m-0"}`}>
+            <div>
                 <h1 className="graphik text-3xl font-semibold text-gray-900">Repository</h1>
                 <p className="text-sm text-gray-400 mt-1">A collaborative platform for students and instructors to
                     exchange study materials, participate in discussions, and contribute valuable academic resources</p>
@@ -445,7 +525,7 @@ const Repository = () => {
 
             {/* Unregistered User - Stats */}
             {!id && (
-                <div className={`grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-4 ${!id ? "m-5" : "m-0"}`}>
+                <div className={`grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-4`}>
                     <StatCard
                         icon={UsersRound}
                         value={totalContributorsCount}
@@ -471,7 +551,7 @@ const Repository = () => {
 
 
             {/* Contribution graph + Leaderboard */}
-            <div className="lg:p-5 grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-4">
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-4">
                 {/* Contribution graph */}
                 {id && graphData && (
                     <div className="h-[500px]">
@@ -479,7 +559,7 @@ const Repository = () => {
                     </div>
                 )}
 
-                <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex flex-col gap-5">
+                <div className={`bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex flex-col gap-5`}>
                     <h2 className="graphik text-2xl font-semibold text-gray-900">Top Contributors</h2>
 
                     {/* Leaderboard */}
@@ -557,7 +637,7 @@ const Repository = () => {
             {/* Materials section */}
             <div>
                 {/* Search */}
-                <div className={`bg-white rounded-2xl p-5 shadow-sm border border-gray-100 ${!id ? "m-5" : "m-0"}`}>
+                <div className={`bg-white rounded-2xl p-5 shadow-sm border border-gray-100`}>
                     <div className="relative">
                         <Search size={15} className="text-gray-400 absolute left-3 top-1/2 -translate-y-1/2"/>
                         <input
@@ -570,8 +650,51 @@ const Repository = () => {
                     </div>
                 </div>
 
+                <div className="flex justify-between items-center gap-4">
+                    {id && (
+                        <select
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value)}
+                            className={optionCls}
+                        >
+                            <option value="all">All</option>
+                            <option value="approved">Approved</option>
+                            <option value="pending">Pending</option>
+                            <option value="rejected">Rejected</option>
+                        </select>
+                    )}
+
+                    {id && (
+                        <button
+                            onClick={() => document.getElementById('my_modal_1').showModal()}
+                            className={`my-5 flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-blue-50 hover:border-blue-200 hover:text-blue-600 transition-all duration-150`}
+                        >
+                            <Upload size={15} strokeWidth={1.75}/>
+                            Upload
+                        </button>
+                    )}
+                </div>
+
+                {(uploadStatus === "success") && (
+                    <div role="alert" className="alert alert-success mb-5">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 shrink-0 stroke-current" fill="none" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>Study material uploaded successfully!</span>
+                    </div>
+                )}
+
+                {(uploadStatus === "error") && (
+                    <div role="alert" className="alert alert-error mb-5">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 shrink-0 stroke-current" fill="none" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>Study material upload failed!</span>
+                    </div>
+                )}
+
                 {filteredMaterials.length > 0 ? (
-                    <div className="p-5 grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4">
+                    <div className={`grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4 ${!id ? "mt-5" : ""}`}>
                         {filteredMaterials.map( material => (
                             <ItemCard
                                 key={material._id}
@@ -588,6 +711,93 @@ const Repository = () => {
                         <p className="text-sm font-medium text-gray-400">No study material found</p>
                     </div>
                 )}
+
+                {/* Material Upload Modal */}
+                <dialog id="my_modal_1" className="modal">
+                    <div className="modal-box">
+                        <h4 className="text-xl font-semibold text-gray-900 text-center">Upload Material</h4>
+
+                        <form onSubmit={handleSubmit}>
+                            <button
+                                type="button"
+                                onClick={() => document.getElementById("my_modal_1").close()}
+                                className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+
+                            {/* Title */}
+                            <div>
+                                <label className={labelCls}>Title</label>
+                                <input type="text" name="title" className={inputCls} />
+                            </div>
+
+                            {/* Description */}
+                            <div>
+                                <label className={labelCls}>Description</label>
+                                <textarea name="description" rows={5} className={inputCls} placeholder="Enter description here..." />
+                            </div>
+
+                            {/* URL */}
+                            <div>
+                                <label className={labelCls}>File URL</label>
+                                <input type="url" name="url" className={inputCls} placeholder="https://example.com/file.pdf" />
+                            </div>
+
+                            {/* Course Code */}
+                            <div>
+                                <label className={labelCls}>Course Code</label>
+                                <input type="text" name="course-code" className={inputCls}  placeholder="CSE 3200" />
+                            </div>
+
+                            {/* Course Name */}
+                            <div>
+                                <label className={labelCls}>Course Name</label>
+                                <input type="text" name="course-name" className={inputCls} placeholder="System Development Project" />
+                            </div>
+
+                            {/* Year + Semester */}
+                            <div className="flex flex-col lg:flex-row justify-between">
+                                <div>
+                                    <label className={labelCls}>Year</label>
+                                    <input type="text" name="year" className={inputCls} placeholder="3rd" />
+                                </div>
+
+                                <div>
+                                    <label className={labelCls}>Semester</label>
+                                    <input type="text" name="semester" className={inputCls} placeholder="2nd" />
+                                </div>
+                            </div>
+
+                            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+                                {/* Item Type */}
+                                <div>
+                                    <label className={labelCls}>Type</label>
+                                    <select
+                                        name="type"
+                                        value={itemType}
+                                        onChange={(e) => setItemType(e.target.value)}
+                                        className={optionCls}
+                                    >
+                                        <option value="personal note">Personal Note</option>
+                                        <option value="question bank">Question Bank</option>
+                                        <option value="answer">Answer</option>
+                                        <option value="ebook">Ebook</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+
+                                {/* Submit */}
+                                <div className="modal-action">
+                                    <button type="submit" className="btn btn-primary">
+                                        Submit
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <form method="dialog" className="modal-backdrop">
+                        <button>close</button>
+                    </form>
+                </dialog>
             </div>
         </div>
     );

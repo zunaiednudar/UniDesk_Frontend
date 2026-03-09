@@ -316,7 +316,7 @@ const BookingModal = ({instructor, onClose, onBooked}) => {
     };
 
     const today = new Date().toISOString().split('T')[0];
-    const inputCls = 'w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-orange-400 focus:border-orange-400 outline-none transition bg-white';
+    const inputCls = 'w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none transition bg-white';
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
