@@ -1,13 +1,13 @@
-import React, { useContext, useState, useEffect } from "react";
-import { AuthContext } from "../../Providers/AuthProvider/AuthProvider.jsx";
-import { toast } from "sonner";
-import { uploadToCloudinary } from "../../utils/uploadToCloudinary.js";
+import React, {useContext, useState, useEffect} from "react";
+import {AuthContext} from "../../Providers/AuthProvider/AuthProvider.jsx";
+import {toast} from "sonner";
+import {uploadToCloudinary} from "../../utils/uploadToCloudinary.js";
 import axiosSecure from "../../utils/axiosSecure.js";
-import { formatErrorMessage } from "../../utils/formatErrorMessages.js";
-import { Camera } from "lucide-react";
+import {formatErrorMessage} from "../../utils/formatErrorMessages.js";
+import {Camera} from "lucide-react";
 
 const Profile = () => {
-    const { userData, setUserData, setUser, updateUser, passwordReset } = useContext(AuthContext);
+    const {userData, setUserData, setUser, updateUser, passwordReset} = useContext(AuthContext);
 
     const [name, setName] = useState("");
     const [role, setRole] = useState("");
@@ -17,10 +17,10 @@ const Profile = () => {
     const [designation, setDesignation] = useState("");
     const [room, setRoom] = useState("");
     const [loading, setLoading] = useState(false);
+    const [resetLoading, setResetLoading] = useState(false);
     const [photoPreview, setPhotoPreview] = useState(null);
     const [photoFile, setPhotoFile] = useState(null);
 
-    // Sync state whenever userData loads or changes (handles page refresh)
     useEffect(() => {
         if (userData) {
             setName(userData.name || "");
@@ -34,8 +34,6 @@ const Profile = () => {
         }
     }, [userData]);
 
-    const [resetLoading, setResetLoading] = useState(false);
-
     const handlePasswordReset = async () => {
         setResetLoading(true);
         try {
@@ -43,8 +41,9 @@ const Profile = () => {
             toast.success("Password reset email sent! Check your inbox.");
         } catch (err) {
             toast.error(formatErrorMessage(err));
+        } finally {
+            setResetLoading(false);
         }
-        setResetLoading(false);
     };
 
     const handlePhotoChange = (e) => {
@@ -57,48 +56,65 @@ const Profile = () => {
 
     const handleProfileUpdate = async (e) => {
         e.preventDefault();
-
         setLoading(true);
+
         try {
             const imageData = photoFile
                 ? await uploadToCloudinary(photoFile)
-                : { url: userData?.photoURL, public_id: userData?.photoId };
+                : {url: userData?.photoURL, public_id: userData?.photoId};
 
-            // Only send what the backend updateProfile controller accepts
             const payload = {
                 name,
                 photoURL: imageData.url,
                 photoId: imageData.public_id,
-                ...(role === "faculty" && room && { room }),
+                ...(role === "faculty" && room && {room}),
             };
 
-            try {
-                const res = await axiosSecure.patch(`/users/profile/${userData.email}`, payload);
-                const updated = res.data.user;
+            await axiosSecure.patch(`/users/profile/${userData.email}`, payload);
 
-                // Update context
-                setUserData(updated);
+            // Md. Zunaied Nudar - Error fix (patch response doesn't return any user)
+            // Fix -> manually created the updated data object with form data & existing userData
+            const updated = {
+                ...userData,
+                name,
+                photoURL: imageData.url,
+                photoId: imageData.public_id,
+                ...(role === "faculty" && {room}),
+            };
 
-                // Sync local state immediately so UI reflects changes without navigation
-                setName(updated.name || "");
-                setRoom(updated.room || "");
-                setPhotoPreview(updated.photoURL || null);
-                setPhotoFile(null);
+            setUserData(updated);
 
-                await updateUser({ displayName: updated.name, photoURL: updated.photoURL });
-                setUser(prev => ({ ...prev, displayName: updated.name, photoURL: updated.photoURL }));
+            // Sync local form state
+            setName(updated.name || "");
+            setRoom(updated.room || "");
+            setPhotoPreview(updated.photoURL || null);
+            setPhotoFile(null); // clear staged file
 
-                toast.success("Profile updated successfully");
-            } catch (dbError) {
-                toast.error(dbError.response?.data?.message || "Update failed. Please try again.");
-            }
+            await updateUser({
+                displayName: updated.name || "",
+                photoURL: updated.photoURL || null,
+            });
+
+            setUser(prev => ({
+                ...prev,
+                displayName: updated.name || "",
+                photoURL: updated.photoURL || null,
+            }));
+
+            toast.success("Profile updated successfully");
         } catch (err) {
-            toast.error(formatErrorMessage(err));
+            const message =
+                err?.response?.data?.message ||
+                formatErrorMessage(err) ||
+                "Update failed. Please try again.";
+            toast.error(message);
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
     };
 
-    const readOnlyClass = "w-full px-4 py-2.5 text-sm border border-gray-200 rounded-lg bg-gray-50 text-gray-400";
+    const readOnlyClass =
+        "w-full px-4 py-2.5 text-sm border border-gray-200 rounded-lg bg-gray-50 text-gray-400";
 
     return (
         <div className="gilroy min-h-screen py-8 px-4">
@@ -114,20 +130,30 @@ const Profile = () => {
                 <div className="bg-white rounded-2xl border border-gray-200 p-6">
                     <h2 className="text-sm font-semibold text-gray-700 mb-1">Profile picture</h2>
                     <p className="text-xs text-gray-400 mb-4">PNG, JPEG under 2MB</p>
-                    <div className="flex items-center gap-5">
-                        <div className="w-16 h-16 rounded-full bg-gray-200 overflow-hidden ring-2 ring-gray-100 shrink-0">
-                            {photoPreview
-                                ? <img src={photoPreview} alt="Profile" className="w-full h-full object-cover" />
-                                : <div className="w-full h-full flex items-center justify-center text-gray-400 text-2xl font-bold">
+                    <div className="flex flex-col lg:flex-row items-center gap-5">
+                        <div
+                            className="w-16 h-16 rounded-full bg-gray-200 overflow-hidden ring-2 ring-gray-100 shrink-0">
+                            {photoPreview ? (
+                                <img src={photoPreview} alt="Profile" className="w-full h-full object-cover"/>
+                            ) : (
+                                <div
+                                    className="w-full h-full flex items-center justify-center text-gray-400 text-2xl font-bold">
                                     {name?.[0]?.toUpperCase() || "?"}
                                 </div>
-                            }
+                            )}
                         </div>
                         <div className="flex gap-2 flex-wrap">
-                            <label className="cursor-pointer flex items-center gap-2 px-4 py-2 text-sm font-medium border border-gray-200 rounded-lg hover:bg-gray-50 transition text-gray-700">
-                                <Camera className="w-4 h-4" />
+                            <label
+                                className="cursor-pointer flex items-center gap-2 px-4 py-2 text-sm font-medium border border-gray-200 rounded-lg hover:bg-gray-50 transition text-gray-700">
+                                <Camera className="w-4 h-4"/>
                                 Change picture
-                                <input type="file" name="photo" accept="image/*" className="hidden" onChange={handlePhotoChange} />
+                                <input
+                                    type="file"
+                                    name="photo"
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={handlePhotoChange}
+                                />
                             </label>
                         </div>
                     </div>
@@ -151,10 +177,10 @@ const Profile = () => {
                 <div className="bg-white rounded-2xl border border-gray-200 p-6">
                     <h2 className="text-sm font-semibold text-gray-700 mb-1">University email</h2>
                     <p className="text-xs text-gray-400 mb-4">Your KUET institutional email address</p>
-                    <div className={readOnlyClass}>{userData?.email || "—"}</div>
+                    <div className={`${readOnlyClass} overflow-x-auto`}>{userData?.email || "—"}</div>
                 </div>
 
-                {/* Role & Department — read only except room for faculty */}
+                {/* Role & Department */}
                 <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
                     <div>
                         <h2 className="text-sm font-semibold text-gray-700 mb-1">Role & Department</h2>
@@ -164,11 +190,11 @@ const Profile = () => {
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="text-xs font-medium text-gray-500 mb-1.5 block">Role</label>
-                            <div className={`${readOnlyClass} capitalize`}>{role || "—"}</div>
+                            <div className={`${readOnlyClass} overflow-x-auto capitalize`}>{role || "—"}</div>
                         </div>
                         <div>
                             <label className="text-xs font-medium text-gray-500 mb-1.5 block">Department</label>
-                            <div className={`${readOnlyClass} uppercase`}>{department || "—"}</div>
+                            <div className={`${readOnlyClass} overflow-x-auto uppercase`}>{department || "—"}</div>
                         </div>
                     </div>
 
@@ -176,11 +202,11 @@ const Profile = () => {
                         <div className="grid grid-cols-2 gap-4 pt-2 border-t border-gray-100">
                             <div>
                                 <label className="text-xs font-medium text-gray-500 mb-1.5 block">Student ID</label>
-                                <div className={readOnlyClass}>{studentID || "—"}</div>
+                                <div className={`${readOnlyClass} overflow-x-auto`}>{studentID || "—"}</div>
                             </div>
                             <div>
                                 <label className="text-xs font-medium text-gray-500 mb-1.5 block">Batch</label>
-                                <div className={readOnlyClass}>{batch || "—"}</div>
+                                <div className={`${readOnlyClass} overflow-x-auto`}>{batch || "—"}</div>
                             </div>
                         </div>
                     )}
@@ -207,16 +233,20 @@ const Profile = () => {
 
                 {/* Password Reset */}
                 <div className="bg-white rounded-2xl border border-gray-200 p-6">
-                    <div className="flex items-center justify-between gap-4">
+                    <div className="flex flex-col lg:flex-row items-end lg:items-center justify-between gap-4">
                         <div>
                             <h2 className="text-sm font-semibold text-gray-700 mb-1">Password</h2>
-                            <p className="text-xs text-gray-400">We'll send a reset link to <span className="text-gray-500 font-medium">{userData?.email}</span></p>
+                            <p className="text-xs text-gray-400">
+                                We'll send a reset link to{" "}
+                                <span className="text-gray-500 font-medium">{userData?.email}</span>
+                            </p>
                         </div>
                         <button
                             type="button"
                             onClick={handlePasswordReset}
                             disabled={resetLoading}
-                            className="shrink-0 px-4 py-2 text-sm font-medium border border-gray-200 rounded-lg hover:bg-gray-50 transition text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                            className="shrink-0 px-4 py-2 text-sm font-medium border border-gray-200 rounded-lg hover:bg-gray-50 transition text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
                             {resetLoading ? "Sending..." : "Send reset link"}
                         </button>
                     </div>
@@ -224,8 +254,11 @@ const Profile = () => {
 
                 {/* Save Button */}
                 <div className="flex justify-end pb-8">
-                    <button type="submit" disabled={loading}
-                            className="px-8 py-2.5 bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold rounded-lg transition disabled:opacity-60 disabled:cursor-not-allowed">
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="px-8 py-2.5 bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold rounded-lg transition disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
                         {loading ? "Saving..." : "Save changes"}
                     </button>
                 </div>
