@@ -63,7 +63,7 @@ const StatCard = ({icon: Icon, value, label, iconBg, iconColor}) => (
 // General section header template
 // Different sections in main body has this header, attached with 'See all' option which routes to specific pages via NavLink
 const SectionHeader = ({icon: Icon, title, iconBg, iconColor, count, seeAllTo, navigate}) => (
-    <div className="flex items-start justify-between gap-2">
+    <div className="flex flex-col lg:flex-row items-start justify-between gap-2 mb-5 lg:mb-0">
         <div className="flex items-center gap-2.5 mb-5">
             <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${iconBg}`}>
                 <Icon size={16} className={iconColor} strokeWidth={2}/>
@@ -205,7 +205,6 @@ const EmptyState = ({message}) => (
 // Main component
 const MyActivity = () => {
     const {userData} = useContext(AuthContext);
-    console.log("User data: ", userData);
 
     const [stats, setStats] = useState({});
     const [appointments, setAppointments] = useState([]);
@@ -217,17 +216,6 @@ const MyActivity = () => {
     const [submissionStats, setSubmissionStats] = useState({onTime: 0, late: 0, missed: 0});
     const [notices, setNotices] = useState([]);
 
-    const [isLarge, setIsLarge] = useState(false);
-
-    // Mechanism to detect window size, after refresh
-    // Used mainly for UI
-    useEffect(() => {
-        const handler = () => setIsLarge(window.innerWidth >= 1024);
-        handler();
-        window.addEventListener('resize', handler);
-        return () => window.removeEventListener('resize', handler);
-    }, []);
-
     useEffect(() => {
         const fetchData = async () => {
             if (!userData?._id) return;
@@ -235,34 +223,10 @@ const MyActivity = () => {
             try {
                 setLoading(true);
 
-                // Get all courses first with await
-                const coursesRes = await axiosSecure.get(`/courses/my-courses`);
-
-                // Get all active courses only
-                const activeCourses = coursesRes.data.activeCourses || [];
-
-                // Get appointments
-                const appointmentsPromise = axiosSecure.get(`/appointment/student/${userData._id}`);
-
-
-                // Get course details with assignments & announcements
-                const courseDataPromises = activeCourses.map(async (course) => {
-                    const [assignmentsRes, announcementsRes] = await Promise.all([
-                        axiosSecure.get(`/course/${course._id}/assignments`),
-                        axiosSecure.get(`/course/${course._id}/announcements`)
-                    ]);
-
-                    return {
-                        course,
-                        assignments: assignmentsRes.data,
-                        announcements: announcementsRes.data
-                    }
-                });
-
-                // Get all the appointments, assignments & announcements (with course details) parallelly with promise
-                const [appointmentsRes, courseDataRes] = await Promise.all([
-                    appointmentsPromise,
-                    Promise.all(courseDataPromises)
+                // Get all courses & appointments first with promise
+                const [coursesRes, appointmentsRes] = await Promise.all([
+                    axiosSecure.get(`/courses/my-courses`),
+                    axiosSecure.get(`/appointment/student/${userData._id}`)
                 ]);
 
                 // List upcoming appointments
@@ -277,6 +241,28 @@ const MyActivity = () => {
                     status: appointment.status,
                 }));
 
+                // Set appointments and stats immediately
+                setAppointments(upcomingAppointments);
+
+                // Get all active courses only
+                const activeCourses = coursesRes.data.activeCourses || [];
+
+                // Get course details with assignments & announcements
+                const courseDataRes = await Promise.all(
+                    activeCourses.map(async (course) => {
+                        const [assignmentsRes, announcementsRes] = await Promise.all([
+                            axiosSecure.get(`/course/${course._id}/assignments`),
+                            axiosSecure.get(`/course/${course._id}/announcements`)
+                        ]);
+
+                        return {
+                            course,
+                            assignments: assignmentsRes.data,
+                            announcements: announcementsRes.data
+                        }
+                    })
+                );
+
                 // List all notices
                 const allNotices = courseDataRes.flatMap(res => res?.announcements?.announcements || []);
 
@@ -290,8 +276,7 @@ const MyActivity = () => {
                         faculty: n.faculty?.name || ""
                     }));
 
-                console.log("Recent notices (MyActivity.jsx): ", recentNotices);
-
+                setNotices(recentNotices);
 
                 // List all assignments with course details
                 const allAssignments = courseDataRes.flatMap(res =>
@@ -331,12 +316,12 @@ const MyActivity = () => {
                 });
 
                 // Submission stats for pie chart
-                const onTime = userTasks.filter(t => t.status === 'completed').length;
-                const late = userTasks.filter(t => t.status === 'late').length;
-                const missed = userTasks.filter(t => t.status === 'missed').length;
-
-                setNotices(recentNotices);
-                setAppointments(upcomingAppointments);
+                const { onTime, late, missed } = userTasks.reduce((acc, t) => {
+                    if (t.status === 'completed') acc.onTime++;
+                    else if (t.status === 'late') acc.late++;
+                    else if (t.status === 'missed') acc.missed++;
+                    return acc;
+                }, { onTime: 0, late: 0, missed: 0 });
 
                 setTaskList(userTasks
                     .sort((a, b) => new Date(a.dueDateRaw) - new Date(b.dueDateRaw))
@@ -359,20 +344,20 @@ const MyActivity = () => {
     }, [userData]);
 
     // Counts only pending tasks
-    const pendingCount = taskList.filter(t => t.status !== 'completed').length;
+    const pendingCount = taskList.filter(t => t.status === 'pending').length;
 
     // Setting up pie chart
     const pieData = [
         {
-            name: 'On-time',
+            name: 'On-time submissions',
             value: submissionStats.onTime
         },
         {
-            name: 'Late',
+            name: 'Late submissions',
             value: submissionStats.late
         },
         {
-            name: 'Missed',
+            name: 'Missed submissions',
             value: submissionStats.missed
         }];
 
@@ -470,9 +455,7 @@ const MyActivity = () => {
                                             data={pieData}
                                             dataKey="value"
                                             nameKey="name"
-                                            outerRadius={isLarge ? 80 : 50}
-                                            innerRadius={isLarge ? 60 : 30}
-                                            paddingAngle={3}
+                                            outerRadius={100}
                                             label={({
                                                         name,
                                                         percent
@@ -486,13 +469,13 @@ const MyActivity = () => {
                                 </ResponsiveContainer>
 
                                 {/* Legend */}
-                                <div className="flex justify-around mt-4">
+                                <div className="flex flex-col lg:flex-row justify-around mt-4">
                                     {pieData.map((entry, idx) => (
                                         <div key={idx} className="flex flex-col items-center gap-1">
                                             <div className="flex items-center gap-1.5">
                                                 <div className="w-2 h-2 rounded-full"
                                                      style={{backgroundColor: PIE_COLORS[idx]}}/>
-                                                <span className="text-xs text-gray-500">{entry.name}</span>
+                                                <span className="text-xs text-gray-500 text-center">{entry.name}</span>
                                             </div>
                                             <span className="text-sm font-bold text-gray-900">{entry.value}</span>
                                         </div>
@@ -519,7 +502,9 @@ const MyActivity = () => {
                         {[1, 2].map(i => <SkeletonBlock key={i} className="h-20"/>)}
                     </div>
                 ) : appointments.length === 0 ? (
-                    <EmptyState message="No upcoming appointments scheduled."/>) : (<div className="space-y-3">
+                    <EmptyState message="No upcoming appointments scheduled."/>
+                ) : (
+                    <div className="space-y-3">
                         {appointments.map(appointment => (
                             <AppointmentCard key={appointment.id} appointment={appointment}/>))}
                     </div>
