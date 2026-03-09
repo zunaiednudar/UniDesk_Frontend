@@ -23,3 +23,7 @@ export const uploadToCloudinary=async(imageFile)=>{
         public_id:data.public_id
     }
 }
+
+export const uploadFileToCloudinary = async (file) => {
+
+};

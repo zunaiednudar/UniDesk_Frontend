@@ -26,6 +26,7 @@ import {useParams} from "react-router";
 import axiosSecure from "../../utils/axiosSecure.js";
 import formatName from "../../utils/formatName.js";
 import {toast} from "sonner";
+import {uploadFileToCloudinary} from "../../utils/uploadToCloudinary.js";
 
 ChartJS.register(
     CategoryScale,
@@ -192,6 +193,8 @@ const Repository = () => {
     const [itemType, setItemType] = useState('personal notes');
 
     const [uploadStatus, setUploadStatus] = useState("idle");
+
+    const [material, setMaterial] = useState("");
 
     const handleDownload = async (url, title) => {
         try {
@@ -422,10 +425,14 @@ const Repository = () => {
 
         const formData = new FormData(e.target);
 
+        const fileData = await uploadFileToCloudinary(material);
+        console.log("Material upload (Repository.jsx): ", fileData);
+
         const data = {
             title: formData.get("title")?.trim(),
             description: formData.get("description")?.trim(),
-            url: formData.get("url")?.trim(),
+            url: fileData.url,
+            cloudinaryId: fileData.public_id,
             courseCode: formData.get("course-code")?.trim(),
             courseName: formData.get("course-name")?.trim(),
             year: formData.get("year")?.trim(),
@@ -735,10 +742,25 @@ const Repository = () => {
                                 <textarea name="description" rows={5} className={inputCls} placeholder="Enter description here..." />
                             </div>
 
-                            {/* URL */}
+                            {/* Material */}
                             <div>
-                                <label className={labelCls}>File URL</label>
-                                <input type="url" name="url" className={inputCls} placeholder="https://example.com/file.pdf" />
+                                <label className={labelCls}>Upload Material</label>
+                                <div className="flex gap-4 items-center mb-3">
+                                    <label className="btn">
+                                        Choose File
+                                        <input
+                                            type="file"
+                                            name="material"
+                                            accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt"
+                                            className="hidden"
+                                            onChange={(e) => setMaterial(e.target.files[0]?.name || "")}
+                                        />
+                                    </label>
+
+                                    <span className="text-sm text-gray-500">
+                                        {material || "No file chosen"}
+                                    </span>
+                                </div>
                             </div>
 
                             {/* Course Code */}
