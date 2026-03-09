@@ -1158,19 +1158,22 @@ const FacultyCourseDetails = () => {
                     <Link to="/dashboard/faculty/my-courses" className='flex items-center gap-1 text-sm text-gray-500'><ArrowLeft className='w-4 h-4' /> <span>Back to Courses</span>
                     </Link>
 
-                    {/* Course name and code */}
+                    {/* Course name,code and leave button */}
 
-                    <div className='flex flex-col gap-1'>
-                        <div className='flex items-center gap-2'>
-                            <p className='graphik font-semibold text-xl md:text-2xl lg:text-3xl'>{course?.courseCode}</p>
-                            {
-                                course?.status === "active" ?
-                                    <span className="badge bg-green-100 border-green-200 text-xs text-green-600 font-semibold rounded-xl"><div className='bg-green-600 w-2 h-2 rounded-full'></div>Active</span>
-                                    :
-                                    <span className="badge bg-blue-100 border-blue-200 text-xs text-blue-600 font-semibold rounded-xl"><Check className='text-blue-600 w-3 h-3'></Check>Completed</span>
-                            }
+                    <div className='flex flex-col md:flex-row md:justify-between md:items-center gap-3 md:gap-0'>
+                        <div className='flex flex-col gap-1'>
+                            <div className='flex items-center gap-2'>
+                                <p className='graphik font-semibold text-xl md:text-2xl lg:text-3xl'>{course?.courseCode}</p>
+                                {
+                                    course?.status === "active" ?
+                                        <span className="badge bg-green-100 border-green-200 text-xs text-green-600 font-semibold rounded-xl"><div className='bg-green-600 w-2 h-2 rounded-full'></div>Active</span>
+                                        :
+                                        <span className="badge bg-blue-100 border-blue-200 text-xs text-blue-600 font-semibold rounded-xl"><Check className='text-blue-600 w-3 h-3'></Check>Completed</span>
+                                }
+                            </div>
+                            <p className='text-gray-500'>{course?.courseName}</p>
                         </div>
-                        <p className='text-gray-500'>{course?.courseName}</p>
+                        <button className='max-w-40 min-h-10 justify-center flex items-center gap-2 text-xs md:text-sm text-red-600 border border-red-200 px-3 py-2 rounded-xl whitespace-nowrap transition-colors hover:bg-red-600 hover:text-white duration-500 cursor-pointer'><LogOut className='w-4 h-4 shrink-0' /> Leave Course</button>
                     </div>
                 </div>
 
@@ -1285,20 +1288,9 @@ const FacultyCourseDetails = () => {
                                             </div>
 
                                             <p className='text-xs md:text-sm text-gray-600 line-clamp-2'>{assignment?.description}</p>
-
-                                            <div className='grid grid-cols-1 md:grid-cols-3 gap-2 text-xs'>
-                                                <div className='flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-gray-700'>
-                                                    <CalendarClock className='w-4 h-4 text-blue-600' />
-                                                    <span className='truncate'>{formatDueDate(assignment?.dueDate)}</span>
-                                                </div>
-                                                <div className='flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-green-700'>
-                                                    <UserCheck className='w-4 h-4' />
-                                                    <span>{assignment?.submissions?.length || 0} Submitted</span>
-                                                </div>
-                                                <div className='flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-red-700'>
-                                                    <UserX className='w-4 h-4' />
-                                                    <span>{course?.students?.length - assignment?.submissions?.length < 0 ? "0" : course?.students?.length - assignment?.submissions?.length} Missing</span>
-                                                </div>
+                                            <div className='flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-gray-700'>
+                                                <CalendarClock className='w-4 h-4 text-blue-600' />
+                                                <span className='truncate'>{formatDueDate(assignment?.dueDate)}</span>
                                             </div>
                                         </div>
                                     )
@@ -1318,7 +1310,7 @@ const FacultyCourseDetails = () => {
                                 </div>
                                 <p className='font-semibold'>Instructors</p>
                             </div>
-                            <div className='flex flex-col gap-1'>
+                            <div className='flex flex-col gap-5'>
                                 {
                                     (!course?.faculties || course.faculties.length === 0)
                                         ?
@@ -2174,67 +2166,83 @@ const FacultyCourseDetails = () => {
                                     ) : (
 
                                         // Submissions Part of the Modal
+                                        <div className="flex flex-col gap-3">
 
-                                        <div className="flex flex-col gap-2 max-h-[55vh] overflow-y-auto">
-                                            {
-                                                loadingSubmissions ? (
-                                                    <span className="loading loading-dots loading-md"></span>
-                                                ) : assignmentSubmissions.length === 0 ? (
-                                                    <p className="text-sm text-gray-500 text-center py-6">No submission found</p>
-                                                ) : (
-                                                    [...assignmentSubmissions]
-                                                        .sort((a, b) => {
-                                                            const aEvaluated = a?.isGraded || a?.marks !== null;
-                                                            const bEvaluated = b?.isGraded || b?.marks !== null;
+                                            {/* Stats */}
 
-                                                            // Unevaluated first
+                                            <div className="grid grid-cols-2 gap-2 text-xs">
+                                                <div className='flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-green-700'>
+                                                    <UserCheck className='w-4 h-4' />
+                                                    <span>{assignmentSubmissions?.length} Submitted</span>
+                                                </div>
+                                                <div className='flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-red-700'>
+                                                    <UserX className='w-4 h-4' />
+                                                    <span>{course?.students?.length - assignmentSubmissions?.length} Missing</span>
+                                                </div>
+                                            </div>
+                                            <div className="flex flex-col gap-2 max-h-[55vh] overflow-y-auto">
+                                                {
+                                                    loadingSubmissions ? (
+                                                        <span className="loading loading-dots loading-md"></span>
+                                                    ) : assignmentSubmissions.length === 0 ? (
+                                                        <p className="text-sm text-gray-500 text-center py-6">No submission found</p>
+                                                    ) : (
+                                                        [...assignmentSubmissions]
+                                                            .sort((a, b) => {
+                                                                const aEvaluated = a?.isGraded || a?.marks !== null;
+                                                                const bEvaluated = b?.isGraded || b?.marks !== null;
 
-                                                            if (aEvaluated !== bEvaluated)
-                                                                return aEvaluated ? 1 : -1;
+                                                                // Unevaluated first
 
-                                                            return new Date(b?.submittedAt) - new Date(a?.submittedAt);
-                                                        })
-                                                        .map((s) =>
-                                                            <div key={s._id} className="flex items-center justify-between gap-3 p-3 rounded-xl border border-gray-200 bg-gray-50">
-                                                                <div className="min-w-0">
-                                                                    <p className="text-sm font-semibold truncate">{formatName(s?.student?.name)}</p>
-                                                                    <p className="text-xs text-gray-500 break-all">{s?.student?.email}</p>
-                                                                    <p className="text-xs text-gray-500">Submitted: {new Date(s.submittedAt).toLocaleString()}</p>
-                                                                    {
-                                                                        s?.isGraded && (
-                                                                            <p className="text-xs text-green-600 mt-1">
-                                                                                Evaluated: {s?.marks ?? 0}/{selectedAssignment?.totalMarks}
-                                                                            </p>
-                                                                        )
-                                                                    }
+                                                                if (aEvaluated !== bEvaluated)
+                                                                    return aEvaluated ? 1 : -1;
+
+                                                                return new Date(b?.submittedAt) - new Date(a?.submittedAt);
+                                                            })
+                                                            .map((s) =>
+                                                                <div key={s._id} className="flex items-center justify-between gap-3 p-3 rounded-xl border border-gray-200 bg-gray-50">
+                                                                    <div className="min-w-0">
+                                                                        <p className="text-sm font-semibold truncate">{formatName(s?.student?.name)}</p>
+                                                                        <p className="text-xs text-gray-500 break-all">{s?.student?.email}</p>
+                                                                        <p className="text-xs text-gray-500">Submitted: {new Date(s.submittedAt).toLocaleString()}</p>
+                                                                        {
+                                                                            s?.isGraded && (
+                                                                                <p className="text-xs text-green-600 mt-1">
+                                                                                    Evaluated: {s?.marks ?? 0}/{selectedAssignment?.totalMarks}
+                                                                                </p>
+                                                                            )
+                                                                        }
+                                                                    </div>
+
+                                                                    <div className="flex items-center gap-2">
+                                                                        <a
+                                                                            href={s.submissionURL}
+                                                                            target="_blank"
+                                                                            rel="noreferrer"
+                                                                            className="btn btn-sm border-blue-200 text-blue-600 hover:bg-blue-600 hover:text-white"
+                                                                        >
+                                                                            Download
+                                                                        </a>
+
+                                                                        {
+                                                                            !s?.isGraded && (
+                                                                                <button
+                                                                                    onClick={() => openGradeSubmissionModal(s)}
+                                                                                    className="btn btn-sm border-green-200 text-green-600 hover:bg-green-600 hover:text-white"
+                                                                                >
+                                                                                    Grade
+                                                                                </button>
+                                                                            )
+                                                                        }
+                                                                    </div>
                                                                 </div>
-
-                                                                <div className="flex items-center gap-2">
-                                                                    <a
-                                                                        href={s.submissionURL}
-                                                                        target="_blank"
-                                                                        rel="noreferrer"
-                                                                        className="btn btn-sm border-blue-200 text-blue-600 hover:bg-blue-600 hover:text-white"
-                                                                    >
-                                                                        Download
-                                                                    </a>
-
-                                                                    {
-                                                                        !s?.isGraded && (
-                                                                            <button
-                                                                                onClick={() => openGradeSubmissionModal(s)}
-                                                                                className="btn btn-sm border-green-200 text-green-600 hover:bg-green-600 hover:text-white"
-                                                                            >
-                                                                                Grade
-                                                                            </button>
-                                                                        )
-                                                                    }
-                                                                </div>
-                                                            </div>
-                                                        )
-                                                )
-                                            }
+                                                            )
+                                                    )
+                                                }
+                                            </div>
                                         </div>
+
+
                                     )
                                 }
                             </div>

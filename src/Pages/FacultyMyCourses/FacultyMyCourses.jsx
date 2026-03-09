@@ -1,6 +1,6 @@
 import { Building2, Cog, Eye, GraduationCap, Search, Users } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
-import { IoMdCreate } from 'react-icons/io';
+import { IoMdAdd, IoMdCreate } from 'react-icons/io';
 import axiosSecure from '../../utils/axiosSecure.js';
 import { toast } from 'sonner';
 import { Link } from 'react-router';
@@ -17,6 +17,7 @@ const FacultyMyCourses = () => {
 
     const [loadingCourses, setLoadingCourses] = useState(true);
     const [loadingCreateCourse, setLoadingCreateCourse] = useState(false);
+    const [loadingJoinCourse, setLoadingJoinCourse] = useState(false);
 
     // Fetching courses for UI
 
@@ -26,6 +27,7 @@ const FacultyMyCourses = () => {
     // Modal refs
 
     const createCourseModalRef = useRef(null);
+    const joinCourseModalRef = useRef(null);
 
     // Course creation
 
@@ -142,6 +144,50 @@ const FacultyMyCourses = () => {
         }
     };
 
+    // Join course modal related
+
+    const handleOpenJoinCourseModal = () => joinCourseModalRef.current.showModal();
+    const handleCloseJoinCourseModal = () => {
+        joinCourseModalRef.current.close();
+        setTimeout(() => {
+            setInvitationCode("");
+        }, 100);
+    }
+
+    // Join course data
+
+    const [invitationCode, setInvitationCode] = useState("");
+
+    // Join course function
+
+    const handleJoinCourse = async (e) => {
+        e.preventDefault();
+        const code = invitationCode.trim();
+
+        if (!code) {
+            handleCloseJoinCourseModal();
+            toast.info("Course invitation code required");
+            return;
+        }
+
+        try {
+            const res = await axiosSecure.post(`/courses/faculty/join?code=${code}`);
+
+            if (!res?.data?.success) {
+                handleCloseJoinCourseModal()
+                toast.error(res?.data?.message);
+                return;
+            }
+
+            setActiveCourses((prev) => [...prev, res?.data?.course]);
+
+            handleCloseJoinCourseModal();
+            toast.success("Joined course successfully");
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Something went wrong");
+        }
+    };
+
     // Fetch user's courses
 
     useEffect(() => {
@@ -195,7 +241,11 @@ const FacultyMyCourses = () => {
                         className="w-full outline-none text-sm text-gray-700 placeholder-gray-400"
                     />
                 </div>
-                <button className="flex gap-2 items-center bg-[#1E40AF] text-white px-5 py-2 rounded-lg cursor-pointer text-center transition-colors hover:bg-blue-600 duration-500 text-xs md:text-sm lg:text-md" onClick={handleOpenCreateCourseModal}><IoMdCreate /> Create</button>
+                <div className='flex gap-2 items-center'>
+                    <button className="w-25 flex gap-2 items-center bg-[#1E40AF] text-white px-5 py-2 rounded-lg cursor-pointer text-center transition-colors hover:bg-blue-600 duration-500 text-xs md:text-sm lg:text-md" onClick={handleOpenCreateCourseModal}><IoMdCreate /> Create</button>
+                    <button className="w-25 flex gap-2 items-center bg-orange-600 text-white px-5 py-2 rounded-lg cursor-pointer text-center transition-colors hover:bg-orange-500 duration-500 text-xs md:text-sm lg:text-md" onClick={handleOpenJoinCourseModal}><IoMdAdd /> Join</button>
+                </div>
+
             </div>
 
             <div className='w-full max-w-full flex flex-col justify-items-center gap-10 shadow-xl p-5'>
@@ -374,6 +424,7 @@ const FacultyMyCourses = () => {
                         <div className="flex flex-col gap-1">
                             <label className="text-sm font-semibold text-gray-700">Course Serial</label>
                             <input
+                                className="input input-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 type="text"
                                 maxLength={2}
                                 value={serial}
@@ -382,7 +433,6 @@ const FacultyMyCourses = () => {
                                     setSerial(value);
                                 }}
                                 placeholder="e.g. 09"
-                                className="input input-bordered w-full"
                                 required
                             />
                         </div>
@@ -391,10 +441,10 @@ const FacultyMyCourses = () => {
                         <div className="flex flex-col gap-1">
                             <label className="text-sm font-semibold text-gray-700">Course Code</label>
                             <input
+                                className="input input-bordered w-full bg-gray-100 font-semibold"
                                 type="text"
                                 value={courseCode}
                                 readOnly
-                                className="input input-bordered w-full bg-gray-100 font-semibold"
                             />
                         </div>
 
@@ -402,6 +452,7 @@ const FacultyMyCourses = () => {
                         <div className="flex flex-col gap-1">
                             <label className="text-sm font-semibold text-gray-700">Course Name</label>
                             <input
+                                className="input input-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 name="courseName"
                                 value={courseName}
                                 onChange={(e) => {
@@ -409,7 +460,6 @@ const FacultyMyCourses = () => {
                                     setCourseName(value);
                                 }}
                                 required
-                                className="input input-bordered w-full"
                             />
                         </div>
 
@@ -466,8 +516,8 @@ const FacultyMyCourses = () => {
                         <div className="flex flex-col gap-1">
                             <label className="text-sm font-semibold text-gray-700">Session</label>
                             <input
+                                className="input input-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 name="session"
-                                className="input input-bordered w-full"
                                 type="text"
                                 pattern="\d{4}-\d{4}"
                                 placeholder="2023-2024"
@@ -510,7 +560,64 @@ const FacultyMyCourses = () => {
                     </form>
                 </div>
             </dialog>
-        </div>
+
+            {/* Join course modal */}
+
+            <dialog ref={joinCourseModalRef} className="modal modal-bottom sm:modal-middle">
+                <div className="modal-box max-w-xl p-8">
+
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-2xl font-bold graphik">Join Course</h3>
+                        <button
+                            onClick={handleCloseJoinCourseModal}
+                            className="btn btn-sm btn-circle btn-ghost"
+                        >
+                            ✕
+                        </button>
+                    </div>
+
+                    <form onSubmit={handleJoinCourse} className="flex flex-col gap-4">
+                        {/* Course Name */}
+                        <div className="flex flex-col gap-1">
+                            <label className="text-sm font-semibold text-gray-700">Invitation Code</label>
+                            <input
+                                className="input input-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                name="invitationCode"
+                                value={invitationCode}
+                                onChange={(e) => {
+                                    const value = e.target.value;
+                                    setInvitationCode(value);
+                                }}
+                                required
+                            />
+                        </div>
+
+                        {/* Buttons */}
+                        <div className="flex justify-end gap-3 mt-4">
+                            <button
+                                type="button"
+                                onClick={handleCloseJoinCourseModal}
+                                className="btn btn-soft w-32"
+                            >
+                                Cancel
+                            </button>
+
+                            <button
+                                disabled={loadingJoinCourse}
+                                type="submit"
+                                className="w-32 bg-[#1E40AF] text-white rounded-lg py-2 transition-colors hover:bg-blue-600 duration-500 cursor-pointer"
+                            >
+                                {
+                                    loadingJoinCourse
+                                        ? <span className="loading loading-dots loading-md"></span>
+                                        : "Join"
+                                }
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </dialog >
+        </div >
     );
 };
 
