@@ -1725,11 +1725,14 @@ const FacultyCourseDetails = () => {
 
             <dialog ref={deleteAnnouncementModalRef} className="modal modal-middle">
                 <div className="modal-box max-w-md">
-                    <p className="font-bold text-lg">Delete Announcement</p>
+                    <div className="flex items-center justify-between mb-1">
+                        <p className="font-bold text-lg">Delete Announcement</p>
+                        <button className="btn btn-sm btn-circle btn-ghost" onClick={handleCloseDeleteAnnouncementModal}>✕</button>
+                    </div>
                     <p className="py-3 text-sm text-gray-600">
                         Are you sure you want to delete this announcement?
                     </p>
-                    <div className="flex justify-end gap-2">
+                    <div className="flex justify-end gap-2 mt-2">
                         <button className="btn btn-soft" onClick={handleCloseDeleteAnnouncementModal}>Cancel</button>
                         <button className="w-25 btn bg-[#1E40AF] text-white transition-colors hover:bg-blue-600 duration-500 cursor-pointer" onClick={handleDeleteAnnouncement} disabled={loadingAnnouncementAction}>
                             {
@@ -1818,14 +1821,17 @@ const FacultyCourseDetails = () => {
 
             <dialog ref={confirmRemoveModalRef} className="modal modal-middle">
                 <div className="modal-box max-w-md">
-                    <p className="font-bold text-lg">Remove Student</p>
+                    <div className="flex items-center justify-between mb-1">
+                        <p className="font-bold text-lg">Remove Student</p>
+                        <button className="btn btn-sm btn-circle btn-ghost" onClick={handleCloseConfirmRemove}>✕</button>
+                    </div>
                     <p className="py-3 text-sm text-gray-600">
                         Are you sure you want to remove this student?
                     </p>
-                    <div className="flex justify-end gap-2">
+                    <div className="flex justify-end gap-2 mt-2">
                         <button className="btn btn-soft" onClick={handleCloseConfirmRemove}>Cancel</button>
                         <button
-                            className="w-25 bg-[#1E40AF] text-white transition-colors hover:bg-blue-600 duration-500 cursor-pointer"
+                            className="w-25 btn bg-[#1E40AF] text-white transition-colors hover:bg-blue-600 duration-500 cursor-pointer"
                             disabled={loadingRemoveStudent}
                             onClick={handleRemoveStudent}
                         >
@@ -1911,12 +1917,15 @@ const FacultyCourseDetails = () => {
 
             <dialog ref={confirmRemoveMaterialModalRef} className="modal modal-middle">
                 <div className="modal-box max-w-md">
-                    <p className="font-bold text-lg">Delete Material</p>
+                    <div className="flex items-center justify-between mb-1">
+                        <p className="font-bold text-lg">Delete Material</p>
+                        <button className="btn btn-sm btn-circle btn-ghost" onClick={handleCloseConfirmRemoveMaterial}>✕</button>
+                    </div>
                     <p className="py-3 text-sm text-gray-600">
                         Are you sure you want to delete this material?
                     </p>
 
-                    <div className="flex justify-end gap-2">
+                    <div className="flex justify-end gap-2 mt-2">
                         <button className="btn btn-soft" onClick={handleCloseConfirmRemoveMaterial}>
                             Cancel
                         </button>
@@ -2337,12 +2346,15 @@ const FacultyCourseDetails = () => {
 
             <dialog ref={deleteAssignmentModalRef} className="modal modal-middle">
                 <div className="modal-box max-w-md">
-                    <p className="font-bold text-lg">Delete Assignment</p>
+                    <div className="flex items-center justify-between mb-1">
+                        <p className="font-bold text-lg">Delete Assignment</p>
+                        <button className="btn btn-sm btn-circle btn-ghost" onClick={closeDeleteAssignmentModal}>✕</button>
+                    </div>
                     <p className="py-3 text-sm text-gray-600">
                         Are you sure you want to delete this assignment?
                     </p>
 
-                    <div className="flex justify-end gap-2">
+                    <div className="flex justify-end gap-2 mt-2">
                         <button className="btn btn-soft" onClick={closeDeleteAssignmentModal}>
                             Cancel
                         </button>
@@ -2368,12 +2380,15 @@ const FacultyCourseDetails = () => {
 
             <dialog ref={leaveCourseModalRef} className="modal modal-middle">
                 <div className="modal-box max-w-md">
-                    <p className="font-bold text-lg">Course Leave Confirmation</p>
+                    <div className="flex items-center justify-between mb-1">
+                        <p className="font-bold text-lg">Course Leave Confirmation</p>
+                        <button className="btn btn-sm btn-circle btn-ghost" onClick={closeLeaveCourseModal}>✕</button>
+                    </div>
                     <p className="py-3 text-sm text-gray-600">
                         Are you sure you want to leave from this course?
                     </p>
 
-                    <div className="flex justify-end gap-2">
+                    <div className="flex justify-end gap-2 mt-2">
                         <button className="btn btn-soft" onClick={closeLeaveCourseModal}>
                             Cancel
                         </button>
@@ -2399,6 +2414,10 @@ const FacultyCourseDetails = () => {
 };
 
 export default FacultyCourseDetails;
+
+
+
+
 
 
 
