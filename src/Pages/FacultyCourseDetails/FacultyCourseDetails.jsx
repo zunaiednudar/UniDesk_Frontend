@@ -37,6 +37,8 @@ const FacultyCourseDetails = () => {
 
     const editCourseModalRef = useRef(null);
 
+    // Edit course modal opening and closing functions
+
     const handleOpenEditCourseModal = () => {
         if (!course)
             return;
@@ -288,6 +290,8 @@ const FacultyCourseDetails = () => {
     const manageStudentModalRef = useRef(null);
     const confirmRemoveModalRef = useRef(null);
 
+    // Students manage modal opening and closing function
+
     const handleManageStudentOpenModal = () => {
         setStudentSearch("");
         setStudentPage(1);
@@ -295,6 +299,8 @@ const FacultyCourseDetails = () => {
     };
 
     const handleManageStudentCloseModal = () => manageStudentModalRef.current.close();
+
+    // Student removal confirmation modal opening and closing function
 
     const handleOpenConfirmRemove = (student) => {
         setConfirmStudent(student);
@@ -373,6 +379,8 @@ const FacultyCourseDetails = () => {
     const uploadMaterialModalRef = useRef(null);
     const confirmRemoveMaterialModalRef = useRef(null);
 
+    // Material managing opening and closing modal functions
+
     const handleManageMaterialsOpenModal = () => {
         setMaterialSearch("");
         setMaterialPage(1);
@@ -381,13 +389,19 @@ const FacultyCourseDetails = () => {
 
     const handleManageMaterialsCloseModal = () => manageMaterialsModalRef.current?.close();
 
+    // Material upload modal opening and closing function
+
     const handleOpenUploadMaterialModal = () => uploadMaterialModalRef.current?.showModal();
     const handleCloseUploadMaterialModal = () => uploadMaterialModalRef.current?.close();
+
+    // Material deletion confirming modal opening function
 
     const handleOpenConfirmRemoveMaterial = (material) => {
         setConfirmMaterial(material);
         confirmRemoveMaterialModalRef.current?.showModal();
     };
+
+    // Material deletion confirming modal closing function
 
     const handleCloseConfirmRemoveMaterial = () => {
         confirmRemoveMaterialModalRef.current?.close();
@@ -439,6 +453,8 @@ const FacultyCourseDetails = () => {
                 title: materialTitle.trim(),
                 description: materialDescription.trim(),
                 url: uploadedURL.url,
+                cloudinaryId: uploadedURL.public_id,
+                resourceType: uploadedURL.resource_type
             };
 
             const res = await axiosSecure.post(`/course/${id}/material`, newMaterial);
@@ -449,13 +465,14 @@ const FacultyCourseDetails = () => {
             }
 
             handleCloseUploadMaterialModal();
-
+            e.target.reset();
             setMaterialFile(null);
             setMaterialTitle("");
             setMaterialDescription("");
 
-            if (res?.data?.material)
-                setMaterials((prev) => [res.data.material, ...prev]);
+            console.log(res);
+
+            setMaterials((prev) => [res.data.material, ...prev]);
 
             toast.success("Material uploaded successfully");
 
@@ -501,11 +518,13 @@ const FacultyCourseDetails = () => {
     const [createDescription, setCreateDescription] = useState("");
     const [createAnnouncementFiles, setCreateAnnouncementFiles] = useState([]);
 
-    // Annoucement modal related
+    // Announcement modal related
 
     const createAnnouncementModalRef = useRef(null);
     const viewAnnouncementModalRef = useRef(null);
     const deleteAnnouncementModalRef = useRef(null);
+
+    // Announcement creation opening modal function
 
     const openCreateAnnouncementModal = () => {
         setCreateTitle("");
@@ -514,10 +533,14 @@ const FacultyCourseDetails = () => {
         createAnnouncementModalRef.current?.showModal();
     };
 
+    // Announcement creation closing modal function
+
     const closeCreateAnnouncementModal = () => {
         createAnnouncementModalRef.current?.close();
         setCreateAnnouncementFiles([]);
     };
+
+    // Announcement view opening modal function
 
     const openViewAnnouncementModal = (announcement) => {
         setSelectedAnnouncement(announcement);
@@ -529,12 +552,16 @@ const FacultyCourseDetails = () => {
         viewAnnouncementModalRef.current?.showModal();
     };
 
+    // Announcement view closing modal function
+
     const closeViewAnnouncementModal = () => {
         viewAnnouncementModalRef.current?.close();
-        setSelectedAnnouncement(null);
-        setIsEditMode(false);
-        setNewAnnouncementFiles([]);
-        setRemoveAnnouncementAttachmentURLs([]);
+        setTimeout(() => {
+            setSelectedAnnouncement(null);
+            setIsEditMode(false);
+            setNewAnnouncementFiles([]);
+            setRemoveAnnouncementAttachmentURLs([]);
+        },100);
     };
 
 
@@ -551,7 +578,8 @@ const FacultyCourseDetails = () => {
                     return {
                         name: file.name,
                         url: uploaded.url,
-                        cloudinaryId: uploaded.public_id
+                        cloudinaryId: uploaded.public_id,
+                        resourceType: uploaded.resource_type
                     };
                 })
             );
@@ -593,6 +621,8 @@ const FacultyCourseDetails = () => {
     const [newAnnouncementFiles, setNewAnnouncementFiles] = useState([]);
     const [removeAnnouncementAttachmentURLs, setRemoveAnnouncementAttachmentURLs] = useState([]);
 
+    // Attachments of announcements URL retrieval function
+
     const getAttachmentURL = (attachment) => {
         if (!attachment)
             return "";
@@ -600,6 +630,8 @@ const FacultyCourseDetails = () => {
             return attachment;
         return attachment?.url || "";
     };
+
+    // Attachments of announcements name retrieval function
 
     const getAttachmentName = (attachment) => {
         if (attachment?.name)
@@ -614,15 +646,21 @@ const FacultyCourseDetails = () => {
         }
     };
 
-    const handleCloseDeleteAnnouncementModal = () => {
-        deleteAnnouncementModalRef.current?.close();
-        setAnnouncementToDelete(null);
-    };
+    // Announcement deletion confirmation modal opening function
 
     const handleOpenDeleteAnnouncementModal = (announcement) => {
         setAnnouncementToDelete(announcement);
         deleteAnnouncementModalRef.current?.showModal();
     };
+
+    // Announcement deletion confirmation modal closing function
+
+    const handleCloseDeleteAnnouncementModal = () => {
+        deleteAnnouncementModalRef.current?.close();
+        setAnnouncementToDelete(null);
+    };
+
+    // Announcement attachments deletion toggling function
 
     const handleToggleRemoveAnnouncementAttachment = (URL) => {
         setRemoveAnnouncementAttachmentURLs((prev) => {
@@ -631,6 +669,8 @@ const FacultyCourseDetails = () => {
             return [...prev, URL];
         });
     };
+
+    // Announcement update function
 
     const handleUpdateAnnouncement = async () => {
         if (!selectedAnnouncement?._id)
@@ -653,25 +693,26 @@ const FacultyCourseDetails = () => {
                     return {
                         name: file.name,
                         url: uploaded.url,
-                        cloudinaryId: uploaded.public_id
+                        cloudinaryId: uploaded.public_id,
+                        resourceType: uploaded.resource_type
                     };
                 })
             );
 
-            const payload = {
+            const updatedData = {
                 title: trimmedTitle,
                 description: trimmedDescription
             };
 
             if (addAttachments.length > 0)
-                payload.addAttachments = addAttachments;
+                updatedData.addAttachments = addAttachments;
 
             if (removeAnnouncementAttachmentURLs.length > 0)
-                payload.removeAttachments = removeAnnouncementAttachmentURLs;
+                updatedData.removeAttachments = removeAnnouncementAttachmentURLs;
 
             const res = await axiosSecure.patch(
                 `/course/${id}/announcement/${selectedAnnouncement._id}`,
-                payload
+                updatedData
             );
 
             if (!res?.data?.success) {
@@ -720,6 +761,8 @@ const FacultyCourseDetails = () => {
         }
     };
 
+    // Delete announcement function
+
     const handleDeleteAnnouncement = async () => {
         if (!announcementToDelete?._id)
             return;
@@ -746,6 +789,42 @@ const FacultyCourseDetails = () => {
         }
     };
 
+    /* Assignment related functions */
+
+    const [loadingAssignment, setLoadingAssignment] = useState(false);
+    const [uploadAssignmentTitle, setUploadAssignmentTitle] = useState("");
+    const [uploadAssignmentDescription, setUploadAssignmentDescription] = useState("");
+    const [uploadAssignmentDueDate, setUploadAssignmentDueDate] = useState("");
+    const [uploadAssignmentTotalMarks, setUploadAssignmentTotalMarks] = useState("");
+    const [uploadAssignmentFiles, setUploadAssignmentFiles] = useState([]);
+
+    // Assignment related modal
+
+    const uploadAssignmentModalRef = useRef(null);
+
+    // Assignment upload opening modal
+
+    const openUploadAssignmentModal = () => {
+        setUploadAssignmentTitle("");
+        setUploadAssignmentDescription("");
+        setUploadAssignmentDueDate("");
+        setUploadAssignmentTotalMarks("");
+        setUploadAssignmentFiles([]);
+        uploadAssignmentModalRef.current?.showModal();
+    };
+
+    // Assignment upload closing modal
+
+    const closeUploadAssignmentModal = () => {
+        uploadAssignmentModalRef.current?.close();
+        setUploadAssignmentFiles([]);
+    };
+
+    // Assignment upload function
+
+    const handleUploadAssignment = (e) => {
+        e.preventDefault();
+    };
 
     if (loading)
         return <Loading></Loading>
@@ -815,7 +894,7 @@ const FacultyCourseDetails = () => {
                             <RxPeople className='w-4 h-4 shrink-0' /> Manage Students
                         </button>
 
-                        <button className='w-full min-h-10 justify-center flex items-center gap-2 text-xs md:text-sm text-green-600 border border-red-200 px-3 py-2 rounded-xl whitespace-nowrap transition-colors hover:bg-green-600 hover:text-white duration-500 cursor-pointer' onClick={handleOpenUploadMaterialModal}><Upload className='w-4 h-4 shrink-0' /> Upload Material</button>
+                        <button className='w-full min-h-10 justify-center flex items-center gap-2 text-xs md:text-sm text-green-600 border border-green-200 px-3 py-2 rounded-xl whitespace-nowrap transition-colors hover:bg-green-600 hover:text-white duration-500 cursor-pointer' onClick={handleOpenUploadMaterialModal}><Upload className='w-4 h-4 shrink-0' /> Upload Material</button>
 
                         <button className='w-full min-h-10 justify-center flex items-center gap-2 text-xs md:text-sm text-gray-600 border border-gray-200 px-3 py-2 rounded-xl whitespace-nowrap transition-colors hover:bg-gray-600 hover:text-white duration-500 cursor-pointer' onClick={handleManageMaterialsOpenModal}><FolderOpen className='w-4 h-4 shrink-0' /> Course Materials</button>
                     </div>
@@ -874,7 +953,7 @@ const FacultyCourseDetails = () => {
 
                             {/* Assignment creation button */}
 
-                            <button className="flex gap-2 items-center bg-[#1E40AF] text-white px-5 py-2 rounded-lg cursor-pointer text-center transition-colors hover:bg-blue-600 duration-500 text-xs md:text-sm lg:text-md"><IoMdCreate /> Create
+                            <button className="flex gap-2 items-center bg-[#1E40AF] text-white px-5 py-2 rounded-lg cursor-pointer text-center transition-colors hover:bg-blue-600 duration-500 text-xs md:text-sm lg:text-md" onClick={openUploadAssignmentModal}><IoMdCreate /> Create
                             </button>
                         </div>
                         <div className='flex flex-col gap-2'>
@@ -1246,7 +1325,7 @@ const FacultyCourseDetails = () => {
                                             }
 
                                             <div className="flex justify-end gap-2">
-                                                <button className="btn btn-soft" onClick={() => setIsEditMode(true)}>Edit</button>
+                                                <button className="w-20 btn bg-[#1E40AF] text-white hover:bg-blue-600" onClick={() => setIsEditMode(true)}>Edit</button>
                                                 <button className="btn btn-error text-white" onClick={() => handleOpenDeleteAnnouncementModal(selectedAnnouncement)}>Delete</button>
                                             </div>
                                         </>
@@ -1298,7 +1377,7 @@ const FacultyCourseDetails = () => {
                                                                         <button
                                                                             type="button"
                                                                             onClick={() => handleToggleRemoveAnnouncementAttachment(url)}
-                                                                            className={`p-1 rounded-full border transition-colors ${marked ? "border-blue-300 text-blue-700 hover:bg-blue-100" : "border-gray-300 text-gray-500 hover:bg-gray-100"}`}
+                                                                            className={`p-1 rounded-full border transition-colors ${marked ? "border-blue-300 text-blue-700 hover:bg-blue-100" : "border-gray-300 text-gray-500 hover:bg-gray-100"} cursor-pointer`}
                                                                             title={marked ? "Undo remove" : "Mark to remove"}
                                                                         >
                                                                             <X className="w-4 h-4" />
@@ -1539,7 +1618,7 @@ const FacultyCourseDetails = () => {
                         </button>
 
                         <button
-                            className="btn bg-[#1E40AF] text-white transition-colors hover:bg-blue-600 duration-500 cursor-pointer"
+                            className="w-25 btn bg-[#1E40AF] text-white transition-colors hover:bg-blue-600 duration-500 cursor-pointer"
                             disabled={loadingRemoveMaterial}
                             onClick={handleRemoveMaterial}
                         >
@@ -1596,7 +1675,7 @@ const FacultyCourseDetails = () => {
                                 id="materialFile"
                                 name="materialFile"
                                 type="file"
-                                className="file-input"
+                                className="w-full file-input"
                                 required
                                 onChange={(e) => setMaterialFile(e.target.files?.[0] || null)}
                             />
@@ -1617,6 +1696,69 @@ const FacultyCourseDetails = () => {
                     </form>
                 </div>
             </dialog>
+
+            {/* Assignment upload Modal */}
+
+            <dialog ref={uploadAssignmentModalRef} className="modal modal-bottom sm:modal-middle">
+                <div className="modal-box max-w-xl p-6">
+                    <div className="flex items-center justify-between mb-4">
+                        <p className="text-xl font-bold graphik">Create Assignment</p>
+                        <button className="btn btn-sm btn-circle btn-ghost" onClick={closeUploadAssignmentModal}>✕</button>
+                    </div>
+
+                    <form onSubmit={handleUploadAssignment} className="flex flex-col gap-4">
+
+                        {/* Title */}
+
+                        <div className="flex flex-col gap-1">
+                            <label className="text-sm font-semibold text-gray-700">Title</label>
+                            <input type="text" className="input input-bordered w-full" value={uploadAssignmentTitle} onChange={(e) => setUploadAssignmentTitle(e.target.value)} required />
+                        </div>
+
+                        {/* Description */}
+
+                        <div className="flex flex-col gap-1">
+                            <label className="text-sm font-semibold text-gray-700">Description</label>
+                            <textarea rows="5" className="textarea textarea-bordered w-full resize-none" value={uploadAssignmentDescription} onChange={(e) => setUploadAssignmentDescription(e.target.value)} required />
+                        </div>
+
+                        {/* Due date */}
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div className="flex flex-col gap-1">
+                                <label className="text-sm font-semibold text-gray-700">Due Date</label>
+                                <input type="datetime-local" className="input input-bordered w-full" value={uploadAssignmentDueDate} onChange={(e) => setUploadAssignmentDueDate(e.target.value)} required />
+                            </div>
+
+                            {/* Total marks */}
+
+                            <div className="flex flex-col gap-1">
+                                <label className="text-sm font-semibold text-gray-700">Total Marks</label>
+                                <input type="number" min="1" step="1" className="input input-bordered w-full" value={uploadAssignmentTotalMarks} onChange={(e) => setUploadAssignmentTotalMarks(e.target.value)} required />
+                            </div>
+                        </div>
+
+                        {/* Attachments */}
+
+                        <div className="flex flex-col gap-1">
+                            <label className="text-sm font-semibold text-gray-700">Attachments (optional)</label>
+                            <input type="file" multiple className="file-input w-full" onChange={(e) => setUploadAssignmentFiles(Array.from(e.target.files || []))} />
+                        </div>
+
+                        <div className="flex justify-end gap-2">
+                            <button type="button" className="btn btn-soft" onClick={closeUploadAssignmentModal}>Cancel</button>
+                            <button type="submit" className="w-25 btn bg-[#1E40AF] text-white hover:bg-blue-600" disabled={loadingAssignment}>
+                                {
+                                    loadingAssignment ?
+                                        <span className="loading loading-dots loading-md"></span> :
+                                        "Upload"
+                                }
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </dialog>
+
         </>
     );
 };
