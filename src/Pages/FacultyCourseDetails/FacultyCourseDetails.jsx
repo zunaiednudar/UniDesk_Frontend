@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+﻿import React, { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import axiosSecure from '../../utils/axiosSecure.js';
 import Loading from '../../Components/Loading/Loading.jsx';
@@ -14,6 +14,8 @@ import { formatDueDate } from '../../utils/formatDueDate.js';
 import { toast } from 'sonner';
 import formatName from '../../utils/formatName.js';
 import { uploadFileToCloudinary } from '../../utils/uploadToCloudinary.js';
+import { fetchAssignmentSubmissions } from '../../utils/fetchAssignmentSubmissions.js';
+import { getAttachmentName, getAttachmentURL } from '../../utils/attachmentHelpers.js';
 
 const FacultyCourseDetails = () => {
     const { id } = useParams();
@@ -564,7 +566,6 @@ const FacultyCourseDetails = () => {
         }, 100);
     };
 
-
     // Announcement creation modal
 
     const handleCreateAnnouncement = async (e) => {
@@ -620,31 +621,6 @@ const FacultyCourseDetails = () => {
     const [announcementToDelete, setAnnouncementToDelete] = useState(null);
     const [newAnnouncementFiles, setNewAnnouncementFiles] = useState([]);
     const [removeAnnouncementAttachmentURLs, setRemoveAnnouncementAttachmentURLs] = useState([]);
-
-    // Attachments of announcements URL retrieval function
-
-    const getAttachmentURL = (attachment) => {
-        if (!attachment)
-            return "";
-        if (typeof attachment === "string")
-            return attachment;
-        return attachment?.url || "";
-    };
-
-    // Attachments of announcements name retrieval function
-
-    const getAttachmentName = (attachment) => {
-        if (attachment?.name)
-            return attachment.name;
-        const url = getAttachmentURL(attachment);
-        if (!url)
-            return "Attachment";
-        try {
-            return decodeURIComponent(url.split("/").pop() || "Attachment");
-        } catch {
-            return url.split("/").pop() || "Attachment";
-        }
-    };
 
     // Announcement deletion confirmation modal opening function
 
@@ -792,17 +768,58 @@ const FacultyCourseDetails = () => {
     /* Assignment related functions */
 
     const [loadingAssignment, setLoadingAssignment] = useState(false);
+    const [loadingSubmissions, setLoadingSubmissions] = useState(false);
+    const [loadingAssignmentModal, setLoadingAssignmentModal] = useState(false);
+    const [loadingGrade, setLoadingGrade] = useState(false);
+
+    // Assignment upload data
+
     const [uploadAssignmentTitle, setUploadAssignmentTitle] = useState("");
     const [uploadAssignmentDescription, setUploadAssignmentDescription] = useState("");
     const [uploadAssignmentDueDate, setUploadAssignmentDueDate] = useState("");
     const [uploadAssignmentTotalMarks, setUploadAssignmentTotalMarks] = useState("");
     const [uploadAssignmentFiles, setUploadAssignmentFiles] = useState([]);
 
-    // Assignment related modal
+    // Assignment view and update related states
+
+    const [selectedAssignment, setSelectedAssignment] = useState(null);
+    const [assignmentModalTab, setAssignmentModalTab] = useState("details");
+    const [assignmentSubmissions, setAssignmentSubmissions] = useState([]);
+    const [editAssignmentTitle, setEditAssignmentTitle] = useState("");
+    const [editAssignmentDescription, setEditAssignmentDescription] = useState("");
+    const [editAssignmentDueDate, setEditAssignmentDueDate] = useState("");
+    const [editAssignmentTotalMarks, setEditAssignmentTotalMarks] = useState("");
+    const [newAssignmentFiles, setNewAssignmentFiles] = useState([]);
+    const [removeAssignmentAttachmentURLs, setRemoveAssignmentAttachmentURLs] = useState([]);
+
+
+    // Assignment grading related states
+
+    const [submissionToGrade, setSubmissionToGrade] = useState(null);
+    const [gradeMarks, setGradeMarks] = useState("");
+    const [gradeFeedback, setGradeFeedback] = useState("");
+
+    // Function for getting submissions for a specific assignment
+
+    const loadSubmissions = async (assignmentId) => {
+        try {
+            setLoadingSubmissions(true);
+            const submissions = await fetchAssignmentSubmissions(assignmentId);
+            setAssignmentSubmissions(submissions);
+        } catch (error) {
+            toast.error(error?.response?.data?.message || "Failed to load submissions");
+        } finally {
+            setLoadingSubmissions(false);
+        }
+    };
+
+    // Assignment related modal refs
 
     const uploadAssignmentModalRef = useRef(null);
+    const viewAssignmentModalRef = useRef(null);
+    const gradeSubmissionModalRef = useRef(null);
 
-    // Assignment upload opening modal
+    // Assignment upload opening modal function
 
     const openUploadAssignmentModal = () => {
         setUploadAssignmentTitle("");
@@ -813,7 +830,7 @@ const FacultyCourseDetails = () => {
         uploadAssignmentModalRef.current?.showModal();
     };
 
-    // Assignment upload closing modal
+    // Assignment upload closing modal function
 
     const closeUploadAssignmentModal = () => {
         uploadAssignmentModalRef.current?.close();
@@ -877,8 +894,200 @@ const FacultyCourseDetails = () => {
             toast.success("Assignment uploaded successfully");
         } catch (error) {
             toast.error(error?.response?.data?.message || "Assignment upload failed");
-        } finally{
+        } finally {
             setLoadingAssignment(false);
+        }
+    };
+
+    // Assignment view modal opening function
+
+    const openViewAssignmentModal = async (assignment) => {
+        setSelectedAssignment(assignment);
+        setAssignmentModalTab("details");
+
+        setEditAssignmentTitle(assignment?.title || "");
+        setEditAssignmentDescription(assignment?.description || "");
+        setEditAssignmentDueDate(assignment?.dueDate ? new Date(assignment.dueDate).toISOString().slice(0, 16) : "");
+        setEditAssignmentTotalMarks(String(assignment?.totalMarks || ""));
+
+        viewAssignmentModalRef.current?.showModal();
+
+        await loadSubmissions(assignment?._id);
+    };
+
+    // Assignment view modal closing function
+
+    const closeViewAssignmentModal = () => {
+        viewAssignmentModalRef.current?.close();
+
+        setTimeout(() => {
+            setSelectedAssignment(null);
+            setAssignmentSubmissions([]);
+            setAssignmentModalTab("details");
+            setNewAssignmentFiles([]);
+            setRemoveAssignmentAttachmentURLs([]);
+        }, 100);
+    };
+
+    // Attachments removal to update assignment 
+
+    const toggleRemoveAssignmentAttachment = (url) => {
+        setRemoveAssignmentAttachmentURLs((prev) =>
+            prev.includes(url) ? prev.filter((u) => u !== url) : [...prev, url]
+        );
+    };
+
+    // Assignment update function
+
+    const handleUpdateAssignment = async () => {
+        if (!selectedAssignment?._id)
+            return;
+
+        const assignment = {
+            title: editAssignmentTitle.trim(),
+            description: editAssignmentDescription.trim(),
+            dueDate: new Date(editAssignmentDueDate).toISOString(),
+            totalMarks: Number(editAssignmentTotalMarks)
+        };
+
+        const noCoreChange =
+            assignment.title === (selectedAssignment.title || "") &&
+            assignment.description === (selectedAssignment.description || "") &&
+            assignment.totalMarks === Number(selectedAssignment.totalMarks) &&
+            assignment.dueDate === selectedAssignment.dueDate;
+
+        const noAttachmentChange =
+            (newAssignmentFiles?.length || 0) === 0 &&
+            (removeAssignmentAttachmentURLs?.length || 0) === 0;
+
+        if (noCoreChange && noAttachmentChange) {
+            toast.info("Nothing to update");
+            return;
+        }
+
+        if (!Number.isFinite(assignment.totalMarks) || assignment.totalMarks <= 0) {
+            toast.error("Total marks must be greater than 0");
+            return;
+        }
+
+        try {
+            setLoadingAssignmentModal(true);
+
+            const addAttachments = await Promise.all(
+                (
+                    newAssignmentFiles || []).map(async (file) => {
+                        const uploaded = await uploadFileToCloudinary(file);
+                        return {
+                            url: uploaded.url,
+                            cloudinaryId: uploaded.public_id,
+                            resourceType: uploaded.resource_type
+                        };
+                    })
+            );
+
+            if (addAttachments.length > 0)
+                assignment.addAttachments = addAttachments;
+
+            if (removeAssignmentAttachmentURLs.length > 0)
+                assignment.removeAttachments = removeAssignmentAttachmentURLs;
+
+            const res = await axiosSecure.patch(`/assignment/${selectedAssignment._id}`, assignment);
+
+            if (!res?.data?.success) {
+                toast.error(res?.data?.message || "Update failed");
+                return;
+            }
+
+            const previousAttachments = selectedAssignment?.attachments || [];
+
+            const filteredExisting = previousAttachments.filter((att) => {
+                const url = getAttachmentURL(att);
+                return !removeAssignmentAttachmentURLs.includes(url);
+            });
+
+            const nextAttachments = [...filteredExisting, ...addAttachments];
+            const nextUpdatedAt = new Date().toISOString();
+
+            setSelectedAssignment((prev) => ({
+                ...prev,
+                ...assignment,
+                attachments: nextAttachments,
+                updatedAt: nextUpdatedAt
+            }));
+
+            setAssignments((prev) =>
+                prev.map((a) =>
+                    a._id === selectedAssignment._id
+                        ? { ...a, ...assignment, attachments: nextAttachments, updatedAt: nextUpdatedAt }
+                        : a
+                )
+            );
+
+            closeViewAssignmentModal();
+            toast.success("Assignment updated");
+            setTimeout(() => {
+                setNewAssignmentFiles([]);
+                setRemoveAssignmentAttachmentURLs([]);
+            }, 100);
+        } catch (error) {
+            toast.error(error?.response?.data?.message || "Update failed");
+        } finally {
+            setLoadingAssignmentModal(false);
+        }
+    };
+
+    // Submission grading modal opening function
+
+    const openGradeSubmissionModal = (submission) => {
+        setSubmissionToGrade(submission);
+        setGradeMarks(submission?.marks ?? "");
+        setGradeFeedback(submission?.feedback ?? "");
+        gradeSubmissionModalRef.current?.showModal();
+    };
+
+    // Submission grading modal opening function
+
+    const closeGradeSubmissionModal = () => {
+        gradeSubmissionModalRef.current?.close();
+        setTimeout(() => {
+            setSubmissionToGrade(null);
+            setGradeMarks("");
+            setGradeFeedback("");
+        }, 100);
+    };
+
+    // Submission grading function
+
+    const handleGradeSubmission = async () => {
+        if (!selectedAssignment?._id || !submissionToGrade?._id)
+            return;
+
+        const marks = Number(gradeMarks);
+        if (!Number.isFinite(marks) || marks < 0 || marks > Number(selectedAssignment.totalMarks)) {
+            toast.error("Invalid marks");
+            return;
+        }
+
+        try {
+            setLoadingGrade(true);
+            const res = await axiosSecure.patch(`/assignment/${selectedAssignment._id}/submissions/${submissionToGrade._id}`, { marks, feedback: gradeFeedback.trim() }
+            );
+
+            if (!res?.data?.success) {
+                toast.error(res?.data?.message || "Grading failed");
+                return;
+            }
+
+            setAssignmentSubmissions(prev =>
+                prev.map(s => s._id === submissionToGrade._id ? { ...s, marks, feedback: gradeFeedback.trim(), isGraded: true } : s)
+            );
+
+            closeGradeSubmissionModal();
+            toast.success("Graded successfully");
+        } catch (error) {
+            toast.error(error?.response?.data?.message || "Grading failed");
+        } finally {
+            setLoadingGrade(false);
         }
     };
 
@@ -1020,7 +1229,7 @@ const FacultyCourseDetails = () => {
                                     </p>
                                     :
                                     assignments.map(assignment =>
-                                        <div key={assignment?._id} className='flex flex-col gap-3 p-4 rounded-xl bg-gray-50 border border-gray-100 hover:border-blue-100 hover:bg-blue-50/30 transition-all duration-500 cursor-pointer'>
+                                        <div key={assignment?._id} className='flex flex-col gap-3 p-4 rounded-xl bg-gray-50 border border-gray-100 hover:border-blue-100 hover:bg-blue-50/30 transition-all duration-500 cursor-pointer' onClick={() => openViewAssignmentModal(assignment)}>
                                             <div className='flex items-start justify-between'>
                                                 <p className='font-semibold text-sm md:text-base truncate'>{assignment?.title}</p>
                                                 <p className='text-xs text-gray-500 mt-1'>{timeAgo(assignment?.updatedAt)}</p>
@@ -1758,7 +1967,7 @@ const FacultyCourseDetails = () => {
             <dialog ref={uploadAssignmentModalRef} className="modal modal-bottom sm:modal-middle">
                 <div className="modal-box max-w-xl p-6">
                     <div className="flex items-center justify-between mb-4">
-                        <p className="text-xl font-bold graphik">Create Assignment</p>
+                        <p className="text-xl font-bold graphik">Upload Assignment</p>
                         <button className="btn btn-sm btn-circle btn-ghost" onClick={closeUploadAssignmentModal}>✕</button>
                     </div>
 
@@ -1812,6 +2021,209 @@ const FacultyCourseDetails = () => {
                             </button>
                         </div>
                     </form>
+                </div>
+            </dialog>
+
+            {/* Assignment view Modal */}
+            <dialog
+                ref={viewAssignmentModalRef}
+                className="modal modal-bottom sm:modal-middle"
+                onClose={closeViewAssignmentModal}
+            >
+                <div className="modal-box max-w-3xl p-6">
+                    {
+                        selectedAssignment && (
+                            <div className="flex flex-col gap-4">
+                                <div className="flex items-center justify-between">
+                                    <p className="text-xl font-bold graphik">Assignment</p>
+                                    <button className="btn btn-sm btn-circle btn-ghost" onClick={closeViewAssignmentModal}>✕</button>
+                                </div>
+
+                                <div className="flex gap-2">
+                                    <button className={`btn btn-sm ${assignmentModalTab === "details" ? "bg-[#1E40AF] text-white" : "btn-soft"}`} onClick={() => setAssignmentModalTab("details")}>Details</button>
+                                    <button className={`btn btn-sm ${assignmentModalTab === "submissions" ? "bg-[#1E40AF] text-white" : "btn-soft"}`} onClick={() => setAssignmentModalTab("submissions")}>See Submissions</button>
+                                </div>
+
+                                {
+                                    assignmentModalTab === "details" ? (
+                                        <div className="flex flex-col gap-3">
+
+                                            {/* Title */}
+
+                                            <input
+                                                className="input input-bordered w-full"
+                                                value={editAssignmentTitle}
+                                                onChange={(e) => setEditAssignmentTitle(e.target.value)}
+                                            />
+
+                                            {/* Description */}
+
+                                            <textarea
+                                                className="textarea textarea-bordered w-full resize-none"
+                                                rows="4"
+                                                value={editAssignmentDescription}
+                                                onChange={(e) => setEditAssignmentDescription(e.target.value)}
+                                            />
+
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+
+                                                {/* Due date */}
+
+                                                <input
+                                                    type="datetime-local"
+                                                    className="input input-bordered w-full"
+                                                    value={editAssignmentDueDate}
+                                                    min={new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16)}
+                                                    onChange={(e) => setEditAssignmentDueDate(e.target.value)}
+                                                />
+
+                                                {/* Total marks */}
+
+                                                <input
+                                                    type="number"
+                                                    min="1"
+                                                    step="1"
+                                                    className="input input-bordered w-full"
+                                                    value={editAssignmentTotalMarks}
+                                                    onChange={(e) => setEditAssignmentTotalMarks(e.target.value)}
+                                                />
+                                            </div>
+
+                                            {/* New attachments */}
+
+                                            <div className="flex flex-col gap-1">
+                                                <label className="text-sm font-semibold text-gray-700">Add Attachments (optional)</label>
+                                                <input
+                                                    type="file"
+                                                    multiple
+                                                    className="file-input w-full"
+                                                    onChange={(e) => setNewAssignmentFiles(Array.from(e.target.files || []))}
+                                                />
+                                            </div>
+
+                                            {/* Existing attachments */}
+                                            {
+                                                selectedAssignment?.attachments?.length > 0 && (
+                                                    <div className="flex flex-col gap-2">
+                                                        <p className="text-sm font-semibold">Existing Attachments</p>
+                                                        {
+                                                            selectedAssignment.attachments.map((att, idx) => {
+                                                                const url = getAttachmentURL(att);
+                                                                const marked = removeAssignmentAttachmentURLs.includes(url);
+                                                                return (
+                                                                    <div
+                                                                        key={`${url}-${idx}`}
+                                                                        className={`flex items-center justify-between rounded-lg border px-3 py-2 text-sm ${marked ? "bg-blue-50 border-blue-300 text-blue-700" : "bg-gray-50 border-gray-200 text-gray-700"}`}
+                                                                    >
+                                                                        <span className="truncate pr-3">
+                                                                            {getAttachmentName(att)} {marked ? "(Will be removed)" : ""}
+                                                                        </span>
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => toggleRemoveAssignmentAttachment(url)}
+                                                                            className="p-1 rounded-full border"
+                                                                            title={marked ? "Undo remove" : "Mark to remove"}
+                                                                        >
+                                                                            <X className="w-4 h-4" />
+                                                                        </button>
+                                                                    </div>
+                                                                );
+                                                            }
+                                                            )
+                                                        }
+                                                    </div>
+                                                )
+                                            }
+
+                                            <div className="flex justify-end">
+                                                <button
+                                                    className="w-40 btn bg-[#1E40AF] text-white hover:bg-blue-600"
+                                                    onClick={handleUpdateAssignment}
+                                                    disabled={loadingAssignmentModal}
+                                                >
+                                                    {
+                                                        loadingAssignmentModal ?
+                                                            (
+                                                                <span className="loading loading-dots loading-md"></span>
+                                                            ) : (
+                                                                "Save Changes"
+                                                            )
+                                                    }
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ) : (
+
+                                        // Submissions Part of the Modal
+
+                                        <div className="flex flex-col gap-2 max-h-[55vh] overflow-y-auto">
+                                            {
+                                                loadingSubmissions ? (
+                                                    <span className="loading loading-dots loading-md"></span>
+                                                ) : assignmentSubmissions.length === 0 ? (
+                                                    <p className="text-sm text-gray-500 text-center py-6">No submission found</p>
+                                                ) : (
+                                                    assignmentSubmissions.map((s) => (
+                                                        <div key={s._id} className="flex items-center justify-between gap-3 p-3 rounded-xl border border-gray-200 bg-gray-50">
+                                                            <div className="min-w-0">
+                                                                <p className="text-sm font-semibold truncate">{s?.student?.name || "Student"}</p>
+                                                                <p className="text-xs text-gray-500 break-all">{s?.student?.email}</p>
+                                                                <p className="text-xs text-gray-500">Submitted: {new Date(s.submittedAt).toLocaleString()}</p>
+                                                            </div>
+                                                            <div className="flex items-center gap-2">
+                                                                <a href={s.submissionURL} target="_blank" rel="noreferrer" className="btn btn-sm border-blue-200 text-blue-600 hover:bg-blue-600 hover:text-white">Download</a>
+                                                                <button onClick={() => openGradeSubmissionModal(s)} className="btn btn-sm border-green-200 text-green-600 hover:bg-green-600 hover:text-white">Grade</button>
+                                                            </div>
+                                                        </div>
+                                                    )
+                                                    )
+                                                )
+                                            }
+                                        </div>
+                                    )
+                                }
+                            </div>
+                        )
+                    }
+                </div>
+            </dialog>
+
+            {/* Assignment Submission grading modal */}
+
+            <dialog ref={gradeSubmissionModalRef} className="modal modal-middle">
+                <div className="modal-box max-w-md">
+                    <p className="text-lg font-bold mb-3">Grade Submission</p>
+
+                    <div className="flex flex-col gap-3">
+                        <input
+                            type="number"
+                            min="0"
+                            max={Number(selectedAssignment?.totalMarks || 0)}
+                            className="input input-bordered w-full"
+                            placeholder="Marks"
+                            value={gradeMarks}
+                            onChange={(e) => setGradeMarks(e.target.value)}
+                        />
+                        <textarea
+                            rows="4"
+                            className="textarea textarea-bordered w-full"
+                            placeholder="Feedback"
+                            value={gradeFeedback}
+                            onChange={(e) => setGradeFeedback(e.target.value)}
+                        />
+                    </div>
+
+                    <div className="flex justify-end gap-2 mt-4">
+                        <button className="btn btn-soft" onClick={closeGradeSubmissionModal}>Cancel</button>
+                        <button className="btn bg-[#1E40AF] text-white hover:bg-blue-600" onClick={handleGradeSubmission} disabled={loadingGrade}>
+                            {
+                                loadingGrade ?
+                                    <span className="loading loading-dots loading-md"></span>
+                                    :
+                                    "Save Grade"
+                            }
+                        </button>
+                    </div>
                 </div>
             </dialog>
         </>
