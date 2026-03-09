@@ -27,6 +27,7 @@ import axiosSecure from "../../utils/axiosSecure.js";
 import formatName from "../../utils/formatName.js";
 import {toast} from "sonner";
 import {uploadFileToCloudinary} from "../../utils/uploadToCloudinary.js";
+import { Pagination } from '@mui/material';
 
 ChartJS.register(
     CategoryScale,
@@ -195,6 +196,8 @@ const Repository = () => {
     const [uploadStatus, setUploadStatus] = useState("idle");
 
     const [material, setMaterial] = useState("");
+
+    const [totalPages, setTotalPages] = useState(1);
 
     const handleDownload = async (url, title) => {
         try {
@@ -398,6 +401,8 @@ const Repository = () => {
 
                 setLeaderboard(leaderboard);
                 setGraphData(data);
+
+                setTotalPages(repositoryItems.totalPages ?? 1);
             } catch (error) {
                 console.log("Error (Repository.jsx): ", error);
             }
@@ -419,6 +424,16 @@ const Repository = () => {
 
         return matchedSearch && matchedStatus;
     });
+
+    // Pagination setup
+
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
+
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentMaterials = filteredMaterials.slice(indexOfFirstItem, indexOfLastItem);
+    // const totalPages = Math.ceil(filteredMaterials.length / itemsPerPage);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -700,24 +715,37 @@ const Repository = () => {
                     </div>
                 )}
 
-                {filteredMaterials.length > 0 ? (
-                    <div className={`grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4 ${!id ? "mt-5" : ""}`}>
-                        {filteredMaterials.map( material => (
-                            <ItemCard
-                                key={material._id}
-                                item={material}
-                                onView={(item) => handleView(item.url)}
-                                onDownload={(item) => handleDownload(item.url, item.title)}
-                            />
-                        ))}
+                {currentMaterials.length > 0 ? (
+                    <div className="h-[800px] flex flex-col justify-between gap-6 overflow-y-auto">
+                        <div className={`grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4 ${!id ? "mt-5" : ""}`}>
+                            {currentMaterials.map( material => (
+                                <ItemCard
+                                    key={material._id}
+                                    item={material}
+                                    onView={(item) => handleView(item.url)}
+                                    onDownload={(item) => handleDownload(item.url, item.title)}
+                                />
+                            ))}
+                        </div>
                     </div>
                 ): (
                     <div
-                        className="bg-white border border-gray-200 rounded-2xl py-14 flex flex-col items-center justify-center text-center">
+                        className="bg-white border border-gray-200 rounded-2xl py-14 flex flex-col items-center justify-center text-center mb-5">
                         <File className="w-8 h-8 text-gray-200 mb-3"/>
                         <p className="text-sm font-medium text-gray-400">No study material found</p>
                     </div>
                 )}
+
+                <div className="flex justify-center items-end my-5">
+                    <Pagination
+                        count={totalPages}
+                        page={currentPage}
+                        onChange={(event, value) => setCurrentPage(value)}
+                        color="primary"
+                        siblingCount={1}
+                        boundaryCount={1}
+                    />
+                </div>
 
                 {/* Material Upload Modal */}
                 <dialog id="my_modal_1" className="modal">
@@ -758,7 +786,7 @@ const Repository = () => {
                                     </label>
 
                                     <span className="text-sm text-gray-500">
-                                        {material || "No file chosen"}
+                                        {material?.name || "No file chosen"}
                                     </span>
                                 </div>
                             </div>
