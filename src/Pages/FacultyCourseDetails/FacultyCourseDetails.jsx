@@ -49,7 +49,7 @@ const FacultyCourseDetails = () => {
         setStatus(course?.status || "");
         setInviteLink(
             course?.invitationCode
-                ? `${import.meta.env.VITE_LIVE_LINK}/join-course?code=${course.invitationCode}`
+                ? course?.invitationCode
                 : ""
         );
         setCopied(false);
@@ -1473,7 +1473,7 @@ const FacultyCourseDetails = () => {
                                 <div className="border-t pt-4 flex flex-col gap-3">
 
                                     <h4 className="font-semibold">
-                                        Invitation Link
+                                        Invitation Code
                                     </h4>
 
                                     <div className="flex gap-2">
@@ -1481,7 +1481,7 @@ const FacultyCourseDetails = () => {
                                         <input
                                             readOnly
                                             value={inviteLink}
-                                            placeholder="Click generate to create invitation link"
+                                            placeholder="Click generate to create invitation code"
                                             className="input input-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         />
 
