@@ -456,10 +456,7 @@ const MyActivity = () => {
                                             dataKey="value"
                                             nameKey="name"
                                             outerRadius={100}
-                                            label={({
-                                                        name,
-                                                        percent
-                                                    }) => percent > 0 ? `${(percent * 100).toFixed(0)}%` : ''}
+                                            label={({percent}) => percent > 0 ? `${(percent * 100).toFixed(0)}%` : ''}
                                             labelLine={false}
                                         >
                                             {pieData.map((_, idx) => (<Cell key={idx} fill={PIE_COLORS[idx]}/>))}

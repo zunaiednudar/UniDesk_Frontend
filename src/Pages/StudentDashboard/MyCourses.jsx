@@ -26,6 +26,7 @@ const statusBadgeConfig = {
     completed: 'bg-blue-100 text-blue-700',
 };
 
+// Stat card for simple analytics
 const StatCard = ({icon: Icon, value, label, iconBg, iconColor, valueColor = 'text-gray-900'}) => (
     <div
         className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200">
