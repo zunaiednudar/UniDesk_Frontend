@@ -185,7 +185,7 @@ const Repository = () => {
     const [graphData, setGraphData] = useState();
     const [searchQuery, setSearchQuery] = useState('');
 
-    const [totalContributorsCount, setTotalContributorsCount] = useState([]);
+    const [totalContributorsCount, setTotalContributorsCount] = useState(0);
     const [totalUploadCount, setTotalUploadCount] = useState(0);
     const [totalDownloadCount, setTotalDownloadCount] = useState(0);
 
@@ -753,7 +753,7 @@ const Repository = () => {
                                             name="material"
                                             accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt"
                                             className="hidden"
-                                            onChange={(e) => setMaterial(e.target.files[0]?.name || "")}
+                                            onChange={(e) => setMaterial(e.target.files[0] || null)}
                                         />
                                     </label>
 
