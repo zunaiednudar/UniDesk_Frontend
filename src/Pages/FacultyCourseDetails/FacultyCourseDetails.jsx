@@ -1,5 +1,5 @@
 ﻿import React, { useEffect, useRef, useState } from 'react';
-import { Link, useParams } from 'react-router';
+import { Link, useNavigate, useParams } from 'react-router';
 import axiosSecure from '../../utils/axiosSecure.js';
 import Loading from '../../Components/Loading/Loading.jsx';
 import { ArrowLeft, Building2, CalendarClock, Check, Cog, Copy, FolderOpen, GraduationCap, LogOut, LucideClipboardCheck, Megaphone, UserCheck, UserX, Users, Search, UserMinus, Download, Trash2, Upload, X } from 'lucide-react';
@@ -24,6 +24,8 @@ const FacultyCourseDetails = () => {
     const [assignments, setAssignments] = useState([]);
     const [materials, setMaterials] = useState([]);
     const [loading, setLoading] = useState(true);
+
+    const navigate=useNavigate();
 
     /* Course edit related */
 
@@ -1140,6 +1142,47 @@ const FacultyCourseDetails = () => {
         }
     };
 
+    /* Course leave related */
+
+    const [loadingLeaveCourse,setLoadingLeaveCourse]=useState(false);
+
+    // Course leave modal ref
+
+    const leaveCourseModalRef=useRef(null);
+
+    // Course leave modal opening function
+
+    const openLeaveCourseModal=()=>leaveCourseModalRef?.current?.showModal();
+
+    // Course leave modal opening function
+
+    const closeLeaveCourseModal=()=>leaveCourseModalRef?.current?.close();
+
+    // Leave course function
+
+    const handleLeaveCourse=async()=>{
+        try {
+            setLoadingLeaveCourse(true);
+            const res = await axiosSecure.delete(`/courses/${course._id}/faculty/leave`);
+
+            if (!res?.data?.success) {
+                closeLeaveCourseModal()
+                toast.error(res?.data?.message);
+                return;
+            }
+
+            closeLeaveCourseModal();
+
+            navigate("/dashboard/faculty/my-courses", { replace: true });
+
+            toast.success("Course left successfully");
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Something went wrong");
+        }finally{
+            setLoadingLeaveCourse(false);
+        }
+    };
+
     if (loading)
         return <Loading></Loading>
 
@@ -1173,7 +1216,7 @@ const FacultyCourseDetails = () => {
                             </div>
                             <p className='text-gray-500'>{course?.courseName}</p>
                         </div>
-                        <button className='max-w-40 min-h-10 justify-center flex items-center gap-2 text-xs md:text-sm text-red-600 border border-red-200 px-3 py-2 rounded-xl whitespace-nowrap transition-colors hover:bg-red-600 hover:text-white duration-500 cursor-pointer'><LogOut className='w-4 h-4 shrink-0' /> Leave Course</button>
+                        <button className='max-w-40 min-h-10 justify-center flex items-center gap-2 text-xs md:text-sm text-red-600 border border-red-200 px-3 py-2 rounded-xl whitespace-nowrap transition-colors hover:bg-red-600 hover:text-white duration-500 cursor-pointer' onClick={openLeaveCourseModal}><LogOut className='w-4 h-4 shrink-0' /> Leave Course</button>
                     </div>
                 </div>
 
@@ -2314,6 +2357,37 @@ const FacultyCourseDetails = () => {
                                     <span className="loading loading-dots loading-md"></span>
                                 ) : (
                                     "Delete"
+                                )
+                            }
+                        </button>
+                    </div>
+                </div>
+            </dialog>
+
+            {/* Course leaving confirmation modal */}
+
+            <dialog ref={leaveCourseModalRef} className="modal modal-middle">
+                <div className="modal-box max-w-md">
+                    <p className="font-bold text-lg">Course Leave Confirmation</p>
+                    <p className="py-3 text-sm text-gray-600">
+                        Are you sure you want to leave from this course?
+                    </p>
+
+                    <div className="flex justify-end gap-2">
+                        <button className="btn btn-soft" onClick={closeLeaveCourseModal}>
+                            Cancel
+                        </button>
+
+                        <button
+                            className="w-25 btn bg-[#1E40AF] text-white transition-colors hover:bg-blue-600 duration-500 cursor-pointer"
+                            onClick={handleLeaveCourse}
+                            disabled={loadingLeaveCourse}
+                        >
+                            {
+                                loadingLeaveCourse ? (
+                                    <span className="loading loading-dots loading-md"></span>
+                                ) : (
+                                    "Leave"
                                 )
                             }
                         </button>
