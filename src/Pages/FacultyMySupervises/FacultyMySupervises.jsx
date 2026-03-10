@@ -15,6 +15,7 @@ const FacultyMySupervises = () => {
     const [search, setSearch] = useState("");
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
+    const [relationshipType,setRelationshipType]=useState("");
 
     // All supervisee data and loading state
 
@@ -142,7 +143,7 @@ const FacultyMySupervises = () => {
             };
 
             const res = await axiosSecure.delete(`/supervisor/${userData?._id}`, {
-                data:payload
+                data: payload
             });
 
             if (!res?.data?.success) {
@@ -172,7 +173,8 @@ const FacultyMySupervises = () => {
                 const res = await axiosSecure.get(`/supervisor/${userData?._id}`, {
                     params: {
                         page,
-                        search
+                        search,
+                        relationshipType
                     }
                 });
 
@@ -196,7 +198,7 @@ const FacultyMySupervises = () => {
 
         if (userData?._id)
             fetchSupervises();
-    }, [userData?._id, page, search]);
+    }, [userData?._id, page, search,relationshipType]);
 
     console.log(activeSupervises, completedSupervises);
 
@@ -228,7 +230,18 @@ const FacultyMySupervises = () => {
                         />
                     </div>
 
-                    <button className="w-25 flex gap-2 items-center bg-[#1E40AF] text-white px-5 py-2 rounded-lg cursor-pointer text-center transition-colors hover:bg-blue-600 duration-500 text-xs md:text-sm lg:text-md"><IoMdAdd /> Assign</button>
+                    <select
+                        value={relationshipType}
+                        onChange={(e) => {
+                            setRelationshipType(e.target.value);
+                            setPage(1);
+                        }}
+                        className="select select-bordered w-25 outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                        <option value="">All</option>
+                        <option value="thesis">Thesis</option>
+                        <option value="project">Project</option>
+                    </select>
                 </div>
 
                 {/* Supervises block */}
@@ -300,7 +313,7 @@ const FacultyMySupervises = () => {
                                                     />
                                                     <div className="flex flex-col items-start min-w-0">
                                                         <p className="text-sm text-black truncate font-bold">{formatName(supervisee?.student?.name)}</p>
-                                                        <p className="text-xs text-gray-400 break-all">{supervisee?.student?.email}</p>
+                                                        <p className="text-xs text-gray-400 break-all">{supervisee?.student?.studentID}</p>
                                                     </div>
                                                 </div>
 
