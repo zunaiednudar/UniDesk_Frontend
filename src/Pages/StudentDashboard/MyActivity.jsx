@@ -3,12 +3,12 @@ import {PieChart, Pie, Cell, Tooltip, ResponsiveContainer} from 'recharts';
 import {
     BookOpen, ClipboardCheck, Calendar, Clock, AlertCircle, ChevronRight
 } from 'lucide-react';
-import {NavLink} from "react-router";
 import axiosSecure from "../../utils/axiosSecure.js";
 import timeAgo from "../../utils/timeAgo.js";
 import {AuthContext} from "../../Providers/AuthProvider/AuthProvider.jsx";
 import RecentNotices from "../../Components/RecentNotices/RecentNotices.jsx";
 import CalendarF from "../../Components/Calendar/Calendar.jsx"
+import {NavLink} from "react-router";
 
 // Design helpers for due date
 const getDueDateClasses = (dateStr, isCompleted) => {
@@ -396,15 +396,15 @@ const MyActivity = () => {
             </div>
 
             {/* Main Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-5 lg:grid-rows-6 gap-6 items-start">
+            <div className="grid grid-cols-1 xl:grid-cols-5 xl:grid-rows-6 gap-6 items-start">
                 {/* Recent Announcements */}
-                <div className="w-full h-full lg:col-span-3 lg:row-span-2">
+                <div className="w-full h-full xl:col-span-3 xl:row-span-2">
                     <RecentNotices notices={notices} loading={loading}/>
                 </div>
 
                 {/* Task List */}
                 <div
-                    className="w-full h-full lg:col-span-2 lg:row-span-4 bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                    className="w-full h-full xl:col-span-2 xl:row-span-4 bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
                     <SectionHeader
                         icon={ClipboardCheck}
                         title="Task List"
@@ -430,12 +430,12 @@ const MyActivity = () => {
                 </div>
 
                 {/* Calendar */}
-                <div className="w-full h-full lg:col-span-3 lg:row-span-4">
+                <div className="w-full h-full xl:col-span-3 xl:row-span-4">
                     <CalendarF/>
                 </div>
 
                 {/* Submission Overview */}
-                <div className="w-full h-full lg:col-span-2 lg:row-span-2 flex flex-col gap-6">
+                <div className="w-full h-full xl:col-span-2 xl:row-span-2 flex flex-col gap-6">
                     <div className="w-full h-full bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
                         <SectionHeader
                             icon={ClipboardCheck}
@@ -469,7 +469,7 @@ const MyActivity = () => {
                                 <div className="flex flex-col lg:flex-row justify-around mt-4">
                                     {pieData.map((entry, idx) => (
                                         <div key={idx} className="flex flex-col items-center gap-1">
-                                            <div className="flex items-center gap-1.5">
+                                            <div className="flex items-center gap-1">
                                                 <div className="w-2 h-2 rounded-full"
                                                      style={{backgroundColor: PIE_COLORS[idx]}}/>
                                                 <span className="text-xs text-gray-500 text-center">{entry.name}</span>

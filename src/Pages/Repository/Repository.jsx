@@ -1,15 +1,14 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {
     ChartNoAxesCombined,
     Trophy,
     Upload,
     CheckCircle,
     CloudUpload,
-    Ban,
     Search,
     File,
     FileImage, FileText,
-    Calendar, Download, Eye, UsersRound, BookCheck, FolderOpen
+    Calendar, Download, Eye, UsersRound, BookCheck, Trash2
 } from 'lucide-react';
 import {
     Chart as ChartJS,
@@ -26,6 +25,8 @@ import {useParams} from "react-router";
 import axiosSecure from "../../utils/axiosSecure.js";
 import formatName from "../../utils/formatName.js";
 import {toast} from "sonner";
+import {uploadFileToCloudinary} from "../../utils/uploadToCloudinary.js";
+import { Pagination } from '@mui/material';
 
 ChartJS.register(
     CategoryScale,
@@ -82,7 +83,7 @@ const fileTypeConfig = {
 
 const defaultFileType = {icon: File, bg: "bg-gray-100", text: "text-gray-500", label: "File"};
 
-const ItemCard = ({item, onDownload, onView}) => {
+const ItemCard = ({id, item, onDownload, onView, onDelete}) => {
     const extension = item.url?.split(".").pop().split("?")[0].toLowerCase() ?? "";
     const fileConfig = fileTypeConfig[extension] ?? defaultFileType;
     const FileIcon = fileConfig.icon;
@@ -160,6 +161,7 @@ const ItemCard = ({item, onDownload, onView}) => {
                         <Eye className="w-3.5 h-3.5" />
                         View
                     </button>
+
                     <button
                         onClick={() => {
                             onDownload?.(item);
@@ -169,29 +171,71 @@ const ItemCard = ({item, onDownload, onView}) => {
                         Download
                     </button>
                 </div>
+
+                {(item.uploader._id === id) && (
+                    <button
+                        onClick={() => {
+                            onDelete?.(item);
+                        }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-orange-700 rounded-lg hover:bg-orange-800 transition">
+                        <Trash2 className="w-3.5 h-3.5" />
+                        Delete
+                    </button>
+                )}
             </div>
         </div>
     );
 };
+
+// Graph UI options
+const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+        legend: {
+            position: "top",
+        },
+        title: {
+            display: true,
+            text: `Contribution Activity (${new Date().getFullYear()})`,
+            font: {
+                size: 16
+            },
+            color: "#111827"
+        }
+    }
+};
+
+// Helper for month mapping
+const months = [
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+];
 
 const Repository = () => {
     const {id} = useParams();
     const [contributionPoints, setContributionPoints] = useState(0);
     const [repositoryItems, setRepositoryItems] = useState([]);
     const [totalApproved, setTotalApproved] = useState(0);
-    const [totalRejected, setTotalRejected] = useState(0);
     const [leaderboard, setLeaderboard] = useState([]);
     const [graphData, setGraphData] = useState();
     const [searchQuery, setSearchQuery] = useState('');
 
-    const [totalContributorsCount, setTotalContributorsCount] = useState([]);
+    const [totalContributorsCount, setTotalContributorsCount] = useState(0);
     const [totalUploadCount, setTotalUploadCount] = useState(0);
     const [totalDownloadCount, setTotalDownloadCount] = useState(0);
 
     const [statusFilter, setStatusFilter] = useState('all');
-    const [itemType, setItemType] = useState('personal notes');
+    const [itemType, setItemType] = useState('notes');
 
     const [uploadStatus, setUploadStatus] = useState("idle");
+
+    const [material, setMaterial] = useState(null);
+    const fileInputRef = useRef(null);
+
+    const [itemToDeleteId, setItemToDeleteId] = useState(null);
+
+    const [currentPage, setCurrentPage] = useState(1);
 
     const handleDownload = async (url, title) => {
         try {
@@ -209,6 +253,19 @@ const Repository = () => {
         }
     };
 
+    const handleDelete = async (itemId) => {
+        try {
+            const res = await axiosSecure.delete(`/repository/${itemId}`);
+
+            if (res.status === 200) {
+                toast("Item permanently deleted");
+                window.location.reload();
+            }
+        } catch {
+            toast.error("Item deletion failed");
+        }
+    }
+
     const handleView = (url) => {
         const ext = url.split('?')[0].split('.').pop().toLowerCase();
         const imageTypes = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
@@ -216,45 +273,17 @@ const Repository = () => {
         if (imageTypes.includes(ext)) {
             window.open(url, '_blank', 'noopener,noreferrer');
         } else {
-            window.open(`https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`, '_blank');
+            window.open(`https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`, '_blank', 'noopener,noreferrer');
         }
     }
 
-
-    // Graph UI options
-    const options = {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: {
-                position: "top",
-            },
-            title: {
-                display: true,
-                text: `Contribution Activity (${new Date().getFullYear()})`,
-                font: {
-                    size: 16
-                },
-                color: "#111827"
-            }
-        }
-    };
-
     useEffect(() => {
-        const months = [
-            "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-        ];
-
         const fetchData = async () => {
             try {
                 const [repositoryRes, leaderboardRes] = await Promise.all([
                     axiosSecure.get('/repository'),
                     axiosSecure.get('/repository/leaderboard'),
                 ]);
-
-                console.log("Repository data (Repository.jsx): ", repositoryRes.data);
-                console.log("Leaderboard data (Repository.jsx): ", leaderboardRes.data);
 
                 const repositoryItems = repositoryRes.data.items;
 
@@ -265,11 +294,6 @@ const Repository = () => {
 
                 const totalApproved = repositoryItems.reduce((sum, item) => {
                     if (item.uploader._id === id) return sum + 1;
-                    return sum;
-                }, 0);
-
-                const totalRejected = repositoryItems.reduce((sum, item) => {
-                    if (item.uploader._id === id && item.rejectedReason) return sum + 1;
                     return sum;
                 }, 0);
 
@@ -287,28 +311,29 @@ const Repository = () => {
 
                 const allPersonalNotes = repositoryItems
                     .filter(item => {
-                        return (item.uploader._id === id) && (item.itemType.toLowerCase() === "personal note");
+                        return (item.uploader._id === id) && (item.itemType.toLowerCase() === "notes");
                     });
 
                 const allQuestionBanksAnswers = repositoryItems
                     .filter(item => {
-                        return (item.uploader._id === id) && ((item.itemType.toLowerCase() === "question bank") || (item.itemType.toLowerCase() === "answer"));
+                        return (item.uploader._id === id) && ((item.itemType.toLowerCase() === "question bank") || (item.itemType.toLowerCase() === "solved questions"));
                     });
 
-                const allEbooks = repositoryItems
+                const allAssessments = repositoryItems
                     .filter(item => {
-                        return (item.uploader._id === id) && (item.itemType.toLowerCase() === "ebook");
+                        return (item.uploader._id === id) && ((item.itemType.toLowerCase() === "project_report") || (item.itemType.toLowerCase() === "lab_report") || (item.itemType.toLowerCase() === "assignment"));
                     });
 
                 const otherMaterials = repositoryItems
                     .filter(item => {
-                        return (item.uploader._id === id) && (item.itemType.toLowerCase() !== "personal note")
+                        return (item.uploader._id === id)
+                            && (item.itemType.toLowerCase() !== "notes")
                             && (item.itemType.toLowerCase() !== "question bank")
-                            && (item.itemType.toLowerCase() !== "answer")
-                            && (item.itemType.toLowerCase() !== "ebook");
+                            && (item.itemType.toLowerCase() !== "solved questions")
+                            && (item.itemType.toLowerCase() !== "project_report")
+                            && (item.itemType.toLowerCase() !== "lab_report")
+                            && (item.itemType.toLowerCase() !== "assignment");
                     });
-
-                console.log("All question banks (Repository.jsx): ", allQuestionBanksAnswers);
 
                 // Month mapping
 
@@ -328,7 +353,7 @@ const Repository = () => {
                         return acc;
                     }, Array(12).fill(0));
 
-                const filteredEbooks = allEbooks
+                const filteredAssessments = allAssessments
                     .reduce((acc, item) => {
                         const month = new Date(item.approvedAt).getMonth();
                         if (new Date(item.approvedAt).getFullYear() === new Date().getFullYear())
@@ -343,8 +368,6 @@ const Repository = () => {
                             acc[month] = (acc[month] || 0) + item.contributionPoints;
                         return acc;
                     }, Array(12).fill(0));
-
-                console.log("Filtered other materials (Repository.jsx): ", filteredPersonalNotes);
 
                 // Build graph datasets
                 const data = {
@@ -365,8 +388,8 @@ const Repository = () => {
                             tension: 0.4
                         },
                         {
-                            label: "Ebooks",
-                            data: filteredEbooks,
+                            label: "Assessments",
+                            data: filteredAssessments,
                             borderColor: "#F59E0B",
                             backgroundColor: "#F59E0B",
                             tension: 0.4
@@ -387,7 +410,6 @@ const Repository = () => {
                 setContributionPoints(totalContributionPoints);
                 setRepositoryItems(repositoryItems);
                 setTotalApproved(totalApproved);
-                setTotalRejected(totalRejected);
 
                 setTotalContributorsCount(totalContributors);
                 setTotalUploadCount(totalUploaded);
@@ -395,37 +417,50 @@ const Repository = () => {
 
                 setLeaderboard(leaderboard);
                 setGraphData(data);
-            } catch (error) {
-                console.log("Error (Repository.jsx): ", error);
+            } catch {
+                toast.error("Error with fetching data");
             }
         };
 
         fetchData();
     }, [id]);
 
-    const filteredMaterials = repositoryItems.filter(item => {
+    // Optimize repository items loading with cache (useMemo)
+    const filteredMaterials = useMemo(() => {
         const q = searchQuery.toLowerCase();
 
-        const matchedSearch = item.title.toLowerCase().includes(q) ||
-            item.courseCode.toLowerCase().includes(q) ||
-            item.courseName.toLowerCase().includes(q) ||
-            item.itemType.toLowerCase().includes(q) ||
-            item.uploader.name.toLowerCase().includes(q);
+        return repositoryItems.filter((item) => {
+            const matchesSearch =
+                item.title.toLowerCase().includes(q) ||
+                item.courseCode.toLowerCase().includes(q) ||
+                item.courseName.toLowerCase().includes(q) ||
+                item.uploader?.name?.toLowerCase().includes(q);
 
-        const matchedStatus = (statusFilter === 'all') || (statusFilter === item.status && item.uploader._id === id);
+            const matchesStatus =
+                statusFilter === "all" || (statusFilter === "personal" && item.uploader._id === id);
 
-        return matchedSearch && matchedStatus;
-    });
+            return matchesSearch && matchesStatus;
+        });
+
+    }, [repositoryItems, searchQuery, statusFilter, id]);
+
+    // Pagination setup
+
+    const itemsPerPage = 10;
+
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentMaterials = filteredMaterials.slice(indexOfFirstItem, indexOfLastItem);
+    const totalPages = Math.max(1, Math.ceil(filteredMaterials.length / itemsPerPage));
 
     const handleSubmit = async (e) => {
         e.preventDefault();
 
         const formData = new FormData(e.target);
 
-        const data = {
+        let data = {
             title: formData.get("title")?.trim(),
             description: formData.get("description")?.trim(),
-            url: formData.get("url")?.trim(),
             courseCode: formData.get("course-code")?.trim(),
             courseName: formData.get("course-name")?.trim(),
             year: formData.get("year")?.trim(),
@@ -433,7 +468,10 @@ const Repository = () => {
             itemType: itemType
         };
 
-        console.log("Data (Repository.jsx): ", data);
+        if (!material) {
+            toast.error("You must provide study material!");
+            return;
+        }
 
         if (!data.title) {
             toast.error("You must give a title of the study material!");
@@ -442,11 +480,6 @@ const Repository = () => {
 
         if (!data.description) {
             toast.error("You must give a valid description of the study material!");
-            return;
-        }
-
-        if (!data.url) {
-            toast.error("You must give a valid URL of the study material!");
             return;
         }
 
@@ -465,19 +498,35 @@ const Repository = () => {
             return;
         }
 
+        const fileData = await uploadFileToCloudinary(material);
+
+        if (!fileData?.url) {
+            toast.error("File upload failed. Please try again.");
+            return;
+        }
+
+        data = {
+            ...data,
+            url: fileData.url,
+            cloudinaryId: fileData.public_id,
+            resourceType: fileData.resource_type
+        };
 
         try {
             const submissionRes = await axiosSecure.post(`/repository`, data);
-            console.log(submissionRes.status);
 
             if (submissionRes.status === 201) {
                 setUploadStatus("success");
                 document.getElementById("my_modal_1").close();
                 e.target.reset();
-                setItemType("personal notes");
+                setItemType("notes");
+
+                setMaterial(null);
+                if (fileInputRef.current) {
+                    fileInputRef.current.value = "";
+                }
             }
-        } catch (error) {
-            console.log("Submission Error (Repository.jsx): ", error);
+        } catch {
             toast.error("Failed to submit material");
             setUploadStatus("error");
         }
@@ -489,39 +538,13 @@ const Repository = () => {
     const optionCls = "text-sm px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none";
 
     return (
-        <div className={`gilroy space-y-6 ${!id ? "mx-15" : "m-0"}`}>
+        <div className={`gilroy space-y-6 ${!id ? "mx-15 mb-5 mt-10" : "m-0"}`}>
             {/* Header */}
             <div>
                 <h1 className="graphik text-3xl font-semibold text-gray-900">Repository</h1>
                 <p className="text-sm text-gray-400 mt-1">A collaborative platform for students and instructors to
                     exchange study materials, participate in discussions, and contribute valuable academic resources</p>
             </div>
-
-            {/* Registered User - Stats */}
-            {id && (
-                <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-4">
-                    <StatCard
-                        icon={ChartNoAxesCombined}
-                        value={contributionPoints}
-                        label="Contribution Points"
-                        iconBg="bg-emerald-50"
-                        iconColor="text-emerald-500"/>
-
-                    <StatCard
-                        icon={BookCheck}
-                        value={totalApproved}
-                        label="Total Approved"
-                        iconBg="bg-blue-50"
-                        iconColor="text-blue-500"/>
-
-                    <StatCard
-                        icon={Ban}
-                        value={totalRejected}
-                        label="Total Rejected"
-                        iconBg="bg-red-50"
-                        iconColor="text-red-500"/>
-                </div>
-            )}
 
             {/* Unregistered User - Stats */}
             {!id && (
@@ -552,10 +575,32 @@ const Repository = () => {
 
             {/* Contribution graph + Leaderboard */}
             <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-4">
-                {/* Contribution graph */}
-                {id && graphData && (
-                    <div className="h-[500px]">
-                        <Line data={graphData} options={options}/>
+                {/* Registered User */}
+                {id && (
+                    <div className="flex flex-col gap-4">
+                        {/* Stats */}
+                        <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-4">
+                            <StatCard
+                                icon={ChartNoAxesCombined}
+                                value={contributionPoints}
+                                label="Contribution Points"
+                                iconBg="bg-emerald-50"
+                                iconColor="text-emerald-500"/>
+
+                            <StatCard
+                                icon={BookCheck}
+                                value={totalApproved}
+                                label="Total Approved"
+                                iconBg="bg-blue-50"
+                                iconColor="text-blue-500"/>
+                        </div>
+
+                        {/* Contribution graph */}
+                        {graphData && (
+                            <div className="flex-1">
+                                <Line data={graphData} options={options}/>
+                            </div>
+                        )}
                     </div>
                 )}
 
@@ -644,7 +689,10 @@ const Repository = () => {
                             type="text"
                             placeholder="Search by course title, course code, course name, material type or uploader name…"
                             value={searchQuery}
-                            onChange={e => setSearchQuery(e.target.value)}
+                            onChange={e => {
+                                setSearchQuery(e.target.value);
+                                setCurrentPage(1);
+                            }}
                             className="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
                         />
                     </div>
@@ -654,19 +702,23 @@ const Repository = () => {
                     {id && (
                         <select
                             value={statusFilter}
-                            onChange={(e) => setStatusFilter(e.target.value)}
+                            onChange={(e) => {
+                                setStatusFilter(e.target.value);
+                                setCurrentPage(1);
+                            }}
                             className={optionCls}
                         >
                             <option value="all">All</option>
-                            <option value="approved">Approved</option>
-                            <option value="pending">Pending</option>
-                            <option value="rejected">Rejected</option>
+                            <option value="personal">Personal</option>
                         </select>
                     )}
 
                     {id && (
                         <button
-                            onClick={() => document.getElementById('my_modal_1').showModal()}
+                            onClick={() => {
+                                setUploadStatus("idle");
+                                document.getElementById('my_modal_1').showModal();
+                            }}
                             className={`my-5 flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-blue-50 hover:border-blue-200 hover:text-blue-600 transition-all duration-150`}
                         >
                             <Upload size={15} strokeWidth={1.75}/>
@@ -693,24 +745,42 @@ const Repository = () => {
                     </div>
                 )}
 
-                {filteredMaterials.length > 0 ? (
-                    <div className={`grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4 ${!id ? "mt-5" : ""}`}>
-                        {filteredMaterials.map( material => (
-                            <ItemCard
-                                key={material._id}
-                                item={material}
-                                onView={(item) => handleView(item.url)}
-                                onDownload={(item) => handleDownload(item.url, item.title)}
-                            />
-                        ))}
+                {currentMaterials.length > 0 ? (
+                    <div className="h-[800px] flex flex-col justify-between gap-6 overflow-y-auto">
+                        <div className={`grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4 ${!id ? "mt-5" : ""}`}>
+                            {currentMaterials.map( repoItem => (
+                                <ItemCard
+                                    id={id}
+                                    key={repoItem._id}
+                                    item={repoItem}
+                                    onView={(item) => handleView(item.url)}
+                                    onDownload={(item) => handleDownload(item.url, item.title)}
+                                    onDelete={(item) => {
+                                        setItemToDeleteId(item._id);
+                                        document.getElementById('my_modal_2').showModal();
+                                    }}
+                                />
+                            ))}
+                        </div>
                     </div>
                 ): (
                     <div
-                        className="bg-white border border-gray-200 rounded-2xl py-14 flex flex-col items-center justify-center text-center">
+                        className="h-[800px] bg-white border border-gray-200 rounded-2xl py-14 flex flex-col items-center justify-center text-center mb-5">
                         <File className="w-8 h-8 text-gray-200 mb-3"/>
                         <p className="text-sm font-medium text-gray-400">No study material found</p>
                     </div>
                 )}
+
+                <div className="flex justify-center items-end my-5">
+                    <Pagination
+                        count={totalPages}
+                        page={currentPage}
+                        onChange={(event, value) => setCurrentPage(value)}
+                        color="primary"
+                        siblingCount={1}
+                        boundaryCount={1}
+                    />
+                </div>
 
                 {/* Material Upload Modal */}
                 <dialog id="my_modal_1" className="modal">
@@ -720,7 +790,11 @@ const Repository = () => {
                         <form onSubmit={handleSubmit}>
                             <button
                                 type="button"
-                                onClick={() => document.getElementById("my_modal_1").close()}
+                                onClick={() => {
+                                    document.getElementById("my_modal_1").close();
+                                    setMaterial(null);
+                                    if (fileInputRef.current) fileInputRef.current.value = "";
+                                }}
                                 className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
 
                             {/* Title */}
@@ -735,10 +809,26 @@ const Repository = () => {
                                 <textarea name="description" rows={5} className={inputCls} placeholder="Enter description here..." />
                             </div>
 
-                            {/* URL */}
+                            {/* Material */}
                             <div>
-                                <label className={labelCls}>File URL</label>
-                                <input type="url" name="url" className={inputCls} placeholder="https://example.com/file.pdf" />
+                                <label className={labelCls}>Upload Material</label>
+                                <div className="flex gap-4 items-center mb-3">
+                                    <label className="btn">
+                                        Choose File
+                                        <input
+                                            ref={fileInputRef}
+                                            type="file"
+                                            name="material"
+                                            accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt"
+                                            className="hidden"
+                                            onChange={(e) => setMaterial(e.target.files[0] || null)}
+                                        />
+                                    </label>
+
+                                    <span className="text-sm text-gray-500">
+                                        {material?.name || "No file chosen"}
+                                    </span>
+                                </div>
                             </div>
 
                             {/* Course Code */}
@@ -754,13 +844,13 @@ const Repository = () => {
                             </div>
 
                             {/* Year + Semester */}
-                            <div className="flex flex-col lg:flex-row justify-between">
-                                <div>
+                            <div className="flex flex-col lg:flex-row justify-between gap-4">
+                                <div className="flex-1">
                                     <label className={labelCls}>Year</label>
                                     <input type="text" name="year" className={inputCls} placeholder="3rd" />
                                 </div>
 
-                                <div>
+                                <div className="flex-1">
                                     <label className={labelCls}>Semester</label>
                                     <input type="text" name="semester" className={inputCls} placeholder="2nd" />
                                 </div>
@@ -776,22 +866,49 @@ const Repository = () => {
                                         onChange={(e) => setItemType(e.target.value)}
                                         className={optionCls}
                                     >
-                                        <option value="personal note">Personal Note</option>
+                                        <option value="notes">Personal Note</option>
                                         <option value="question bank">Question Bank</option>
-                                        <option value="answer">Answer</option>
-                                        <option value="ebook">Ebook</option>
+                                        <option value="solved questions">Answer</option>
+                                        <option value="project_report">Project Report</option>
+                                        <option value="lab_report">Lab Report</option>
+                                        <option value="assignment">Assignment</option>
                                         <option value="other">Other</option>
                                     </select>
                                 </div>
 
                                 {/* Submit */}
                                 <div className="modal-action">
-                                    <button type="submit" className="btn btn-primary">
+                                    <button type="submit" className="btn btn-primary" disabled={!material}>
                                         Submit
                                     </button>
                                 </div>
                             </div>
                         </form>
+                    </div>
+
+                    <form method="dialog" className="modal-backdrop">
+                        <button onClick={() => {
+                            setMaterial(null);
+                            if (fileInputRef.current) {
+                                fileInputRef.current.value = "";
+                            }}
+                        }>close</button>
+                    </form>
+                </dialog>
+
+                {/* Item deletion modal */}
+                <dialog id="my_modal_2" className="modal modal-bottom sm:modal-middle">
+                    <div className="modal-box">
+                        <p className="text-md text-gray-500">Are you sure you want to delete this item?</p>
+
+                        <div className="modal-action">
+                            <button className="btn btn-ghost btn-sm" onClick={() => document.getElementById("my_modal_2").close()}>Cancel</button>
+                            <button className="btn btn-error btn-sm text-white" onClick={() => {
+                                handleDelete(itemToDeleteId);
+                                document.getElementById("my_modal_2").close();
+                                setItemToDeleteId(null);
+                            }}>Delete</button>
+                        </div>
                     </div>
 
                     <form method="dialog" className="modal-backdrop">

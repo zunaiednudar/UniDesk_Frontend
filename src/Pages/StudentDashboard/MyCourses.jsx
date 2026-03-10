@@ -339,6 +339,7 @@ const MyCourses = () => {
 
     const activeCourses = courses.filter(c => c.status === 'active' && matchesCourse(c));
     const completedCourses = courses.filter(c => c.status === 'completed' && matchesCourse(c));
+    const recentCompleted = completedCourses.slice(0, 10);
 
     return (
         <div className="gilroy space-y-6">
