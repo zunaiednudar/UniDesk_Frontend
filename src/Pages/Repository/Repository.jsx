@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {
     ChartNoAxesCombined,
     Trophy,
@@ -191,11 +191,12 @@ const Repository = () => {
     const [totalDownloadCount, setTotalDownloadCount] = useState(0);
 
     const [statusFilter, setStatusFilter] = useState('all');
-    const [itemType, setItemType] = useState('personal notes');
+    const [itemType, setItemType] = useState('personal note');
 
     const [uploadStatus, setUploadStatus] = useState("idle");
 
-    const [material, setMaterial] = useState("");
+    const [material, setMaterial] = useState(null);
+    const fileInputRef = useRef(null);
 
     const [totalPages, setTotalPages] = useState(1);
 
@@ -246,12 +247,13 @@ const Repository = () => {
         }
     };
 
-    useEffect(() => {
-        const months = [
-            "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-        ];
+    // Helper for month mapping
+    const months = [
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    ];
 
+    useEffect(() => {
         const fetchData = async () => {
             try {
                 const [repositoryRes, leaderboardRes] = await Promise.all([
@@ -350,7 +352,7 @@ const Repository = () => {
                         return acc;
                     }, Array(12).fill(0));
 
-                console.log("Filtered other materials (Repository.jsx): ", filteredPersonalNotes);
+                console.log("Filtered other materials (Repository.jsx): ", filteredOtherMaterials);
 
                 // Build graph datasets
                 const data = {
@@ -402,7 +404,7 @@ const Repository = () => {
                 setLeaderboard(leaderboard);
                 setGraphData(data);
 
-                setTotalPages(repositoryItems.totalPages ?? 1);
+                setTotalPages(repositoryRes.data.totalPages ?? 1);
             } catch (error) {
                 console.log("Error (Repository.jsx): ", error);
             }
@@ -411,19 +413,24 @@ const Repository = () => {
         fetchData();
     }, [id]);
 
-    const filteredMaterials = repositoryItems.filter(item => {
+    // Optimize repository items loading with cache (useMemo)
+    const filteredMaterials = useMemo(() => {
         const q = searchQuery.toLowerCase();
 
-        const matchedSearch = item.title.toLowerCase().includes(q) ||
-            item.courseCode.toLowerCase().includes(q) ||
-            item.courseName.toLowerCase().includes(q) ||
-            item.itemType.toLowerCase().includes(q) ||
-            item.uploader.name.toLowerCase().includes(q);
+        return repositoryItems.filter((item) => {
+            const matchesSearch =
+                item.title.toLowerCase().includes(q) ||
+                item.courseCode.toLowerCase().includes(q) ||
+                item.courseName.toLowerCase().includes(q) ||
+                item.uploader?.name?.toLowerCase().includes(q);
 
-        const matchedStatus = (statusFilter === 'all') || (statusFilter === item.status && item.uploader._id === id);
+            const matchesStatus =
+                statusFilter === "all" || item.status === statusFilter;
 
-        return matchedSearch && matchedStatus;
-    });
+            return matchesSearch && matchesStatus;
+        });
+
+    }, [repositoryItems, searchQuery, statusFilter]);
 
     // Pagination setup
 
@@ -443,11 +450,21 @@ const Repository = () => {
         const fileData = await uploadFileToCloudinary(material);
         console.log("Material upload (Repository.jsx): ", fileData);
 
+        if (material) {
+            console.log("File size (MB):", material.size / 1024 / 1024);
+        }
+
+        if (!fileData) {
+            toast.error("You must provide study material!");
+            return;
+        }
+
         const data = {
             title: formData.get("title")?.trim(),
             description: formData.get("description")?.trim(),
             url: fileData.url,
             cloudinaryId: fileData.public_id,
+            resourceType: fileData.resource_type,
             courseCode: formData.get("course-code")?.trim(),
             courseName: formData.get("course-name")?.trim(),
             year: formData.get("year")?.trim(),
@@ -496,12 +513,18 @@ const Repository = () => {
                 setUploadStatus("success");
                 document.getElementById("my_modal_1").close();
                 e.target.reset();
-                setItemType("personal notes");
+                setItemType("personal note");
             }
         } catch (error) {
             console.log("Submission Error (Repository.jsx): ", error);
             toast.error("Failed to submit material");
             setUploadStatus("error");
+        } finally {
+            setMaterial(null);
+
+            if (fileInputRef.current) {
+                fileInputRef.current.value = "";
+            }
         }
     }
 
@@ -755,7 +778,11 @@ const Repository = () => {
                         <form onSubmit={handleSubmit}>
                             <button
                                 type="button"
-                                onClick={() => document.getElementById("my_modal_1").close()}
+                                onClick={() => {
+                                    document.getElementById("my_modal_1").close();
+                                    setMaterial(null);
+                                    if (fileInputRef.current) fileInputRef.current.value = "";
+                                }}
                                 className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
 
                             {/* Title */}
@@ -777,6 +804,7 @@ const Repository = () => {
                                     <label className="btn">
                                         Choose File
                                         <input
+                                            ref={fileInputRef}
                                             type="file"
                                             name="material"
                                             accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt"
@@ -836,7 +864,7 @@ const Repository = () => {
 
                                 {/* Submit */}
                                 <div className="modal-action">
-                                    <button type="submit" className="btn btn-primary">
+                                    <button type="submit" className="btn btn-primary" disabled={!material}>
                                         Submit
                                     </button>
                                 </div>
@@ -845,7 +873,12 @@ const Repository = () => {
                     </div>
 
                     <form method="dialog" className="modal-backdrop">
-                        <button>close</button>
+                        <button onClick={() => {
+                            setMaterial(null);
+                            if (fileInputRef.current) {
+                                fileInputRef.current.value = "";
+                            }}
+                        }>close</button>
                     </form>
                 </dialog>
             </div>
