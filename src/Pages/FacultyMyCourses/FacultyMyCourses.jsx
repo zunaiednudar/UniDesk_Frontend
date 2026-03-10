@@ -172,6 +172,7 @@ const FacultyMyCourses = () => {
         }
 
         try {
+            setLoadingJoinCourse(true);
             const res = await axiosSecure.post(`/courses/faculty/join?code=${code}`);
 
             if (!res?.data?.success) {
@@ -186,6 +187,8 @@ const FacultyMyCourses = () => {
             toast.success("Joined course successfully");
         } catch (error) {
             toast.error(error.response?.data?.message || "Something went wrong");
+        }finally{
+            setLoadingJoinCourse(false);
         }
     };
 
@@ -246,7 +249,6 @@ const FacultyMyCourses = () => {
                     <button className="w-25 flex gap-2 items-center bg-[#1E40AF] text-white px-5 py-2 rounded-lg cursor-pointer text-center transition-colors hover:bg-blue-600 duration-500 text-xs md:text-sm lg:text-md" onClick={handleOpenCreateCourseModal}><IoMdCreate /> Create</button>
                     <button className="w-25 flex gap-2 items-center bg-orange-600 text-white px-5 py-2 rounded-lg cursor-pointer text-center transition-colors hover:bg-orange-500 duration-500 text-xs md:text-sm lg:text-md" onClick={handleOpenJoinCourseModal}><IoMdAdd /> Join</button>
                 </div>
-
             </div>
 
             <div className='w-full max-w-full flex flex-col justify-items-center gap-10 shadow-xl p-5'>
@@ -256,7 +258,7 @@ const FacultyMyCourses = () => {
                 <div className='w-full flex flex-col gap-5'>
                     <div className="flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full bg-green-500" />
-                        <p className="text-xl font-bold text-gray-800">Active Courses</p>
+                        <p className="graphik text-xl font-bold text-gray-800">Active Courses</p>
                         <span className="text-xs text-gray-400 font-medium bg-gray-100 px-2 py-0.5 rounded-full">{activeCourses.length}</span>
                     </div>
                     <hr className='border-gray-200' />
