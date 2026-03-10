@@ -19,7 +19,7 @@ const FacultyDashboard = () => {
     const [loadingAppointments, setLoadingAppointments] = useState(true);
     const [loadingAssignments, setLoadingAssignments] = useState(true);
 
-    const dashboardLoading=loadingCourses || loadingAppointments || loadingAssignments;
+    const dashboardLoading = loadingCourses || loadingAppointments || loadingAssignments;
 
     // Data collection
 
@@ -103,7 +103,7 @@ const FacultyDashboard = () => {
             try {
                 setLoadingAssignments(true);
 
-                const res=await axiosSecure.get("/submission/faculty/pending");
+                const res = await axiosSecure.get("/submission/faculty/pending");
 
                 console.log(res.data.assignments);
 
@@ -119,8 +119,37 @@ const FacultyDashboard = () => {
         fetchAssignments();
     }, []);
 
+    // Stats card info
+
+    const stats = [
+        {
+            title: "Total Courses",
+            count: (activeCourses.length + completedCourses.length >= 0) ? activeCourses.length + completedCourses.length : "0",
+            logo: GraduationCap,
+            logoBg: "bg-blue-600"
+        },
+        {
+            title: "Total Students",
+            count: totalStudents,
+            logo: MdPeopleOutline,
+            logoBg: "bg-green-600"
+        },
+        {
+            title: "Active Courses",
+            count: activeCourses.length,
+            logo: VscLayersActive,
+            logoBg: "bg-yellow-600"
+        },
+        {
+            title: "Upcoming Appointments",
+            count: appointments.length,
+            logo: MdOutlineCalendarToday,
+            logoBg: "bg-purple-600"
+        },
+    ];
+
     // console.log(activeCourses.length+completedCourses.length);
-    console.log(assignments);
+    // console.log(assignments);
     return (
         <div className='w-full max-w-full p-5 flex flex-col gap-10 gilroy'>
 
@@ -144,40 +173,17 @@ const FacultyDashboard = () => {
                         )
                     ) :
                         (
-                            <>
-                                <div className='w-full px-5 py-10 rounded-lg shadow-xl flex items-start justify-between box-border hover:-translate-y-1 transition-all duration-300'>
+                            stats.map(stat =>
+                                <div key={stat.title} className='w-full px-5 py-10 rounded-lg shadow-xl flex items-start justify-between box-border hover:-translate-y-1 transition-all duration-300'>
                                     <div>
-                                        <p className='text-gray-500 text-sm'>Total Courses</p>
-                                        <p className='graphik text-5xl font-bold'>{(activeCourses.length + completedCourses.length >= 0) ? activeCourses.length + completedCourses.length : "0"}</p>
+                                        <p className='text-gray-500 text-sm'>{stat.title}</p>
+                                        <p className='graphik text-5xl font-bold'>{stat.count}</p>
                                     </div>
-                                    <div className='w-10 h-10 bg-[#1E40AF] rounded-lg flex justify-center items-center'>
-                                        <GraduationCap className='w-5 h-5 text-white' /></div>
-                                </div>
-                                <div className='w-full px-5 py-10 rounded-lg shadow-xl flex items-start justify-between box-border hover:-translate-y-1 transition-all duration-300'>
-                                    <div>
-                                        <p className='text-gray-500 text-sm'>Total Students</p>
-                                        <p className='graphik text-5xl font-bold'>{totalStudents}</p>
+                                    <div className={`w-10 h-10 ${stat.logoBg} rounded-lg flex justify-center items-center`}>
+                                        <stat.logo className='w-5 h-5 text-white' />
                                     </div>
-                                    <div className='w-10 h-10 bg-[#1eaf75] rounded-lg flex justify-center items-center box-border'>
-                                        <MdPeopleOutline className='w-5 h-5 text-white' /></div>
                                 </div>
-                                <div className='w-full px-5 py-10 rounded-lg shadow-xl flex items-start justify-between box-border hover:-translate-y-1 transition-all duration-300'>
-                                    <div>
-                                        <p className='text-gray-500 text-sm'>Active Courses</p>
-                                        <p className='graphik text-5xl font-bold'>{activeCourses.length}</p>
-                                    </div>
-                                    <div className='w-10 h-10 bg-[#afad1e] rounded-lg flex justify-center items-center'>
-                                        <VscLayersActive className='w-5 h-5 text-white' /></div>
-                                </div>
-                                <div className='w-full px-5 py-10 rounded-lg shadow-xl flex items-start justify-between hover:-translate-y-1 transition-all duration-300'>
-                                    <div>
-                                        <p className='text-gray-500 text-sm'>Upcoming Appointments</p>
-                                        <p className='graphik text-5xl font-bold'>{appointments.length}</p>
-                                    </div>
-                                    <div className='w-10 h-10 bg-[#af1ea8] rounded-lg flex justify-center items-center'>
-                                        <MdOutlineCalendarToday className='w-5 h-5 text-white' /></div>
-                                </div>
-                            </>
+                            )
                         )
                 }
             </div>

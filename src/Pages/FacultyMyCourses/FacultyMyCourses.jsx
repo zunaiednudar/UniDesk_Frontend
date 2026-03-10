@@ -147,6 +147,7 @@ const FacultyMyCourses = () => {
     // Join course modal related
 
     const handleOpenJoinCourseModal = () => joinCourseModalRef.current.showModal();
+
     const handleCloseJoinCourseModal = () => {
         joinCourseModalRef.current.close();
         setTimeout(() => {
@@ -253,7 +254,11 @@ const FacultyMyCourses = () => {
                 {/* Active courses */}
 
                 <div className='w-full flex flex-col gap-5'>
-                    <p className=' text-xl md:text-2xl lg:text-3xl font-bold graphik'>Active Courses</p>
+                    <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-green-500" />
+                        <p className="text-xl font-bold text-gray-800">Active Courses</p>
+                        <span className="text-xs text-gray-400 font-medium bg-gray-100 px-2 py-0.5 rounded-full">{activeCourses.length}</span>
+                    </div>
                     <hr className='border-gray-200' />
                     <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5'>
                         {
@@ -272,22 +277,50 @@ const FacultyMyCourses = () => {
                                     activeCourses.map(course =>
                                         <div key={course._id} className='w-full flex flex-col p-6 rounded-xl box-border shadow-md  hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-gray-200'>
                                             <div className='mb-6 flex flex-col gap-2'>
-                                                <p className='graphik font-semibold text-xl md:text-2xl lg:text-3xl'>{course.courseCode}</p>
-                                                <p className='text-md md:text-lg font-semibold text-gray-500 truncate'>{course.courseName}</p>
+                                                <p className='graphik font-semibold text-lg md:text-xl lg:text-2xl'>{course.courseCode}</p>
+                                                <p className='text-sm md:text-md font-semibold text-gray-500 truncate'>{course.courseName}</p>
                                             </div>
                                             <div className='mb-6'>
-                                                <div className='flex items-center gap-2 text-xs md:text-lg font-semibold text-gray-500'>
+                                                <div className='flex items-center gap-2 text-xs md:text-sm font-semibold text-gray-500'>
                                                     <Building2 className='w-4 h-4' /> {course.department.toUpperCase()}</div>
-                                                <div className='flex items-center gap-2 text-xs md:text-lg font-semibold text-gray-500'>
+                                                <div className='flex items-center gap-2 text-xs md:text-sm font-semibold text-gray-500'>
                                                     <GraduationCap className='w-4 h-4' /> {course.year} • {course.semester} • {course.session}
                                                 </div>
-                                                <div className='flex items-center gap-2 text-xs md:text-lg font-semibold text-gray-500'>
+                                                <div className='flex items-center gap-2 text-xs md:text-sm font-semibold text-gray-500'>
                                                     <Users className='w-4 h-4' /> {course.students.length} {course.students.length === 1 ? "student" : "students"}
                                                 </div>
                                             </div>
-                                            <hr className='border-gray-200 my-4' />
-                                            <Link to={`/dashboard/faculty/my-courses/${course._id}`}
-                                                className=' flex gap-2 items-center bg-[#1E40AF] text-white px-5 py-2 rounded-lg text-center transition-colors hover:bg-blue-600 duration-500 justify-center'><Eye /> View</Link>
+                                            {
+                                                course.faculties?.length > 0 &&
+                                                <div>
+                                                    <span className="text-sm text-gray-500 mb-2">Instructors</span>
+
+                                                    {/* Faculty info */}
+
+                                                    <div className="space-y-2">
+                                                        {
+                                                            course.faculties?.map((faculty) => (
+                                                                <div key={faculty.email} className="flex items-center gap-2 text-sm text-gray-500">
+                                                                    <img src={faculty?.photoURL} alt={faculty?.name} className="w-5 h-5 rounded-full object-cover mr-2"
+                                                                    />
+                                                                    <div className="flex flex-col items-start min-w-0">
+                                                                        <p className="text-sm text-gray-500 truncate">{faculty?.name}</p>
+                                                                        <p className="text-xs text-gray-400 break-all">{faculty?.email}</p>
+                                                                    </div>
+                                                                </div>
+                                                            )
+                                                            )
+                                                        }
+                                                    </div>
+                                                </div>
+                                            }
+
+                                            <div className='flex flex-col py-4 mt-auto gap-4'>
+                                                <hr className='border-gray-200' />
+                                                <Link to={`/dashboard/faculty/my-courses/${course._id}`}
+                                                    className=' flex gap-2 items-center bg-[#1E40AF] text-white px-5 py-2 rounded-lg text-center transition-colors hover:bg-blue-600 duration-500 justify-center'><Eye /> View
+                                                </Link>
+                                            </div>
                                         </div>
                                     )
                                 )
@@ -298,7 +331,7 @@ const FacultyMyCourses = () => {
                 {/* Completed courses */}
 
                 <div className='w-full md:flex-2  flex flex-col gap-5'>
-                    <p className='text-xl md:text-2xl lg:text-3xl font-bold graphik'>Completed Courses</p>
+                    <p className="graphik text-xl font-bold text-gray-800">Completed Courses</p>
                     <hr className='border-gray-200' />
                     <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5'>
                         {
@@ -317,21 +350,50 @@ const FacultyMyCourses = () => {
                                     completedCourses.map(course =>
                                         <div key={course._id} className='w-full flex flex-col p-6 rounded-xl box-border shadow-md  hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 border border-gray-200'>
                                             <div className='mb-6 flex flex-col gap-2'>
-                                                <p className='graphik font-semibold text-xl md:text-2xl lg:text-3xl'>{course.courseCode}</p>
-                                                <p className='text-md md:text-lg font-semibold text-gray-500 truncate'>{course.courseName}</p>
+                                                <p className='graphik font-semibold text-lg md:text-xl lg:text-2xl'>{course.courseCode}</p>
+                                                <p className='text-sm md:text-md font-semibold text-gray-500 truncate'>{course.courseName}</p>
                                             </div>
                                             <div className='mb-6'>
-                                                <div className='flex items-center gap-2 text-xs md:text-lg font-semibold text-gray-500'>
+                                                <div className='flex items-center gap-2 text-xs md:text-sm font-semibold text-gray-500'>
                                                     <Building2 className='w-4 h-4' /> {course.department.toUpperCase()}</div>
-                                                <div className='flex items-center gap-2 text-xs md:text-lg font-semibold text-gray-500'>
+                                                <div className='flex items-center gap-2 text-xs md:text-sm font-semibold text-gray-500'>
                                                     <GraduationCap className='w-4 h-4' /> {course.year} • {course.semester} • {course.session}
                                                 </div>
-                                                <div className='flex items-center gap-2 text-xs md:text-lg font-semibold text-gray-500'>
+                                                <div className='flex items-center gap-2 text-xs md:text-sm font-semibold text-gray-500'>
                                                     <Users className='w-4 h-4' /> {course.students.length} {course.students.length === 1 ? "student" : "students"}
                                                 </div>
                                             </div>
-                                            <hr className='border-gray-200 my-4' />
-                                            <Link to={`/dashboard/faculty/my-courses/${course._id}`} className=' flex gap-2 items-center bg-[#1E40AF] text-white px-5 py-2 rounded-lg text-center transition-colors hover:bg-blue-600 duration-500 justify-center'><Eye /> View</Link>
+                                            {
+                                                course.faculties?.length > 0 &&
+                                                <div>
+                                                    <span className="text-sm text-gray-500 mb-2">Instructors</span>
+
+                                                    {/* Faculty info */}
+
+                                                    <div className="space-y-2">
+                                                        {
+                                                            course.faculties?.map((faculty) => (
+                                                                <div key={faculty.email} className="flex items-center gap-2 text-sm text-gray-500">
+                                                                    <img src={faculty?.photoURL} alt={faculty?.name} className="w-5 h-5 rounded-full object-cover mr-2"
+                                                                    />
+                                                                    <div className="flex flex-col items-start min-w-0">
+                                                                        <p className="text-sm text-gray-500 truncate">{faculty?.name}</p>
+                                                                        <p className="text-xs text-gray-400 break-all">{faculty?.email}</p>
+                                                                    </div>
+                                                                </div>
+                                                            )
+                                                            )
+                                                        }
+                                                    </div>
+                                                </div>
+                                            }
+
+                                            <div className='flex flex-col py-4 mt-auto gap-4'>
+                                                <hr className='border-gray-200' />
+                                                <Link to={`/dashboard/faculty/my-courses/${course._id}`}
+                                                    className=' flex gap-2 items-center bg-[#1E40AF] text-white px-5 py-2 rounded-lg text-center transition-colors hover:bg-blue-600 duration-500 justify-center'><Eye /> View
+                                                </Link>
+                                            </div>
                                         </div>
                                     )
                                 )

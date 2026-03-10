@@ -1331,7 +1331,7 @@ const FacultyCourseDetails = () => {
                                             </div>
 
                                             <p className='text-xs md:text-sm text-gray-600 line-clamp-2'>{assignment?.description}</p>
-                                            <div className='flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-gray-700'>
+                                            <div className='flex items-center gap-2 rounded-lg bg-gray-50 py-2 text-gray-700'>
                                                 <CalendarClock className='w-4 h-4 text-blue-600' />
                                                 <span className='truncate'>{formatDueDate(assignment?.dueDate)}</span>
                                             </div>
