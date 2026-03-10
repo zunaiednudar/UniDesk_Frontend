@@ -71,7 +71,6 @@ const EmptyState = ({message}) => (
 // Contains basic course information
 const CourseCard = ({course, onFilesClick, navigate}) => (
     <div
-        onClick={() => navigate(`/dashboard/student/courses/${course.id}/details`)}
         className="flex flex-col group bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md hover:border-blue-200 transition-all duration-200 cursor-pointer relative overflow-hidden"
     >
         {/* Hover accent bar */}
@@ -79,7 +78,7 @@ const CourseCard = ({course, onFilesClick, navigate}) => (
             className="absolute top-0 left-6 right-6 h-0.5 bg-gradient-to-r from-blue-400 to-blue-300 rounded-b-full opacity-0 group-hover:opacity-100 transition-opacity duration-200"/>
 
         {/* Header */}
-        <div className="flex items-start justify-between mb-4">
+        <div className="flex items-start justify-between mb-4 min-h-[100px]">
             <div className="min-w-0 flex-1">
                 <h3 className="text-base font-bold text-gray-900 group-hover:text-blue-600 transition-colors duration-150">
                     {course.code}
@@ -152,14 +151,16 @@ const CourseCard = ({course, onFilesClick, navigate}) => (
                 <span>Files</span>
             </button>
 
-            <div className="p-2 flex justify-center items-center gap-1 bg-blue-800 hover:bg-blue-900 rounded-lg">
+            <button
+                onClick={() => navigate(`/dashboard/student/courses/${course.id}/details`)}
+                className="p-2 flex justify-center items-center gap-1 bg-blue-800 hover:bg-blue-900 cursor-pointer rounded-lg">
                 <Eye
                     size={16}
                     className="text-gray-300"
                     strokeWidth={2}
                 />
                 <span className="text-xs text-gray-300">View</span>
-            </div>
+            </button>
         </div>
     </div>
 );
@@ -352,7 +353,6 @@ const MyCourses = () => {
 
     return (
         <div className="gilroy space-y-6">
-
             {/* Page title */}
             <div className="flex items-start justify-between gap-4">
                 <div>
@@ -398,7 +398,7 @@ const MyCourses = () => {
                 <div className="space-y-4 mb-4">
                     <div className="flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full bg-green-500"/>
-                        <h2 className="text-sm font-bold text-gray-800">Active Courses</h2>
+                        <h2 className="graphik text-sm font-semibold text-gray-800">Active Courses</h2>
                         {!loading && (
                             <span className="text-xs text-gray-400 font-medium bg-gray-100 px-2 py-0.5 rounded-full">
                             {activeCourses.length}
