@@ -9,7 +9,7 @@ import {
     Search,
     File,
     FileImage, FileText,
-    Calendar, Download, Eye, UsersRound, BookCheck, FolderOpen
+    Calendar, Download, Eye, UsersRound, BookCheck, Trash2
 } from 'lucide-react';
 import {
     Chart as ChartJS,
@@ -84,7 +84,7 @@ const fileTypeConfig = {
 
 const defaultFileType = {icon: File, bg: "bg-gray-100", text: "text-gray-500", label: "File"};
 
-const ItemCard = ({item, onDownload, onView}) => {
+const ItemCard = ({id, item, onDownload, onView, onDelete}) => {
     const extension = item.url?.split(".").pop().split("?")[0].toLowerCase() ?? "";
     const fileConfig = fileTypeConfig[extension] ?? defaultFileType;
     const FileIcon = fileConfig.icon;
@@ -162,6 +162,7 @@ const ItemCard = ({item, onDownload, onView}) => {
                         <Eye className="w-3.5 h-3.5" />
                         View
                     </button>
+
                     <button
                         onClick={() => {
                             onDownload?.(item);
@@ -171,10 +172,46 @@ const ItemCard = ({item, onDownload, onView}) => {
                         Download
                     </button>
                 </div>
+
+                {(item.uploader._id === id) && (
+                    <button
+                        onClick={() => {
+                            onDelete?.(item);
+                        }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-orange-700 rounded-lg hover:bg-orange-800 transition">
+                        <Trash2 className="w-3.5 h-3.5" />
+                        Delete
+                    </button>
+                )}
             </div>
         </div>
     );
 };
+
+// Graph UI options
+const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+        legend: {
+            position: "top",
+        },
+        title: {
+            display: true,
+            text: `Contribution Activity (${new Date().getFullYear()})`,
+            font: {
+                size: 16
+            },
+            color: "#111827"
+        }
+    }
+};
+
+// Helper for month mapping
+const months = [
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+];
 
 const Repository = () => {
     const {id} = useParams();
@@ -198,7 +235,9 @@ const Repository = () => {
     const [material, setMaterial] = useState(null);
     const fileInputRef = useRef(null);
 
-    const [totalPages, setTotalPages] = useState(1);
+    const [itemToDeleteId, setItemToDeleteId] = useState(null);
+
+    const [currentPage, setCurrentPage] = useState(1);
 
     const handleDownload = async (url, title) => {
         try {
@@ -216,6 +255,19 @@ const Repository = () => {
         }
     };
 
+    const handleDelete = async (itemId) => {
+        try {
+            const res = await axiosSecure.delete(`/repository/${itemId}`);
+
+            if (res.status === 200) {
+                toast("Item permanently deleted");
+                window.location.reload();
+            }
+        } catch {
+            toast.error("Item deletion failed");
+        }
+    }
+
     const handleView = (url) => {
         const ext = url.split('?')[0].split('.').pop().toLowerCase();
         const imageTypes = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
@@ -223,35 +275,9 @@ const Repository = () => {
         if (imageTypes.includes(ext)) {
             window.open(url, '_blank', 'noopener,noreferrer');
         } else {
-            window.open(`https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`, '_blank');
+            window.open(`https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`, '_blank', 'noopener,noreferrer');
         }
     }
-
-
-    // Graph UI options
-    const options = {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: {
-                position: "top",
-            },
-            title: {
-                display: true,
-                text: `Contribution Activity (${new Date().getFullYear()})`,
-                font: {
-                    size: 16
-                },
-                color: "#111827"
-            }
-        }
-    };
-
-    // Helper for month mapping
-    const months = [
-        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-    ];
 
     useEffect(() => {
         const fetchData = async () => {
@@ -260,9 +286,6 @@ const Repository = () => {
                     axiosSecure.get('/repository'),
                     axiosSecure.get('/repository/leaderboard'),
                 ]);
-
-                console.log("Repository data (Repository.jsx): ", repositoryRes.data);
-                console.log("Leaderboard data (Repository.jsx): ", leaderboardRes.data);
 
                 const repositoryItems = repositoryRes.data.items;
 
@@ -303,20 +326,21 @@ const Repository = () => {
                         return (item.uploader._id === id) && ((item.itemType.toLowerCase() === "question bank") || (item.itemType.toLowerCase() === "answer"));
                     });
 
-                const allEbooks = repositoryItems
+                const allAssessments = repositoryItems
                     .filter(item => {
-                        return (item.uploader._id === id) && (item.itemType.toLowerCase() === "ebook");
+                        return (item.uploader._id === id) && ((item.itemType.toLowerCase() === "project report") || (item.itemType.toLowerCase() === "lab report") || (item.itemType.toLowerCase() === "assignment"));
                     });
 
                 const otherMaterials = repositoryItems
                     .filter(item => {
-                        return (item.uploader._id === id) && (item.itemType.toLowerCase() !== "personal note")
+                        return (item.uploader._id === id)
+                            && (item.itemType.toLowerCase() !== "personal note")
                             && (item.itemType.toLowerCase() !== "question bank")
                             && (item.itemType.toLowerCase() !== "answer")
-                            && (item.itemType.toLowerCase() !== "ebook");
+                            && (item.itemType.toLowerCase() !== "project report")
+                            && (item.itemType.toLowerCase() !== "lab report")
+                            && (item.itemType.toLowerCase() !== "assignment");
                     });
-
-                console.log("All question banks (Repository.jsx): ", allQuestionBanksAnswers);
 
                 // Month mapping
 
@@ -336,7 +360,7 @@ const Repository = () => {
                         return acc;
                     }, Array(12).fill(0));
 
-                const filteredEbooks = allEbooks
+                const filteredAssessments = allAssessments
                     .reduce((acc, item) => {
                         const month = new Date(item.approvedAt).getMonth();
                         if (new Date(item.approvedAt).getFullYear() === new Date().getFullYear())
@@ -352,7 +376,7 @@ const Repository = () => {
                         return acc;
                     }, Array(12).fill(0));
 
-                console.log("Filtered other materials (Repository.jsx): ", filteredOtherMaterials);
+                console.log(filteredOtherMaterials);
 
                 // Build graph datasets
                 const data = {
@@ -373,8 +397,8 @@ const Repository = () => {
                             tension: 0.4
                         },
                         {
-                            label: "Ebooks",
-                            data: filteredEbooks,
+                            label: "Assessments",
+                            data: filteredAssessments,
                             borderColor: "#F59E0B",
                             backgroundColor: "#F59E0B",
                             tension: 0.4
@@ -403,10 +427,8 @@ const Repository = () => {
 
                 setLeaderboard(leaderboard);
                 setGraphData(data);
-
-                setTotalPages(repositoryRes.data.totalPages ?? 1);
-            } catch (error) {
-                console.log("Error (Repository.jsx): ", error);
+            } catch {
+                toast.error("Error with fetching data");
             }
         };
 
@@ -425,46 +447,36 @@ const Repository = () => {
                 item.uploader?.name?.toLowerCase().includes(q);
 
             const matchesStatus =
-                statusFilter === "all" || item.status === statusFilter;
+                statusFilter === "all"
+                    ? (item.status === "approved" || item.uploader._id === id)
+                    : (item.status === statusFilter && item.uploader._id === id);
 
             return matchesSearch && matchesStatus;
         });
 
-    }, [repositoryItems, searchQuery, statusFilter]);
+    }, [repositoryItems, searchQuery, statusFilter, id]);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchQuery, statusFilter]);
 
     // Pagination setup
 
-    const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
 
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const currentMaterials = filteredMaterials.slice(indexOfFirstItem, indexOfLastItem);
-    // const totalPages = Math.ceil(filteredMaterials.length / itemsPerPage);
+    const totalPages = Math.max(1, Math.ceil(filteredMaterials.length / itemsPerPage));
 
     const handleSubmit = async (e) => {
         e.preventDefault();
 
         const formData = new FormData(e.target);
 
-        const fileData = await uploadFileToCloudinary(material);
-        console.log("Material upload (Repository.jsx): ", fileData);
-
-        if (material) {
-            console.log("File size (MB):", material.size / 1024 / 1024);
-        }
-
-        if (!fileData) {
-            toast.error("You must provide study material!");
-            return;
-        }
-
-        const data = {
+        let data = {
             title: formData.get("title")?.trim(),
             description: formData.get("description")?.trim(),
-            url: fileData.url,
-            cloudinaryId: fileData.public_id,
-            resourceType: fileData.resource_type,
             courseCode: formData.get("course-code")?.trim(),
             courseName: formData.get("course-name")?.trim(),
             year: formData.get("year")?.trim(),
@@ -472,7 +484,10 @@ const Repository = () => {
             itemType: itemType
         };
 
-        console.log("Data (Repository.jsx): ", data);
+        if (!material) {
+            toast.error("You must provide study material!");
+            return;
+        }
 
         if (!data.title) {
             toast.error("You must give a title of the study material!");
@@ -481,11 +496,6 @@ const Repository = () => {
 
         if (!data.description) {
             toast.error("You must give a valid description of the study material!");
-            return;
-        }
-
-        if (!data.url) {
-            toast.error("You must give a valid URL of the study material!");
             return;
         }
 
@@ -504,27 +514,37 @@ const Repository = () => {
             return;
         }
 
+        const fileData = await uploadFileToCloudinary(material);
+
+        if (!fileData?.url) {
+            toast.error("File upload failed. Please try again.");
+            return;
+        }
+
+        data = {
+            ...data,
+            url: fileData.url,
+            cloudinaryId: fileData.public_id,
+            resourceType: fileData.resource_type
+        };
 
         try {
             const submissionRes = await axiosSecure.post(`/repository`, data);
-            console.log(submissionRes.status);
 
             if (submissionRes.status === 201) {
                 setUploadStatus("success");
                 document.getElementById("my_modal_1").close();
                 e.target.reset();
                 setItemType("personal note");
+
+                setMaterial(null);
+                if (fileInputRef.current) {
+                    fileInputRef.current.value = "";
+                }
             }
-        } catch (error) {
-            console.log("Submission Error (Repository.jsx): ", error);
+        } catch {
             toast.error("Failed to submit material");
             setUploadStatus("error");
-        } finally {
-            setMaterial(null);
-
-            if (fileInputRef.current) {
-                fileInputRef.current.value = "";
-            }
         }
     }
 
@@ -705,13 +725,15 @@ const Repository = () => {
                             <option value="all">All</option>
                             <option value="approved">Approved</option>
                             <option value="pending">Pending</option>
-                            <option value="rejected">Rejected</option>
                         </select>
                     )}
 
                     {id && (
                         <button
-                            onClick={() => document.getElementById('my_modal_1').showModal()}
+                            onClick={() => {
+                                setUploadStatus("idle");
+                                document.getElementById('my_modal_1').showModal();
+                            }}
                             className={`my-5 flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-blue-50 hover:border-blue-200 hover:text-blue-600 transition-all duration-150`}
                         >
                             <Upload size={15} strokeWidth={1.75}/>
@@ -741,19 +763,24 @@ const Repository = () => {
                 {currentMaterials.length > 0 ? (
                     <div className="h-[800px] flex flex-col justify-between gap-6 overflow-y-auto">
                         <div className={`grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4 ${!id ? "mt-5" : ""}`}>
-                            {currentMaterials.map( material => (
+                            {currentMaterials.map( repoItem => (
                                 <ItemCard
-                                    key={material._id}
-                                    item={material}
+                                    id={id}
+                                    key={repoItem._id}
+                                    item={repoItem}
                                     onView={(item) => handleView(item.url)}
                                     onDownload={(item) => handleDownload(item.url, item.title)}
+                                    onDelete={(item) => {
+                                        setItemToDeleteId(item._id);
+                                        document.getElementById('my_modal_2').showModal();
+                                    }}
                                 />
                             ))}
                         </div>
                     </div>
                 ): (
                     <div
-                        className="bg-white border border-gray-200 rounded-2xl py-14 flex flex-col items-center justify-center text-center mb-5">
+                        className="h-[800px] bg-white border border-gray-200 rounded-2xl py-14 flex flex-col items-center justify-center text-center mb-5">
                         <File className="w-8 h-8 text-gray-200 mb-3"/>
                         <p className="text-sm font-medium text-gray-400">No study material found</p>
                     </div>
@@ -857,7 +884,9 @@ const Repository = () => {
                                         <option value="personal note">Personal Note</option>
                                         <option value="question bank">Question Bank</option>
                                         <option value="answer">Answer</option>
-                                        <option value="ebook">Ebook</option>
+                                        <option value="project report">Project Report</option>
+                                        <option value="lab report">Lab Report</option>
+                                        <option value="assignment">Assignment</option>
                                         <option value="other">Other</option>
                                     </select>
                                 </div>
@@ -879,6 +908,26 @@ const Repository = () => {
                                 fileInputRef.current.value = "";
                             }}
                         }>close</button>
+                    </form>
+                </dialog>
+
+                {/* Item deletion modal */}
+                <dialog id="my_modal_2" className="modal modal-bottom sm:modal-middle">
+                    <div className="modal-box">
+                        <p className="text-md text-gray-500">Are you sure you want to delete this item?</p>
+
+                        <div className="modal-action">
+                            <button className="btn btn-ghost btn-sm" onClick={() => document.getElementById("my_modal_2").close()}>Cancel</button>
+                            <button className="btn btn-error btn-sm text-white" onClick={() => {
+                                handleDelete(itemToDeleteId);
+                                document.getElementById("my_modal_2").close();
+                                setItemToDeleteId(null);
+                            }}>Delete</button>
+                        </div>
+                    </div>
+
+                    <form method="dialog" className="modal-backdrop">
+                        <button>close</button>
                     </form>
                 </dialog>
             </div>
