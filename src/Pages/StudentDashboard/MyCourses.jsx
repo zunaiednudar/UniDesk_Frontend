@@ -9,17 +9,18 @@ import {
     Hash,
     AlertCircle,
     FolderOpen,
-    ChevronRight,
+    Eye,
     CheckCircle,
-    Check, ArrowRight,
     Plus, X, Loader2, LogIn
 } from 'lucide-react';
-import {NavLink, useNavigate} from 'react-router';
+import { useNavigate} from 'react-router';
 import axiosSecure from "../../utils/axiosSecure.js";
 import formatName from "../../utils/formatName.js";
 import {AuthContext} from "../../Providers/AuthProvider/AuthProvider.jsx";
 import CourseFilesDrawer from "../../Components/Course/CourseFilesDrawer.jsx";
 import DefaultProfile from "../../assets/default-profile.png";
+import { Pagination } from '@mui/material';
+import {toast} from "sonner";
 
 const statusBadgeConfig = {
     active: 'bg-green-100 text-green-700',
@@ -71,7 +72,7 @@ const EmptyState = ({message}) => (
 const CourseCard = ({course, onFilesClick, navigate}) => (
     <div
         onClick={() => navigate(`/dashboard/student/courses/${course.id}/details`)}
-        className="group bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md hover:border-blue-200 transition-all duration-200 cursor-pointer relative overflow-hidden"
+        className="flex flex-col group bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md hover:border-blue-200 transition-all duration-200 cursor-pointer relative overflow-hidden"
     >
         {/* Hover accent bar */}
         <div
@@ -80,10 +81,10 @@ const CourseCard = ({course, onFilesClick, navigate}) => (
         {/* Header */}
         <div className="flex items-start justify-between mb-4">
             <div className="min-w-0 flex-1">
-                <h3 className="text-base font-bold text-gray-900 truncate group-hover:text-blue-600 transition-colors duration-150">
+                <h3 className="text-base font-bold text-gray-900 group-hover:text-blue-600 transition-colors duration-150">
                     {course.code}
                 </h3>
-                <p className="text-sm text-gray-500 mt-0.5 truncate">{course.name}</p>
+                <p className="text-sm text-gray-500 mt-0.5">{course.name}</p>
             </div>
             <span
                 className={`ml-3 flex-shrink-0 px-2.5 py-1 rounded-full text-xs font-semibold capitalize ${statusBadgeConfig[course.status] ?? 'bg-gray-100 text-gray-600'}`}>
@@ -91,7 +92,7 @@ const CourseCard = ({course, onFilesClick, navigate}) => (
             </span>
         </div>
 
-        <div className="flex flex-col justify-between gap-4">
+        <div className="flex-1 flex flex-col justify-between gap-4">
             {/* Meta */}
             <div className="space-y-2 mb-5">
                 {course.department && (
@@ -103,7 +104,7 @@ const CourseCard = ({course, onFilesClick, navigate}) => (
                 {(course.year || course.semester || course.session) && (
                     <div className="flex items-center gap-2 text-sm text-gray-500">
                         <Hash size={14} className="flex-shrink-0 text-gray-400"/>
-                        <span className="truncate">
+                        <span>
                             {[course.year, course.semester, course.session].filter(Boolean).join(' · ')}
                         </span>
                     </div>
@@ -121,7 +122,7 @@ const CourseCard = ({course, onFilesClick, navigate}) => (
             }
 
             {/* Faculty info */}
-            <div className="space-y-2">
+            <div className="flex-1 space-y-2">
                 {course.faculties?.map((f, idx) => (
                     <div key={idx} className="flex items-center gap-2 text-sm text-gray-500">
                         <img
@@ -139,7 +140,7 @@ const CourseCard = ({course, onFilesClick, navigate}) => (
         </div>
 
         {/* Actions */}
-        <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+        <div className="flex flex-col justify-between pt-4 border-t border-gray-100 gap-4">
             <button
                 onClick={e => {
                     e.stopPropagation();
@@ -150,16 +151,14 @@ const CourseCard = ({course, onFilesClick, navigate}) => (
                 <FolderOpen size={15} strokeWidth={1.75}/>
                 <span>Files</span>
             </button>
-            <div className="flex items-center gap-1">
-                <span
-                    className="text-xs text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity duration-150 mr-1">
-                    View details
-                </span>
-                <ChevronRight
+
+            <div className="p-2 flex justify-center items-center gap-1 bg-blue-800 hover:bg-blue-900 rounded-lg">
+                <Eye
                     size={16}
-                    className="text-gray-300 group-hover:text-orange-400 group-hover:translate-x-0.5 transition-all duration-150"
+                    className="text-gray-300"
                     strokeWidth={2}
                 />
+                <span className="text-xs text-gray-300">View</span>
             </div>
         </div>
     </div>
@@ -272,6 +271,8 @@ const MyCourses = () => {
     const [activeCourse, setActiveCourse] = useState(null);
     const [joinOpen, setJoinOpen] = useState(false);
 
+    const [currentPage, setCurrentPage] = useState(1);
+
     // Fetch course
     const fetchCourses = async () => {
         setLoading(true);
@@ -314,8 +315,8 @@ const MyCourses = () => {
             ];
 
             setCourses(detailed);
-        } catch (err) {
-            console.error('Failed to fetch courses:', err);
+        } catch {
+            toast.error('Failed to fetch courses');
         } finally {
             setLoading(false);
         }
@@ -339,7 +340,15 @@ const MyCourses = () => {
 
     const activeCourses = courses.filter(c => c.status === 'active' && matchesCourse(c));
     const completedCourses = courses.filter(c => c.status === 'completed' && matchesCourse(c));
-    const recentCompleted = completedCourses.slice(0, 10);
+
+    // Pagination setup
+
+    const itemsPerPage = 9;
+
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentCourses = completedCourses.slice(indexOfFirstItem, indexOfLastItem);
+    const totalPages = Math.max(1, Math.ceil(completedCourses.length / itemsPerPage));
 
     return (
         <div className="gilroy space-y-6">
@@ -378,89 +387,81 @@ const MyCourses = () => {
                         type="text"
                         placeholder="Search by name, code, department, or instructor…"
                         value={searchQuery}
-                        onChange={e => setSearchQuery(e.target.value)}
+                        onChange={e => { setSearchQuery(e.target.value); setCurrentPage(1); }}
                         className="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
                     />
                 </div>
             </div>
 
-            {/* Active Courses */}
-            <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-green-500"/>
-                    <h2 className="text-sm font-bold text-gray-800">Active Courses</h2>
-                    {!loading && (
-                        <span className="text-xs text-gray-400 font-medium bg-gray-100 px-2 py-0.5 rounded-full">
+            <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex flex-col gap-4">
+                {/* Active Courses */}
+                <div className="space-y-4 mb-4">
+                    <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-green-500"/>
+                        <h2 className="text-sm font-bold text-gray-800">Active Courses</h2>
+                        {!loading && (
+                            <span className="text-xs text-gray-400 font-medium bg-gray-100 px-2 py-0.5 rounded-full">
                             {activeCourses.length}
                         </span>
-                    )}
+                        )}
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                        {loading ? (
+                            [1, 2, 3].map(i => <SkeletonCard key={i}/>)
+                        ) : activeCourses.length === 0 ? (
+                            <EmptyState message="No active courses found."/>
+                        ) : (
+                            activeCourses.map(course => (
+                                <CourseCard
+                                    key={course.id}
+                                    course={course}
+                                    navigate={navigate}
+                                    onFilesClick={c => {
+                                        setActiveCourse(c);
+                                        setDrawerOpen(true);
+                                    }}
+                                />
+                            ))
+                        )}
+                    </div>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                    {loading ? (
-                        [1, 2, 3].map(i => <SkeletonCard key={i}/>)
-                    ) : activeCourses.length === 0 ? (
-                        <EmptyState message="No active courses found."/>
-                    ) : (
-                        activeCourses.map(course => (
-                            <CourseCard
-                                key={course.id}
-                                course={course}
-                                navigate={navigate}
-                                onFilesClick={c => {
-                                    setActiveCourse(c);
-                                    setDrawerOpen(true);
-                                }}
-                            />
-                        ))
-                    )}
-                </div>
-            </div>
 
-            {/* Divider */}
-            <div className="border-t border-gray-200"></div>
-            <span className="graphik text-xl font-medium cursor-default">Recent Courses</span>
+                {/* Divider */}
+                <div className="border-t border-gray-200"></div>
+                <span className="graphik text-xl font-medium cursor-default">Recent Courses</span>
 
+                {/* Completed Courses */}
+                <div className="h-[800px] flex flex-col justify-between gap-6 overflow-y-auto">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                        {loading ? (
+                            [1, 2, 3].map(i => <SkeletonCard key={i}/>)
+                        ) : currentCourses.length === 0 ? (
+                            <EmptyState message="No completed courses yet."/>
+                        ) : (
+                            currentCourses.map(course => (
+                                <CourseCard
+                                    key={course.id}
+                                    course={course}
+                                    navigate={navigate}
+                                    onFilesClick={c => {
+                                        setActiveCourse(c);
+                                        setDrawerOpen(true);
+                                    }}
+                                />
+                            ))
+                        )}
+                    </div>
 
-            {/* Completed Courses */}
-            <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                    {/*<div className="flex items-center gap-2">*/}
-                    {/*    <div className="w-2 h-2 rounded-full bg-blue-500" />*/}
-                    {/*    <h2 className="text-sm font-bold text-gray-800">Completed Courses</h2>*/}
-                    {/*    {!loading && (*/}
-                    {/*        <span className="text-xs text-gray-400 font-medium bg-gray-100 px-2 py-0.5 rounded-full">*/}
-                    {/*            {completedCount}*/}
-                    {/*        </span>*/}
-                    {/*    )}*/}
-                    {/*</div>*/}
-                    {!loading && completedCount > 10 && (
-                        <NavLink
-                            to="/dashboard/student/courses/list"
-                            className="flex items-center gap-1 text-xs font-semibold text-blue-500 hover:text-blue-600 transition-colors"
-                        >
-                            See all {completedCount} courses
-                            <ChevronRight size={13} strokeWidth={2.5}/>
-                        </NavLink>
-                    )}
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                    {loading ? (
-                        [1, 2, 3].map(i => <SkeletonCard key={i}/>)
-                    ) : recentCompleted.length === 0 ? (
-                        <EmptyState message="No completed courses yet."/>
-                    ) : (
-                        recentCompleted.map(course => (
-                            <CourseCard
-                                key={course.id}
-                                course={course}
-                                navigate={navigate}
-                                onFilesClick={c => {
-                                    setActiveCourse(c);
-                                    setDrawerOpen(true);
-                                }}
-                            />
-                        ))
-                    )}
+                    <div className="flex justify-center items-end my-5">
+                        <Pagination
+                            count={totalPages}
+                            page={currentPage}
+                            onChange={(event, value) => setCurrentPage(value)}
+                            color="primary"
+                            siblingCount={1}
+                            boundaryCount={1}
+                        />
+                    </div>
                 </div>
             </div>
 
@@ -473,7 +474,7 @@ const MyCourses = () => {
             {joinOpen && (
                 <JoinCourseModal
                     onClose={() => setJoinOpen(false)}
-                    onJoined={refetchCourses}
+                    onJoined={fetchCourses}
                 />
             )}
         </div>
