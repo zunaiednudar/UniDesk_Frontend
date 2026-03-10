@@ -39,7 +39,7 @@ const RecentNotices = ({ notices = [], loading }) => {
         const content = contentRef.current;
         if (!container || !content) return;
 
-        const speed = 0.1;
+        const speed = 0.25;
 
         const scroll = () => {
             positionRef.current += speed;

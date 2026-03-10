@@ -96,6 +96,10 @@ export const router = createBrowserRouter([
                 path: "courses/:id/details",
                 Component: CourseDetails
             },
+            {
+                path: ":id/repository",
+                Component: Repository
+            }
         ]
     },
     {

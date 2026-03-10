@@ -52,7 +52,7 @@ const StatCard = ({icon: Icon, value, label, iconBg, iconColor}) => (<div
     </div>);
 
 const SectionHeader = ({icon: Icon, title, iconBg, iconColor, count, seeAllTo, navigate}) => (
-    <div className="flex items-start justify-between gap-2">
+    <div className="flex flex-col lg:flex-row items-start justify-between lg:gap-2 mb-4 lg:mb-0">
         <div className="flex items-center gap-2.5 mb-5">
             <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${iconBg}`}>
                 <Icon size={16} className={iconColor} strokeWidth={2}/>
@@ -184,10 +184,18 @@ const MyActivity = () => {
     const [notices, setNotices] = useState([]);
 
     const [isLarge, setIsLarge] = useState(false);
+    const [isMedium, setIsMedium] = useState(false);
 
     useEffect(() => {
-        const handler = () => setIsLarge(window.innerWidth >= 1024); // lg breakpoint ~1024px
-        handler(); // run once
+        const handler = () => setIsLarge(window.innerWidth >= 1024); //
+        handler();
+        window.addEventListener('resize', handler);
+        return () => window.removeEventListener('resize', handler);
+    }, []);
+
+    useEffect(() => {
+        const handler = () => setIsMedium(window.innerWidth >= 640); //
+        handler();
         window.addEventListener('resize', handler);
         return () => window.removeEventListener('resize', handler);
     }, []);
@@ -324,10 +332,10 @@ const MyActivity = () => {
 
     const pendingCount = taskList.filter(t => t.status !== 'completed').length;
 
-    const pieData = [{name: 'On-time', value: submissionStats.onTime}, {
-        name: 'Late',
+    const pieData = [{name: 'On-time Submissions', value: submissionStats.onTime}, {
+        name: 'Late Submissions',
         value: submissionStats.late
-    }, {name: 'Missed', value: submissionStats.missed},];
+    }, {name: 'Missed Submissions', value: submissionStats.missed},];
 
     return (<div className="gilroy space-y-6">
             {/* Page Title */}
@@ -363,15 +371,15 @@ const MyActivity = () => {
             </div>
 
             {/* Main Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-5 lg:grid-rows-6 gap-6 items-start">
+            <div className="grid grid-cols-1 xl:grid-cols-5 xl:grid-rows-6 gap-6 items-start">
                 {/* Recent Announcements */}
-                <div className="w-full h-full lg:col-span-3 lg:row-span-2">
+                <div className="w-full h-full xl:col-span-3 xl:row-span-2">
                     <RecentNotices notices={notices} loading={loading}/>
                 </div>
 
                 {/* Task List */}
                 <div
-                    className="w-full h-full lg:col-span-2 lg:row-span-4 bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                    className="w-full h-full xl:col-span-2 xl:row-span-4 bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
                     <SectionHeader
                         icon={ClipboardCheck}
                         title="Task List"
@@ -392,12 +400,12 @@ const MyActivity = () => {
                 </div>
 
                 {/* Calendar */}
-                <div className="w-full h-full lg:col-span-3 lg:row-span-4">
+                <div className="w-full h-full xl:col-span-3 xl:row-span-4">
                     <CalendarF/>
                 </div>
 
                 {/* Submission Overview */}
-                <div className="w-full h-full lg:col-span-2 lg:row-span-2 flex flex-col gap-6">
+                <div className="w-full h-full xl:col-span-2 xl:row-span-2 flex flex-col gap-6">
                     <div className="w-full h-full bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
                         <SectionHeader
                             icon={ClipboardCheck}
@@ -414,9 +422,7 @@ const MyActivity = () => {
                                             data={pieData}
                                             dataKey="value"
                                             nameKey="name"
-                                            outerRadius={isLarge ? 80 : 50}
-                                            innerRadius={isLarge ? 60 : 30}
-                                            paddingAngle={3}
+                                            outerRadius={isMedium ? 100 : 50}
                                             label={({
                                                         name,
                                                         percent
@@ -430,13 +436,13 @@ const MyActivity = () => {
                                 </ResponsiveContainer>
 
                                 {/* Legend */}
-                                <div className="flex justify-around mt-4">
+                                <div className="flex flex-col items-center xl:flex-row justify-around mt-4">
                                     {pieData.map((entry, idx) => (
                                         <div key={idx} className="flex flex-col items-center gap-1">
-                                            <div className="flex items-center gap-1.5">
+                                            <div className="flex items-center gap-1">
                                                 <div className="w-2 h-2 rounded-full"
                                                      style={{backgroundColor: PIE_COLORS[idx]}}/>
-                                                <span className="text-xs text-gray-500">{entry.name}</span>
+                                                <span className="text-xs text-gray-500 text-center">{entry.name}</span>
                                             </div>
                                             <span className="text-sm font-bold text-gray-900">{entry.value}</span>
                                         </div>))}
