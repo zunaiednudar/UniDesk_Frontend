@@ -724,7 +724,6 @@ const Repository = () => {
                         >
                             <option value="all">All</option>
                             <option value="approved">Approved</option>
-                            <option value="pending">Pending</option>
                         </select>
                     )}
 
