@@ -29,3 +29,20 @@ export const formatAppointmentDate = (dateString) => {
         year: "numeric"
     }) + ` • ${time}`;
 };
+
+export const formatAppointmentTime = (startTime, endTime) => {
+    if (!startTime || !endTime) 
+        return 'Time not available';
+
+    const start = new Date(startTime).toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+
+    const end = new Date(endTime).toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+
+    return `${start} - ${end}`;
+};
