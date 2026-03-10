@@ -5,7 +5,6 @@ import {
     Upload,
     CheckCircle,
     CloudUpload,
-    Ban,
     Search,
     File,
     FileImage, FileText,
@@ -218,7 +217,6 @@ const Repository = () => {
     const [contributionPoints, setContributionPoints] = useState(0);
     const [repositoryItems, setRepositoryItems] = useState([]);
     const [totalApproved, setTotalApproved] = useState(0);
-    const [totalRejected, setTotalRejected] = useState(0);
     const [leaderboard, setLeaderboard] = useState([]);
     const [graphData, setGraphData] = useState();
     const [searchQuery, setSearchQuery] = useState('');
@@ -228,7 +226,7 @@ const Repository = () => {
     const [totalDownloadCount, setTotalDownloadCount] = useState(0);
 
     const [statusFilter, setStatusFilter] = useState('all');
-    const [itemType, setItemType] = useState('personal note');
+    const [itemType, setItemType] = useState('notes');
 
     const [uploadStatus, setUploadStatus] = useState("idle");
 
@@ -299,11 +297,6 @@ const Repository = () => {
                     return sum;
                 }, 0);
 
-                const totalRejected = repositoryItems.reduce((sum, item) => {
-                    if (item.uploader._id === id && item.rejectedReason) return sum + 1;
-                    return sum;
-                }, 0);
-
                 const totalContributors = new Set(
                     repositoryItems
                         .filter(item => item.contributionPoints > 0)
@@ -318,27 +311,27 @@ const Repository = () => {
 
                 const allPersonalNotes = repositoryItems
                     .filter(item => {
-                        return (item.uploader._id === id) && (item.itemType.toLowerCase() === "personal note");
+                        return (item.uploader._id === id) && (item.itemType.toLowerCase() === "notes");
                     });
 
                 const allQuestionBanksAnswers = repositoryItems
                     .filter(item => {
-                        return (item.uploader._id === id) && ((item.itemType.toLowerCase() === "question bank") || (item.itemType.toLowerCase() === "answer"));
+                        return (item.uploader._id === id) && ((item.itemType.toLowerCase() === "question bank") || (item.itemType.toLowerCase() === "solved questions"));
                     });
 
                 const allAssessments = repositoryItems
                     .filter(item => {
-                        return (item.uploader._id === id) && ((item.itemType.toLowerCase() === "project report") || (item.itemType.toLowerCase() === "lab report") || (item.itemType.toLowerCase() === "assignment"));
+                        return (item.uploader._id === id) && ((item.itemType.toLowerCase() === "project_report") || (item.itemType.toLowerCase() === "lab_report") || (item.itemType.toLowerCase() === "assignment"));
                     });
 
                 const otherMaterials = repositoryItems
                     .filter(item => {
                         return (item.uploader._id === id)
-                            && (item.itemType.toLowerCase() !== "personal note")
+                            && (item.itemType.toLowerCase() !== "notes")
                             && (item.itemType.toLowerCase() !== "question bank")
-                            && (item.itemType.toLowerCase() !== "answer")
-                            && (item.itemType.toLowerCase() !== "project report")
-                            && (item.itemType.toLowerCase() !== "lab report")
+                            && (item.itemType.toLowerCase() !== "solved questions")
+                            && (item.itemType.toLowerCase() !== "project_report")
+                            && (item.itemType.toLowerCase() !== "lab_report")
                             && (item.itemType.toLowerCase() !== "assignment");
                     });
 
@@ -375,8 +368,6 @@ const Repository = () => {
                             acc[month] = (acc[month] || 0) + item.contributionPoints;
                         return acc;
                     }, Array(12).fill(0));
-
-                console.log(filteredOtherMaterials);
 
                 // Build graph datasets
                 const data = {
@@ -419,7 +410,6 @@ const Repository = () => {
                 setContributionPoints(totalContributionPoints);
                 setRepositoryItems(repositoryItems);
                 setTotalApproved(totalApproved);
-                setTotalRejected(totalRejected);
 
                 setTotalContributorsCount(totalContributors);
                 setTotalUploadCount(totalUploaded);
@@ -447,18 +437,12 @@ const Repository = () => {
                 item.uploader?.name?.toLowerCase().includes(q);
 
             const matchesStatus =
-                statusFilter === "all"
-                    ? (item.status === "approved" || item.uploader._id === id)
-                    : (item.status === statusFilter && item.uploader._id === id);
+                statusFilter === "all" || (statusFilter === "personal" && item.uploader._id === id);
 
             return matchesSearch && matchesStatus;
         });
 
     }, [repositoryItems, searchQuery, statusFilter, id]);
-
-    useEffect(() => {
-        setCurrentPage(1);
-    }, [searchQuery, statusFilter]);
 
     // Pagination setup
 
@@ -535,7 +519,7 @@ const Repository = () => {
                 setUploadStatus("success");
                 document.getElementById("my_modal_1").close();
                 e.target.reset();
-                setItemType("personal note");
+                setItemType("notes");
 
                 setMaterial(null);
                 if (fileInputRef.current) {
@@ -561,32 +545,6 @@ const Repository = () => {
                 <p className="text-sm text-gray-400 mt-1">A collaborative platform for students and instructors to
                     exchange study materials, participate in discussions, and contribute valuable academic resources</p>
             </div>
-
-            {/* Registered User - Stats */}
-            {id && (
-                <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-4">
-                    <StatCard
-                        icon={ChartNoAxesCombined}
-                        value={contributionPoints}
-                        label="Contribution Points"
-                        iconBg="bg-emerald-50"
-                        iconColor="text-emerald-500"/>
-
-                    <StatCard
-                        icon={BookCheck}
-                        value={totalApproved}
-                        label="Total Approved"
-                        iconBg="bg-blue-50"
-                        iconColor="text-blue-500"/>
-
-                    <StatCard
-                        icon={Ban}
-                        value={totalRejected}
-                        label="Total Rejected"
-                        iconBg="bg-red-50"
-                        iconColor="text-red-500"/>
-                </div>
-            )}
 
             {/* Unregistered User - Stats */}
             {!id && (
@@ -617,10 +575,32 @@ const Repository = () => {
 
             {/* Contribution graph + Leaderboard */}
             <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-4">
-                {/* Contribution graph */}
-                {id && graphData && (
-                    <div className="h-[500px]">
-                        <Line data={graphData} options={options}/>
+                {/* Registered User */}
+                {id && (
+                    <div className="flex flex-col gap-4">
+                        {/* Stats */}
+                        <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-4">
+                            <StatCard
+                                icon={ChartNoAxesCombined}
+                                value={contributionPoints}
+                                label="Contribution Points"
+                                iconBg="bg-emerald-50"
+                                iconColor="text-emerald-500"/>
+
+                            <StatCard
+                                icon={BookCheck}
+                                value={totalApproved}
+                                label="Total Approved"
+                                iconBg="bg-blue-50"
+                                iconColor="text-blue-500"/>
+                        </div>
+
+                        {/* Contribution graph */}
+                        {graphData && (
+                            <div className="flex-1">
+                                <Line data={graphData} options={options}/>
+                            </div>
+                        )}
                     </div>
                 )}
 
@@ -709,7 +689,10 @@ const Repository = () => {
                             type="text"
                             placeholder="Search by course title, course code, course name, material type or uploader name…"
                             value={searchQuery}
-                            onChange={e => setSearchQuery(e.target.value)}
+                            onChange={e => {
+                                setSearchQuery(e.target.value);
+                                setCurrentPage(1);
+                            }}
                             className="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
                         />
                     </div>
@@ -719,11 +702,14 @@ const Repository = () => {
                     {id && (
                         <select
                             value={statusFilter}
-                            onChange={(e) => setStatusFilter(e.target.value)}
+                            onChange={(e) => {
+                                setStatusFilter(e.target.value);
+                                setCurrentPage(1);
+                            }}
                             className={optionCls}
                         >
                             <option value="all">All</option>
-                            <option value="approved">Approved</option>
+                            <option value="personal">Personal</option>
                         </select>
                     )}
 
@@ -880,11 +866,11 @@ const Repository = () => {
                                         onChange={(e) => setItemType(e.target.value)}
                                         className={optionCls}
                                     >
-                                        <option value="personal note">Personal Note</option>
+                                        <option value="notes">Personal Note</option>
                                         <option value="question bank">Question Bank</option>
-                                        <option value="answer">Answer</option>
-                                        <option value="project report">Project Report</option>
-                                        <option value="lab report">Lab Report</option>
+                                        <option value="solved questions">Answer</option>
+                                        <option value="project_report">Project Report</option>
+                                        <option value="lab_report">Lab Report</option>
                                         <option value="assignment">Assignment</option>
                                         <option value="other">Other</option>
                                     </select>
