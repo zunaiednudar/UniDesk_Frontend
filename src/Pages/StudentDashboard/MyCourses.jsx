@@ -431,7 +431,7 @@ const MyCourses = () => {
                 <span className="graphik text-xl font-medium cursor-default">Recent Courses</span>
 
                 {/* Completed Courses */}
-                <div className="h-[800px] flex flex-col justify-between gap-6 overflow-y-auto">
+                <div className="max-h-[800px] flex flex-col justify-between gap-6 overflow-y-auto">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                         {loading ? (
                             [1, 2, 3].map(i => <SkeletonCard key={i}/>)
