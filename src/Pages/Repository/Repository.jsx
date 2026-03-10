@@ -554,7 +554,7 @@ const Repository = () => {
     const optionCls = "text-sm px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none";
 
     return (
-        <div className={`gilroy space-y-6 ${!id ? "mx-15 mb-5" : "m-0"}`}>
+        <div className={`gilroy space-y-6 ${!id ? "mx-15 mb-5 mt-10" : "m-0"}`}>
             {/* Header */}
             <div>
                 <h1 className="graphik text-3xl font-semibold text-gray-900">Repository</h1>
