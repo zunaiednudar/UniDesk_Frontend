@@ -40,6 +40,7 @@ const StatCard = ({icon: Icon, value, label, iconBg, iconColor, valueColor = 'te
     </div>
 );
 
+// Represents loading during data fetch
 const SkeletonCard = () => (
     <div className="bg-white rounded-2xl border border-gray-100 p-6 animate-pulse">
         <div className="flex justify-between mb-4">
@@ -58,6 +59,7 @@ const SkeletonCard = () => (
     </div>
 );
 
+// Represents section when data is empty
 const EmptyState = ({message}) => (
     <div className="col-span-full flex flex-col items-center py-12 text-gray-400 text-sm">
         <AlertCircle size={32} className="text-gray-200 mb-3"/>
@@ -65,6 +67,7 @@ const EmptyState = ({message}) => (
     </div>
 );
 
+// Contains basic course information
 const CourseCard = ({course, onFilesClick, navigate}) => (
     <div
         onClick={() => navigate(`/dashboard/student/courses/${course.id}/details`)}
@@ -162,6 +165,7 @@ const CourseCard = ({course, onFilesClick, navigate}) => (
     </div>
 );
 
+// Modal which contains a form that student can use to join a course
 const JoinCourseModal = ({onClose, onJoined}) => {
     const [code, setCode] = useState('');
     const [loading, setLoading] = useState(false);
@@ -268,63 +272,15 @@ const MyCourses = () => {
     const [activeCourse, setActiveCourse] = useState(null);
     const [joinOpen, setJoinOpen] = useState(false);
 
-    useEffect(() => {
-        const fetchCourses = async () => {
-            if (!userData?._id) return;
-            setLoading(true);
-            try {
-                const res = await axiosSecure.get('/courses/my-courses');
-                const activeCourses = res.data.activeCourses || [];
-                const completedCourses = res.data.completedCourses || [];
-
-                const mapCourse = (course, status) => ({
-                    id: course._id,
-                    code: course.courseCode,
-                    name: course.courseName,
-                    description: course.description,
-                    session: course.session,
-                    department: course.department,
-                    year: course.year,
-                    semester: course.semester,
-                    faculties: Array.isArray(course.faculties)
-                        ? course.faculties.map(f => ({
-                            name: formatName(f?.name),
-                            email: f?.email ?? "",
-                            photoURL: f?.photoURL ?? null,
-                        }))
-                        : [],
-                    students: Array.isArray(course.students)
-                        ? course.students.map(s => ({
-                            name: formatName(s?.name),
-                            email: s?.email ?? "",
-                            photoURL: s?.photoURL ?? null,
-                            roll: s?.studentID ?? "",
-                        }))
-                        : [],
-                    status,
-                });
-
-                const detailed = [
-                    ...activeCourses.map(c => mapCourse(c, 'active')),
-                    ...completedCourses.map(c => mapCourse(c, 'completed')),
-                ];
-
-                setCourses(detailed);
-            } catch (err) {
-                console.error('Failed to fetch courses:', err);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchCourses();
-    }, [userData]);
-
-    const refetchCourses = () => {
-        if (!userData?._id) return;
+    // Fetch course
+    const fetchCourses = async () => {
         setLoading(true);
-        axiosSecure.get('/courses/my-courses').then(res => {
+        try {
+            // Get all courses
+            const res = await axiosSecure.get('/courses/my-courses');
             const activeCourses = res.data.activeCourses || [];
             const completedCourses = res.data.completedCourses || [];
+
             const mapCourse = (course, status) => ({
                 id: course._id,
                 code: course.courseCode,
@@ -351,12 +307,24 @@ const MyCourses = () => {
                     : [],
                 status,
             });
-            setCourses([
+
+            const detailed = [
                 ...activeCourses.map(c => mapCourse(c, 'active')),
                 ...completedCourses.map(c => mapCourse(c, 'completed')),
-            ]);
-        }).catch(console.error).finally(() => setLoading(false));
+            ];
+
+            setCourses(detailed);
+        } catch (err) {
+            console.error('Failed to fetch courses:', err);
+        } finally {
+            setLoading(false);
+        }
     };
+
+    useEffect(() => {
+        if (!userData?._id) return;
+        fetchCourses();
+    }, [userData]);
 
     const totalCourses = courses.length;
     const activeCount = courses.filter(c => c.status === 'active').length;
@@ -371,7 +339,6 @@ const MyCourses = () => {
 
     const activeCourses = courses.filter(c => c.status === 'active' && matchesCourse(c));
     const completedCourses = courses.filter(c => c.status === 'completed' && matchesCourse(c));
-    const recentCompleted = completedCourses.slice(0, 10);
 
     return (
         <div className="gilroy space-y-6">

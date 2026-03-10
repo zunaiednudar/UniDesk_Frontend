@@ -331,7 +331,7 @@ const MyActivity = () => {
 
                 setStats({
                     enrolledCourses: (coursesRes.data.activeCourses || []).length,
-                    pendingAssignments: userTasks.filter(t => t.status !== 'completed').length,
+                    pendingAssignments: userTasks.filter(t => t.status == 'pending').length,
                     upcomingAppointments: upcomingAppointments.length,
                 });
             } catch (error) {
