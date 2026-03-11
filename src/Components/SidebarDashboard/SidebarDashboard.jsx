@@ -5,7 +5,7 @@ import {AuthContext} from "../../Providers/AuthProvider/AuthProvider.jsx";
 import DefaultProfile from "../../assets/default-profile.png";
 import {toast} from "sonner";
 
-const SidebarDashboard = ({ menuItems, isSidebarOpen, setIsSidebarOpen, toggleSidebar, isMobile }) => {
+const SidebarDashboard = ({ menuItems, isSidebarOpen, setIsSidebarOpen, toggleSidebar, isMobile, role }) => {
     const { userData, logout } = useContext(AuthContext);
 
     const activeClass = "bg-gray-300 p-2 rounded-lg";
@@ -79,12 +79,12 @@ const SidebarDashboard = ({ menuItems, isSidebarOpen, setIsSidebarOpen, toggleSi
                     <nav className="flex flex-col justify-between pr-4">
                         {/* Desktop Navigation */}
                         <div className="flex flex-col items-center gap-2">
-                            <NavLink to="/dashboard/student" className={({ isActive }) => isActive ? activeClass : normalClass} end>
+                            <NavLink to={`/dashboard/${role}`} className={({ isActive }) => isActive ? activeClass : normalClass} end>
                                 <LayoutDashboard className="w-5 h-5" />
                             </NavLink>
 
                             {userData && (
-                                <NavLink to={`/dashboard/student/${userData._id}/repository`} className={({ isActive }) => isActive ? activeClass : normalClass}>
+                                <NavLink to={`/dashboard/${role}/${userData._id}/repository`} className={({ isActive }) => isActive ? activeClass : normalClass}>
                                     <LibraryBig className="w-5 h-5" />
                                 </NavLink>
                             )}

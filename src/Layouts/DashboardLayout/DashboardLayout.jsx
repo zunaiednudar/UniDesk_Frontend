@@ -4,7 +4,7 @@ import SidebarDashboard from "../../Components/SidebarDashboard/SidebarDashboard
 import {Bell, PanelLeft, Check } from "lucide-react";
 import axiosSecure from "../../utils/axiosSecure.js";
 
-const DashboardLayout = ({ menuItems }) => {
+const DashboardLayout = ({ menuItems, role }) => {
     const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
 
     const [isSidebarOpen, setIsSidebarOpen] = useState(
@@ -126,7 +126,7 @@ const DashboardLayout = ({ menuItems }) => {
 
     const pathSegments = location.pathname.split("/").filter(Boolean);
     const filteredSegments = pathSegments.filter(segment =>
-        segment !== "student" &&
+        segment !== "student" && segment !== "admin" &&
         !/^[a-f\d]{24}$/i.test(segment) // remove Mongo ObjectId
     );
     const formattedPath = filteredSegments.map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1)).join(" / ");
@@ -134,7 +134,7 @@ const DashboardLayout = ({ menuItems }) => {
     return (
         <div className="gilroy flex h-dvh">
             {/* Sidebar */}
-             <SidebarDashboard menuItems={menuItems} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} toggleSidebar={toggleSidebar} isMobile={isMobile} />
+             <SidebarDashboard menuItems={menuItems} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} toggleSidebar={toggleSidebar} isMobile={isMobile} role={role} />
 
             {/* Main Content */}
             <main className="flex flex-col flex-1 gap-2 w-full overflow-y-auto">

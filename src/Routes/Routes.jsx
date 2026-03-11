@@ -6,25 +6,29 @@ import SignUp from "../Pages/SignUp/SignUp.jsx";
 import Repository from "../Pages/Repository/Repository.jsx";
 import NotFound from "../Pages/NotFound.jsx/NotFound.jsx";
 
-import DashboardLayout from "../Layouts/DashboardLayout/DashboardLayout.jsx";
 import StudentDashboard from "../Pages/StudentDashboard/StudentDashboard.jsx";
 import MyActivity from "../Pages/StudentDashboard/MyActivity.jsx";
 import MyCourses from "../Pages/StudentDashboard/MyCourses.jsx";
-import MyProjects from "../Pages/StudentDashboard/MyProjects.jsx";
 import MyAssessments from "../Pages/StudentDashboard/MyAssessments.jsx";
 import AskMentor from "../Pages/StudentDashboard/AskMentor.jsx";
 import PublicRoute from "../Providers/PublicRoute/PublicRoute.jsx";
 import StudentRoute from "../Providers/RoleWiseRoutes/StudentRoute/StudentRoute.jsx";
-import Profile from "../Pages/Profile/Profile.jsx";
+import StudentProfile from "../Pages/Profile/StudentProfile.jsx";
 import Notification from "../Pages/Notification/Notification.jsx";
 import CourseDetails from "../Components/Course/CourseDetails.jsx";
-import {Component} from "react";
-import * as path from "node:path";
+
+import AdminDashboard from "../Pages/AdminDashboard/AdminDashboard.jsx";
+import Overview from "../Pages/AdminDashboard/Overview.jsx";
+import Users from "../Pages/AdminDashboard/Users.jsx";
+import AdminRoute from "../Providers/RoleWiseRoutes/AdminRoute/AdminRoute.jsx";
+import AdminProfile from "../Pages/Profile/AdminProfile.jsx";
 
 export const router = createBrowserRouter([
     {
         path: "/",
-        Component: RootLayout,
+        element: <PublicRoute>
+            <RootLayout></RootLayout>
+        </PublicRoute>,
         children: [
             {
                 index: true,
@@ -52,13 +56,17 @@ export const router = createBrowserRouter([
             },
             {
                 path: "/repository",
-                Component: Repository
+                element: <PublicRoute>
+                    <Repository></Repository>
+                </PublicRoute>
             },
         ]
     },
     {
         path: "/dashboard/student",
-        Component: StudentDashboard,
+        element: <StudentRoute>
+            <StudentDashboard></StudentDashboard>
+        </StudentRoute>,
         children: [
             {
                 index: true,
@@ -66,44 +74,94 @@ export const router = createBrowserRouter([
             },
             {
                 path: "activity",
-                Component: MyActivity
+                element: <StudentRoute>
+                    <MyActivity></MyActivity>
+                </StudentRoute>
             },
             {
                 path: "courses",
-                Component: MyCourses
+                element: <StudentRoute>
+                    <MyCourses></MyCourses>
+                </StudentRoute>
             },
             {
                 path: "assessments",
-                Component: MyAssessments
+                element: <StudentRoute>
+                    <MyAssessments></MyAssessments>
+                </StudentRoute>
             },
-            // {
-            //     path: "projects",
-            //     Component: MyProjects
-            // },
             {
                 path: "ask-mentor",
-                Component: AskMentor
+                element: <StudentRoute>
+                    <AskMentor></AskMentor>
+                </StudentRoute>
             },
             {
                 path: "profile",
-                Component: Profile
+                element: <StudentRoute>
+                    <StudentProfile></StudentProfile>
+                </StudentRoute>
             },
             {
                 path: "notifications",
-                Component: Notification
+                element: <StudentRoute>
+                    <Notification></Notification>
+                </StudentRoute>
             },
             {
                 path: "courses/:id/details",
-                Component: CourseDetails
+                element: <StudentRoute>
+                    <CourseDetails></CourseDetails>
+                </StudentRoute>
             },
             {
                 path: ":id/repository",
-                Component: Repository
+                element: <StudentRoute>
+                    <Repository></Repository>
+                </StudentRoute>
+            }
+        ]
+    },
+    {
+        path: "/dashboard/admin",
+        element: <AdminRoute>
+            <AdminDashboard></AdminDashboard>
+        </AdminRoute>,
+        children: [
+            {
+                index: true,
+                element: <Navigate to="overview" replace />
+            },
+            {
+                path: "overview",
+                element: <AdminRoute>
+                    <Overview></Overview>
+                </AdminRoute>
+            },
+            {
+                path: "users",
+                element: <AdminRoute>
+                    <Users></Users>
+                </AdminRoute>
+            },
+            {
+                path: "profile",
+                element: <AdminRoute>
+                    <AdminProfile></AdminProfile>
+                </AdminRoute>
+            },
+            {
+                path: ":id/repository",
+                element: <AdminRoute>
+                    <Repository></Repository>
+                </AdminRoute>
             }
         ]
     },
     {
         path: "*",
-        Component: NotFound
+        element: <PublicRoute>
+            <NotFound></NotFound>
+        </PublicRoute>
     }
 ]);

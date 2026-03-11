@@ -81,7 +81,7 @@ const SignUp = () => {
             const result = await signUp(data.email, password);
             const user = result.user;
 
-            // User Information storing in database
+            // Users Information storing in database
 
             try {
                 const res = await axiosSecure.post("/users", data);
