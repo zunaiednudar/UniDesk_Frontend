@@ -377,7 +377,19 @@ const AssignmentRow = ({assignment, onSubmitted, onUnsubmitted, onRecheckSent}) 
                         </div>
                     )}
 
-                    {assignment.status === "graded" && (!assignment.recheckRequested || assignment.recheckResolved) && (
+                    {assignment.status === "graded" && assignment.recheckRequested && assignment.recheckResolved && (
+                        <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3">
+                            <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+                                <ScanEye size={15} className="text-emerald-500"/>
+                            </div>
+                            <div>
+                                <p className="text-xs font-bold text-emerald-600">Recheck Completed</p>
+                                <p className="text-[11px] text-emerald-400 mt-0.5">Your marks have been updated by the instructor.</p>
+                            </div>
+                        </div>
+                    )}
+
+                    {assignment.status === "graded" && !assignment.recheckRequested && !assignment.recheckResolved && (
                         <div className="flex flex-col gap-4">
                             <input
                                 type="text"
