@@ -25,7 +25,7 @@ const FacultyCourseDetails = () => {
     const [materials, setMaterials] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    const navigate=useNavigate();
+    const navigate = useNavigate();
 
     /* Course edit related */
 
@@ -806,6 +806,7 @@ const FacultyCourseDetails = () => {
     const [submissionToGrade, setSubmissionToGrade] = useState(null);
     const [gradeMarks, setGradeMarks] = useState("");
     const [gradeFeedback, setGradeFeedback] = useState("");
+    const isPendingRecheck = submissionToGrade?.recheckRequested && !submissionToGrade?.recheckResolved;
 
     // Function for getting submissions for a specific assignment
 
@@ -1050,7 +1051,7 @@ const FacultyCourseDetails = () => {
     const openGradeSubmissionModal = (submission) => {
         setSubmissionToGrade(submission);
         setGradeMarks(submission?.marks ?? "");
-        setGradeFeedback(submission?.feedback ?? "");
+        setGradeFeedback(submission?.recheckFeedback ?? submission?.feedback ?? "");
         gradeSubmissionModalRef.current?.showModal();
     };
 
@@ -1080,20 +1081,45 @@ const FacultyCourseDetails = () => {
 
         try {
             setLoadingGrade(true);
-            const res = await axiosSecure.patch(`/assignment/${selectedAssignment._id}/submissions/${submissionToGrade._id}`, { marks, feedback: gradeFeedback.trim() }
-            );
+            const payload = {
+                marks,
+                feedback: gradeFeedback.trim()
+            };
+
+            const isRecheck = submissionToGrade?.recheckRequested && !submissionToGrade?.recheckResolved;
+
+            const res = isRecheck
+                ?
+                await axiosSecure.patch(`/submission/recheck/${submissionToGrade._id}`, payload)
+                :
+                await axiosSecure.patch(
+                    `/assignment/${selectedAssignment._id}/submissions/${submissionToGrade._id}`,
+                    payload
+                );
 
             if (!res?.data?.success) {
                 toast.error(res?.data?.message || "Grading failed");
                 return;
             }
 
-            setAssignmentSubmissions(prev =>
-                prev.map(s => s._id === submissionToGrade._id ? { ...s, marks, feedback: gradeFeedback.trim(), isGraded: true } : s)
+            setAssignmentSubmissions((prev) =>
+                prev.map((s) =>
+                    s._id === submissionToGrade._id
+                        ? {
+                            ...s,
+                            marks,
+                            feedback: gradeFeedback.trim(),
+                            isGraded: true,
+                            gradedBy: res?.data?.submission?.gradedBy ?? s?.gradedBy,
+                            recheckResolved: isRecheck ? true : s?.recheckResolved,
+                            recheckFeedback: isRecheck ? gradeFeedback.trim() : s?.recheckFeedback
+                        }
+                        : s
+                )
             );
 
             closeGradeSubmissionModal();
-            toast.success("Graded successfully");
+            toast.success(isRecheck ? "Recheck resolved successfully" : "Graded successfully");
         } catch (error) {
             toast.error(error?.response?.data?.message || "Grading failed");
         } finally {
@@ -1144,23 +1170,23 @@ const FacultyCourseDetails = () => {
 
     /* Course leave related */
 
-    const [loadingLeaveCourse,setLoadingLeaveCourse]=useState(false);
+    const [loadingLeaveCourse, setLoadingLeaveCourse] = useState(false);
 
     // Course leave modal ref
 
-    const leaveCourseModalRef=useRef(null);
+    const leaveCourseModalRef = useRef(null);
 
     // Course leave modal opening function
 
-    const openLeaveCourseModal=()=>leaveCourseModalRef?.current?.showModal();
+    const openLeaveCourseModal = () => leaveCourseModalRef?.current?.showModal();
 
     // Course leave modal opening function
 
-    const closeLeaveCourseModal=()=>leaveCourseModalRef?.current?.close();
+    const closeLeaveCourseModal = () => leaveCourseModalRef?.current?.close();
 
     // Leave course function
 
-    const handleLeaveCourse=async()=>{
+    const handleLeaveCourse = async () => {
         try {
             setLoadingLeaveCourse(true);
             const res = await axiosSecure.delete(`/courses/${course._id}/faculty/leave`);
@@ -1178,7 +1204,7 @@ const FacultyCourseDetails = () => {
             toast.success("Course left successfully");
         } catch (error) {
             toast.error(error.response?.data?.message || "Something went wrong");
-        }finally{
+        } finally {
             setLoadingLeaveCourse(false);
         }
     };
@@ -2241,10 +2267,18 @@ const FacultyCourseDetails = () => {
                                                     ) : (
                                                         [...assignmentSubmissions]
                                                             .sort((a, b) => {
+                                                                const aPendingRecheck = a?.recheckRequested && !a?.recheckResolved;
+                                                                const bPendingRecheck = b?.recheckRequested && !b?.recheckResolved;
+
+                                                                // Pending rechecks first so faculty can act on them quickly.
+
+                                                                if (aPendingRecheck !== bPendingRecheck)
+                                                                    return aPendingRecheck ? -1 : 1;
+
                                                                 const aEvaluated = a?.isGraded || a?.marks !== null;
                                                                 const bEvaluated = b?.isGraded || b?.marks !== null;
 
-                                                                // Unevaluated first
+                                                                // Unevaluated submissions come before evaluated ones.
 
                                                                 if (aEvaluated !== bEvaluated)
                                                                     return aEvaluated ? 1 : -1;
@@ -2264,6 +2298,35 @@ const FacultyCourseDetails = () => {
                                                                                 </p>
                                                                             )
                                                                         }
+                                                                        {
+                                                                            s?.recheckRequested && !s?.recheckResolved && (
+                                                                                <div className="mt-2 inline-flex items-center rounded-full bg-amber-100 text-amber-700 px-2.5 py-1 text-[11px] font-semibold">
+                                                                                    Recheck requested
+                                                                                </div>
+                                                                            )
+                                                                        }
+
+                                                                        {
+                                                                            s?.recheckRequested && s?.recheckResolved && (
+                                                                                <div className="mt-2 inline-flex items-center rounded-full bg-blue-100 text-blue-700 px-2.5 py-1 text-[11px] font-semibold">
+                                                                                    Recheck resolved
+                                                                                </div>
+                                                                            )
+                                                                        }
+
+                                                                        {
+                                                                            s?.recheckRequested && s?.recheckMessage && (
+                                                                                <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2">
+                                                                                    <p className="text-[11px] font-semibold uppercase tracking-wide text-amber-700">
+                                                                                        Recheck Message
+                                                                                    </p>
+                                                                                    <p className="mt-1 text-xs text-gray-700">
+                                                                                        {s?.recheckMessage}
+                                                                                    </p>
+                                                                                </div>
+                                                                            )
+                                                                        }
+
                                                                     </div>
 
                                                                     <div className="flex items-center gap-2">
@@ -2276,16 +2339,24 @@ const FacultyCourseDetails = () => {
                                                                             Download
                                                                         </a>
 
-                                                                        {
-                                                                            !s?.isGraded && (
-                                                                                <button
-                                                                                    onClick={() => openGradeSubmissionModal(s)}
-                                                                                    className="btn btn-sm border-green-200 text-green-600 hover:bg-green-600 hover:text-white"
-                                                                                >
-                                                                                    Grade
-                                                                                </button>
-                                                                            )
-                                                                        }
+                                                                        <button
+                                                                            onClick={() => openGradeSubmissionModal(s)}
+                                                                            className={`btn btn-sm ${s?.recheckRequested && !s?.recheckResolved
+                                                                                ? "border-amber-200 text-amber-600 hover:bg-amber-500 hover:text-white"
+                                                                                : !s?.isGraded
+                                                                                    ? "border-green-200 text-green-600 hover:bg-green-600 hover:text-white"
+                                                                                    : "border-blue-200 text-blue-600 hover:bg-blue-600 hover:text-white"
+                                                                                }`}
+                                                                        >
+                                                                            {
+                                                                                s?.recheckRequested && !s?.recheckResolved
+                                                                                    ? "Review Recheck"
+                                                                                    : !s?.isGraded
+                                                                                        ? "Grade"
+                                                                                        : "Update Grade"
+                                                                            }
+                                                                        </button>
+
                                                                     </div>
                                                                 </div>
                                                             )
@@ -2307,7 +2378,30 @@ const FacultyCourseDetails = () => {
 
             <dialog ref={gradeSubmissionModalRef} className="modal modal-middle">
                 <form onSubmit={handleGradeSubmission} className="modal-box max-w-md">
-                    <p className="text-lg font-bold mb-3">Grade Submission</p>
+                    <p className="text-lg font-bold mb-3">
+                        {
+                            isPendingRecheck ? "Review Recheck Request"
+                                : submissionToGrade?.isGraded
+                                    ?
+                                    "Update Grade"
+                                    :
+                                    "Grade Submission"
+                        }
+                    </p>
+
+                    {
+                        isPendingRecheck && (
+                            <div className="mb-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+                                <p className="text-[11px] font-semibold uppercase tracking-wide text-amber-700">
+                                    Student Recheck Request
+                                </p>
+                                <p className="mt-1 text-sm text-gray-700">
+                                    {submissionToGrade?.recheckMessage || "No message provided."}
+                                </p>
+                            </div>
+                        )
+                    }
+
 
                     <div className="flex flex-col gap-3">
                         <input

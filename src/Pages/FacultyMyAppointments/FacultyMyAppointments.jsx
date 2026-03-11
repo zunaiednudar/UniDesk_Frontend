@@ -55,23 +55,10 @@ const FacultyMyAppointments = () => {
 
                 setTotalPages(res?.data?.pagination?.totalPages || 1);
 
-                const studentsSet = new Set();
-                let upcoming = 0, pending = 0, completed = 0;
-
-                data.forEach((appointment) => {
-                    if (appointment?.status === "approved")
-                        upcoming++;
-                    else if (appointment?.status === "pending")
-                        pending++;
-                    else if (appointment?.status === "completed")
-                        completed++;
-                    studentsSet.add(appointment?.student);
-                });
-
-                setCompletedAppointments(completed);
-                setUpcomingAppointments(upcoming);
-                setPendingAppointments(pending);
-                setStudents(studentsSet.size);
+                setCompletedAppointments(res?.data?.stats?.completed);
+                setUpcomingAppointments(res?.data?.stats?.approved);
+                setPendingAppointments(res?.data?.stats?.pending);
+                setStudents(res?.data?.stats?.students);
 
                 setAppointments(data);
             } catch (error) {
