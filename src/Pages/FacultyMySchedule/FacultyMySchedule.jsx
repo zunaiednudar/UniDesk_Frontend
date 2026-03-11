@@ -13,6 +13,7 @@ import formatName from '../../utils/formatName.js';
 import { CalendarDays, Clock3, Presentation } from 'lucide-react';
 import { MdOutlineUpcoming } from 'react-icons/md';
 import { IoMdCreate } from 'react-icons/io';
+import { buildEditableSchedule, handleAddClass, handleAddFreeSlot, handleClassChange, handleFreeSlotChange, handleRemoveClass, handleRemoveFreeSlot } from '../../utils/facultyScheduleUpdateHelper.js';
 
 const FacultyMySchedule = () => {
     const { userData } = useContext(AuthContext);
@@ -246,6 +247,80 @@ const FacultyMySchedule = () => {
         }
     ];
 
+    // Schedule update related
+
+    const scheduleModalRef = useRef(null);
+
+    const [updateWeeklySchedule, setUpdateWeeklySchedule] = useState([]);
+    const [loadingUpdateSchedule, setLoadingUpdateSchedule] = useState(false);
+
+    // Schedule update model opening function
+
+    const openScheduleUpdateModal = () => {
+        setUpdateWeeklySchedule(buildEditableSchedule(schedule?.weeklySchedule || []));
+        scheduleModalRef.current?.showModal();
+    };
+
+    // Schedule update modal closing function
+
+    const closeScheduleUpdateModal = () => {
+        scheduleModalRef.current?.close();
+        setTimeout(() => {
+            setUpdateWeeklySchedule([]);
+        }, 500);
+    };
+
+    // Schedule update function
+
+    const handleUpdateSchedule = async (e) => {
+        e.preventDefault();
+
+        if (!userData?._id)
+            return;
+
+        const cleanedWeeklySchedule = updateWeeklySchedule.map((dayItem) => ({
+            day: dayItem.day,
+            classes: (dayItem.classes || []).filter(
+                (item) => item.courseName?.trim() && item.startTime && item.endTime
+            ),
+            freeSlots: (dayItem.freeSlots || []).filter(
+                (item) => item.startTime && item.endTime
+            )
+        }));
+
+        try {
+            setLoadingUpdateSchedule(true);
+
+            const res = await axiosSecure.patch("/schedule", {
+                facultyID: userData._id,
+                weeklySchedule: cleanedWeeklySchedule
+            });
+
+            if (!res?.data?.success) {
+                closeScheduleUpdateModal();
+                toast.error(res?.data?.message || "Schedule update failed");
+                return;
+            }
+
+            if (res?.data?.schedule)
+                setSchedule(res?.data?.schedule);
+            else
+                setSchedule((prev) => ({
+                    ...prev,
+                    weeklySchedule: cleanedWeeklySchedule
+                }));
+
+
+            closeScheduleUpdateModal();
+            toast.success("Schedule updated successfully");
+        } catch (error) {
+            closeScheduleUpdateModal();
+            toast.error(error?.response?.data?.message || "Schedule update failed");
+        } finally {
+            setLoadingUpdateSchedule(false);
+        }
+    };
+
     return (
         <div className='w-full max-w-full p-5 flex flex-col gap-10 gilroy'>
             <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
@@ -286,7 +361,6 @@ const FacultyMySchedule = () => {
 
             {/* Filter and update button */}
 
-
             <div className="rounded-[28px] border border-white/70 bg-white/90 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-sm p-4 md:p-6">
                 <div className='flex justify-between items-center mb-5'>
                     <div className="flex flex-wrap items-center gap-3 ">
@@ -300,7 +374,7 @@ const FacultyMySchedule = () => {
                             <span className="text-sm font-medium text-orange-700">Class</span>
                         </div>
                     </div>
-                    <button className="w-30 flex gap-2 items-center bg-[#1E40AF] text-white px-5 py-2 rounded-lg cursor-pointer text-center transition-colors hover:bg-blue-600 duration-500 text-xs md:text-sm lg:text-md"><IoMdCreate /> Update</button>
+                    <button className="w-30 flex gap-2 items-center bg-[#1E40AF] text-white px-5 py-2 rounded-lg cursor-pointer text-center transition-colors hover:bg-blue-600 duration-500 text-xs md:text-sm lg:text-md" onClick={openScheduleUpdateModal}><IoMdCreate /> Update</button>
                 </div>
                 {
                     loading
@@ -387,6 +461,173 @@ const FacultyMySchedule = () => {
                 </div>
             </dialog>
 
+            {/* Schedule update modal */}
+
+            <dialog ref={scheduleModalRef} className="modal modal-middle">
+                <form onSubmit={handleUpdateSchedule} className="modal-box max-w-5xl">
+                    <div className="flex items-center justify-between mb-4">
+                        <p className="text-xl font-bold text-gray-900">Update Schedule</p>
+                        <button
+                            type="button"
+                            className="btn btn-sm btn-circle btn-ghost"
+                            onClick={closeScheduleUpdateModal}
+                        >
+                            ✕
+                        </button>
+                    </div>
+
+                    <div className="max-h-[70vh] overflow-y-auto pr-1 flex flex-col gap-5">
+                        {
+                            updateWeeklySchedule.map((dayItem, dayIndex) => (
+                                <div key={dayItem.day} className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <p className="text-lg font-semibold text-gray-900">{dayItem.day}</p>
+
+                                        <div className="flex gap-2">
+                                            <button
+                                                type="button"
+                                                className="w-30 btn btn-sm border-orange-200 text-orange-600 hover:bg-orange-500 hover:text-white"
+                                                onClick={() => handleAddClass(dayIndex, setUpdateWeeklySchedule)}
+                                            >
+                                                Add Class
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                className="w-30 btn btn-sm border-blue-200 text-blue-600 hover:bg-blue-600 hover:text-white"
+                                                onClick={() => handleAddFreeSlot(dayIndex, setUpdateWeeklySchedule)}
+                                            >
+                                                Add Free Slot
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex flex-col gap-4">
+                                        <div>
+                                            <p className="text-sm font-semibold text-orange-600 mb-2">Classes</p>
+
+                                            {
+                                                dayItem.classes.length === 0 ? (
+                                                    <p className="text-sm text-gray-400">No classes added</p>
+                                                ) : (
+                                                    <div className="flex flex-col gap-3">
+                                                        {
+                                                            dayItem.classes.map((classItem, classIndex) => (
+                                                                <div key={classIndex} className="grid grid-cols-1 md:grid-cols-4 gap-3 items-center">
+                                                                    <input
+                                                                        type="text"
+                                                                        className="input input-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                                        placeholder="Course name"
+                                                                        value={classItem.courseName}
+                                                                        onChange={(e) =>
+                                                                            handleClassChange(dayIndex, classIndex, "courseName", e.target.value, setUpdateWeeklySchedule)
+                                                                        }
+                                                                    />
+
+                                                                    <input
+                                                                        type="time"
+                                                                        className="input input-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                                        value={classItem.startTime}
+                                                                        onChange={(e) =>
+                                                                            handleClassChange(dayIndex, classIndex, "startTime", e.target.value, setUpdateWeeklySchedule)
+                                                                        }
+                                                                    />
+
+                                                                    <input
+                                                                        type="time"
+                                                                        className="input input-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                                        value={classItem.endTime}
+                                                                        onChange={(e) =>
+                                                                            handleClassChange(dayIndex, classIndex, "endTime", e.target.value, setUpdateWeeklySchedule)
+                                                                        }
+                                                                    />
+
+                                                                    <button
+                                                                        type="button"
+                                                                        className="w-30 btn btn-sm border-red-200 text-red-600 hover:bg-red-600 hover:text-white"
+                                                                        onClick={() => handleRemoveClass(dayIndex, classIndex, setUpdateWeeklySchedule)}
+                                                                    >
+                                                                        Remove
+                                                                    </button>
+                                                                </div>
+                                                            )
+                                                            )
+                                                        }
+                                                    </div>
+                                                )
+                                            }
+                                        </div>
+
+                                        <div>
+                                            <p className="text-sm font-semibold text-blue-600 mb-2">Free Slots</p>
+
+                                            {
+                                                dayItem.freeSlots.length === 0 ? (
+                                                    <p className="text-sm text-gray-400">No free slots added</p>
+                                                ) : (
+                                                    <div className="flex flex-col gap-3">
+                                                        {
+                                                            dayItem.freeSlots.map((slot, slotIndex) => (
+                                                                <div key={slotIndex} className="grid grid-cols-1 md:grid-cols-3 gap-3 items-center">
+                                                                    <input
+                                                                        type="time"
+                                                                        className="input input-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                                        value={slot.startTime}
+                                                                        onChange={(e) =>
+                                                                            handleFreeSlotChange(dayIndex, slotIndex, "startTime", e.target.value, setUpdateWeeklySchedule)
+                                                                        }
+                                                                    />
+
+                                                                    <input
+                                                                        type="time"
+                                                                        className="input input-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                                        value={slot.endTime}
+                                                                        onChange={(e) =>
+                                                                            handleFreeSlotChange(dayIndex, slotIndex, "endTime", e.target.value, setUpdateWeeklySchedule)
+                                                                        }
+                                                                    />
+
+                                                                    <button
+                                                                        type="button"
+                                                                        className="w-30 btn btn-sm border-red-200 text-red-600 hover:bg-red-600 hover:text-white"
+                                                                        onClick={() => handleRemoveFreeSlot(dayIndex, slotIndex, setUpdateWeeklySchedule)}
+                                                                    >
+                                                                        Remove
+                                                                    </button>
+                                                                </div>
+                                                            )
+                                                            )
+                                                        }
+                                                    </div>
+                                                )
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                    </div>
+
+                    <div className="flex justify-end gap-2 mt-5">
+                        <button type="button" className="btn btn-soft" onClick={closeScheduleUpdateModal}>
+                            Cancel
+                        </button>
+
+                        <button
+                            type="submit"
+                            className="w-40 btn bg-[#1E40AF] text-white hover:bg-blue-600 border-none"
+                            disabled={loadingUpdateSchedule}
+                        >
+                            {
+                                loadingUpdateSchedule ? (
+                                    <span className="loading loading-dots loading-md"></span>
+                                ) : (
+                                    "Save Schedule"
+                                )
+                            }
+                        </button>
+                    </div>
+                </form>
+            </dialog>
         </div>
     );
 };
