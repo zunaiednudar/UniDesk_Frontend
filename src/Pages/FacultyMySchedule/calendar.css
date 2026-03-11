@@ -1,0 +1,92 @@
+.fc {
+  font-family: "Gilroy", sans-serif;
+}
+
+.fc-theme-standard td,
+.fc-theme-standard th,
+.fc-theme-standard .fc-scrollgrid {
+  border-color: #e2e8f0;
+}
+
+.fc .fc-scrollgrid {
+  border-radius: 1.25rem;
+  overflow: hidden;
+}
+
+.fc .fc-col-header-cell {
+  background: linear-gradient(180deg, #f8fafc 0%, #eff6ff 100%);
+  padding: 0.75rem 0;
+}
+
+.fc .fc-col-header-cell-cushion {
+  color: #0f172a;
+  font-weight: 700;
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+
+.fc .fc-timegrid-axis-cushion,
+.fc .fc-timegrid-slot-label-cushion {
+  color: #64748b;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.fc .fc-timegrid-slot {
+  height: 2.5rem;
+}
+
+.fc .fc-timegrid-col {
+  background: #ffffff;
+}
+
+.fc .fc-timegrid-slot-lane {
+  background: linear-gradient(180deg, rgba(248, 250, 252, 0.55) 0%, rgba(255, 255, 255, 1) 100%);
+}
+
+.fc .fc-timegrid-now-indicator-line {
+  border-color: #ef4444;
+}
+
+.fc .fc-day-today {
+  background: rgba(59, 130, 246, 0.06) !important;
+}
+
+.fc .fc-event {
+  min-height: 34px;
+  border: none;
+  border-radius: 0.25rem;
+  overflow: hidden;
+}
+
+.fc .schedule-event-appointment {
+  background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 45%, #0f766e 100%);
+  box-shadow: 0 10px 24px rgba(37, 99, 235, 0.22);
+}
+
+.fc .schedule-event-class {
+  background: linear-gradient(135deg, #ea580c 0%, #f97316 45%, #d97706 100%);
+  box-shadow: 0 10px 24px rgba(249, 115, 22, 0.22);
+}
+
+.fc .fc-event-main {
+  padding: 0;
+}
+
+.fc .fc-timegrid-event-harness {
+  margin-inline: 4px;
+}
+
+.calendar-scroll::-webkit-scrollbar {
+  height: 10px;
+}
+
+.calendar-scroll::-webkit-scrollbar-track {
+  background: #e2e8f0;
+  border-radius: 9999px;
+}
+
+.calendar-scroll::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 9999px;
+}

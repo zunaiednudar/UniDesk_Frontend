@@ -113,6 +113,59 @@ const CardSkeleton = ({ variant = "list", lines = 3 }) => {
 
         );
 
+    // Weekly calendar schedule
+
+    if (variant === "weeklyCalendar")
+        return (
+            <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm animate-pulse">
+                <div className="flex items-center justify-between mb-4">
+                    <div className="h-6 w-32 rounded bg-gray-200"></div>
+                    <div className="h-8 w-24 rounded bg-gray-200"></div>
+                </div>
+
+                <div className="grid grid-cols-6 border border-gray-100 rounded-xl overflow-hidden">
+                    <div className="bg-gray-50 border-r border-gray-100 p-3">
+                        <div className="h-4 w-10 rounded bg-gray-200"></div>
+                    </div>
+
+                    {
+                        [...Array(5)].map((_, index) => (
+                            <div key={index} className="bg-gray-50 border-r last:border-r-0 border-gray-100 p-3">
+                                <div className="h-4 w-16 rounded bg-gray-200 mx-auto"></div>
+                            </div>
+                        ))
+                    }
+
+                    {
+                        [...Array(8)].map((_, row) => (
+                            <React.Fragment key={row}>
+                                <div className="border-t border-r border-gray-100 p-3 h-20">
+                                    <div className="h-3 w-8 rounded bg-gray-200"></div>
+                                </div>
+
+                                {
+                                    [...Array(5)].map((_, col) => (
+                                        <div key={col} className="border-t border-r last:border-r-0 border-gray-100 p-2 h-20 relative">
+                                            {(row === 1 && col === 0) && (
+                                                <div className="h-10 w-full rounded-lg bg-blue-100"></div>
+                                            )}
+                                            {(row === 3 && col === 2) && (
+                                                <div className="h-12 w-full rounded-lg bg-emerald-100"></div>
+                                            )}
+                                            {(row === 5 && col === 4) && (
+                                                <div className="h-9 w-full rounded-lg bg-amber-100"></div>
+                                            )}
+                                        </div>
+                                    ))
+                                }
+                            </React.Fragment>
+                        ))
+                    }
+                </div>
+            </div>
+
+        );
+
     // For cards inside a container
 
     return (

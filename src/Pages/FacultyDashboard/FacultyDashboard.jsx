@@ -186,7 +186,7 @@ const FacultyDashboard = () => {
             <div className='w-full max-w-full flex flex-col md:flex-row justify-items-center gap-10'>
                 {/* Recent Courses */}
                 <div className='w-full md:flex-2 shadow-xl p-5 flex flex-col gap-5'>
-                    <p className='text-xl md:text-2xl lg:text-3xl font-bold graphik'>Recent Courses</p>
+                    <p className='text-lg md:text-xl font-bold graphik'>Recent Courses</p>
                     <div className='flex flex-col gap-3'>
                         {
                             dashboardLoading ? (
@@ -206,7 +206,7 @@ const FacultyDashboard = () => {
                                             className="w-full p-6 rounded-xl bg-white shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 flex flex-col gap-4"
                                         >
                                             {/* Course Code */}
-                                            <p className="text-xl graphik font-bold text-[#1E40AF] tracking-wide">
+                                            <p className="text-lg graphik font-bold text-[#1E40AF] tracking-wide">
                                                 {course.courseCode}
                                             </p>
 
@@ -245,7 +245,7 @@ const FacultyDashboard = () => {
 
                 {/* Upcoming Appointments */}
                 <div className='w-full md:flex-1 shadow-xl p-5 flex flex-col gap-5'>
-                    <p className='text-xl md:text-2xl lg:text-3xl font-bold graphik'>Upcoming Appointments</p>
+                    <p className='text-lg md:text-xl font-bold graphik'>Upcoming Appointments</p>
                     <div className='flex flex-col gap-3'>
                         {
                             dashboardLoading ? (
@@ -263,7 +263,7 @@ const FacultyDashboard = () => {
                                         className="w-full p-6 rounded-xl bg-white shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col gap-3"
                                     >
                                         {/* Student Name */}
-                                        <p className="text-lg graphik font-bold text-[#1E40AF]">
+                                        <p className="graphik font-bold text-[#1E40AF]">
                                             {appointment.student.name
                                                 .split(" ")
                                                 .map(word => word.charAt(0).toUpperCase() + word.slice(1))
@@ -291,7 +291,7 @@ const FacultyDashboard = () => {
             {/* Pending Grading course wise */}
 
             <div className='w-full shadow-xl p-5 flex flex-col gap-5'>
-                <p className='text-xl md:text-2xl lg:text-3xl font-bold graphik'>Pending Grading</p>
+                <p className='text-lg md:text-xl font-bold graphik'>Pending Grading</p>
                 {
                     dashboardLoading ? (
                         Array.from({ length: 3 }).map((_, i) => (

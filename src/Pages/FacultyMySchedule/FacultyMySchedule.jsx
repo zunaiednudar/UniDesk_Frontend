@@ -1,9 +1,312 @@
-import React from 'react';
+import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { startOfWeek, addDays, format } from "date-fns";
+import { AuthContext } from '../../Providers/AuthProvider/AuthProvider.jsx';
+import { toast } from 'sonner';
+import axiosSecure from '../../utils/axiosSecure.js';
+import FullCalendar from '@fullcalendar/react';
+import timeGridPlugin from '@fullcalendar/timegrid';
+import interactionPlugin from '@fullcalendar/interaction';
+import CardSkeleton from '../../Components/CardSkeleton/CardSkeleton.jsx';
+import "./calendar.css";
+import CalendarEventContent from '../../Components/CalendarEventContent/CalendarEventContent.jsx';
+import formatName from '../../utils/formatName.js';
 
 const FacultyMySchedule = () => {
+    const { userData } = useContext(AuthContext);
+
+    // Schedule fetch
+
+    const [schedule, setSchedule] = useState(null);
+    const [appointments, setAppointments] = useState([]);
+    const [loadingSchedule, setLoadingSchedule] = useState(true);
+    const [loadingAppointments, setLoadingAppointments] = useState(true);
+
+    useEffect(() => {
+        const fetchSchedule = async () => {
+            try {
+                setLoadingSchedule(true);
+
+                const res = await axiosSecure.get(`/schedule/${userData?._id}`);
+
+                console.log(res);
+
+                if (!res?.data?.success) {
+                    toast.error(res?.data?.message);
+                    return;
+                }
+
+                setSchedule(res?.data?.schedule);
+
+            } catch (error) {
+                toast.error("Schedule fetch failed");
+            } finally {
+                setLoadingSchedule(false);
+            }
+        };
+
+        const fetchAppointments = async () => {
+            try {
+                setLoadingAppointments(true);
+
+                const res = await axiosSecure.get(`/appointment/faculty/${userData?._id}/week`);
+
+                if (!res?.data?.success) {
+                    toast.error(res?.data?.message);
+                    return;
+                }
+
+                setAppointments(res?.data?.appointments);
+
+            } catch (error) {
+                toast.error("Appointments fetch failed");
+            } finally {
+                setLoadingAppointments(false);
+            }
+        };
+
+        if (userData?._id) {
+            fetchSchedule();
+            fetchAppointments();
+        }
+    }, [userData?._id]);
+
+    const loading = loadingAppointments || loadingSchedule;
+
+    // Schedule mapping
+
+    // Schedule week retrieval
+
+    const currentDate = new Date();
+
+    // Sunday
+
+    const weekStart = startOfWeek(currentDate, { weekStartsOn: 0 });
+
+    // Thursday
+
+    const weekEnd = addDays(weekStart, 4);
+
+    // Class events mapping
+
+    const classEvents = useMemo(() => {
+        if (!schedule?.weeklySchedule)
+            return [];
+
+        const weekStart = startOfWeek(new Date(), { weekStartsOn: 0 });
+
+        const dayIndexMap = {
+            Sunday: 0,
+            Monday: 1,
+            Tuesday: 2,
+            Wednesday: 3,
+            Thursday: 4,
+            Friday: 5,
+            Saturday: 6
+        };
+
+        return schedule.weeklySchedule.flatMap((dayItem) => {
+            const dayOffset = dayIndexMap[dayItem.day];
+            if (dayOffset === undefined)
+                return [];
+
+            const baseDate = addDays(weekStart, dayOffset);
+
+            return (dayItem.classes || []).map((classItem, index) => {
+                const start = new Date(baseDate);
+                const end = new Date(baseDate);
+
+                const [startHour, startMinute] = classItem.startTime.split(":").map(Number);
+                const [endHour, endMinute] = classItem.endTime.split(":").map(Number);
+
+                start.setHours(startHour, startMinute, 0, 0);
+                end.setHours(endHour, endMinute, 0, 0);
+
+                return {
+                    id: `class-${dayItem.day}-${index}`,
+                    title: "Class",
+                    start,
+                    end,
+                    classNames: ["schedule-event", "schedule-event-class"],
+                    extendedProps: {
+                        type: "class",
+                        courseName: classItem.courseName,
+                        day: dayItem.day,
+                        startTime: classItem.startTime,
+                        endTime: classItem.endTime
+                    }
+                };
+            });
+        });
+    }, [schedule]);
+
+
+    // Appointment events mapping
+
+    const appointmentEvents = useMemo(() => {
+        return appointments.map((appointment) => ({
+            id: `appointment-${appointment._id}`,
+            title: "Appointment",
+            start: new Date(appointment.startTime),
+            end: new Date(appointment.endTime),
+            classNames: ["schedule-event", "schedule-event-appointment"],
+            extendedProps: {
+                type: "appointment",
+                studentName: appointment?.student?.name,
+                studentEmail: appointment?.student?.email,
+                purpose: appointment?.purpose,
+                mode: appointment?.mode,
+                meetingType: appointment?.meetingType,
+                meetLink: appointment?.meetLink,
+                startTime: appointment?.startTime,
+                endTime: appointment?.endTime
+            }
+        }));
+    }, [appointments]);
+
+
+    const calendarEvents = useMemo(() => {
+        return [...classEvents, ...appointmentEvents];
+    }, [classEvents, appointmentEvents]);
+
+    // Event details modal
+
+    const [selectedEvent, setSelectedEvent] = useState(null);
+    const detailsModalRef = useRef(null);
+
+    // Modal opening function
+
+    const openDetailsModal = (eventInfo) => {
+        setSelectedEvent({
+            title: eventInfo.event.title,
+            start: eventInfo.event.start,
+            end: eventInfo.event.end,
+            ...eventInfo.event.extendedProps
+        });
+
+        detailsModalRef.current?.showModal();
+    };
+
+    // Modal closing function
+
+    const closeDetailsModal = () => {
+        detailsModalRef.current?.close();
+        setTimeout(() => {
+            setSelectedEvent(null);
+        }, 500);
+    };
+
     return (
-        <div>
-            FacultyMySchedule
+        <div className='w-full max-w-full p-5 flex flex-col gap-10 gilroy'>
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+                <div>
+                    <p className='text-3xl graphik font-bold text-black'>My Schedule</p>
+                    <p className='text-gray-500'>Sunday to Thursday schedule</p>
+                </div>
+
+                <div className="inline-flex items-center rounded-full bg-blue-50 border border-blue-100 px-4 py-2 text-sm font-medium text-blue-700">
+                    {`Week of ${format(weekStart, "MMMM d")} - ${format(weekEnd, "d, yyyy")}`}
+                </div>
+            </div>
+
+
+            <div className="rounded-[28px] border border-white/70 bg-white/90 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-sm p-4 md:p-6">
+                <div className="flex flex-wrap items-center gap-3 mb-5">
+                    <div className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-1.5">
+                        <span className="w-3 h-3 rounded-full bg-blue-500"></span>
+                        <span className="text-sm font-medium text-blue-700">Appointment</span>
+                    </div>
+
+                    <div className="inline-flex items-center gap-2 rounded-full border border-orange-100 bg-orange-50 px-3 py-1.5">
+                        <span className="w-3 h-3 rounded-full bg-orange-500"></span>
+                        <span className="text-sm font-medium text-orange-700">Class</span>
+                    </div>
+                </div>
+
+                {
+                    loading
+                        ?
+                        <CardSkeleton variant="weeklyCalendar" />
+                        :
+                        <div className="w-full overflow-x-auto calendar-scroll">
+                            <div className="min-w-[1000px]">
+                                <FullCalendar
+                                    plugins={[timeGridPlugin, interactionPlugin]}
+                                    initialView="timeGridWeek"
+                                    events={calendarEvents}
+                                    firstDay={0}
+                                    hiddenDays={[5, 6]}
+                                    allDaySlot={false}
+                                    headerToolbar={false}
+                                    slotMinTime="08:00:00"
+                                    slotMaxTime="18:00:00"
+                                    slotDuration="00:30:00"
+                                    dayHeaderFormat={{ weekday: 'short', day: 'numeric', month: 'short' }}
+                                    eventDisplay="block"
+                                    height="auto"
+                                    eventContent={(arg) => (
+                                        <CalendarEventContent event={arg.event} timeText={arg.timeText} />
+                                    )}
+                                    eventClick={openDetailsModal}
+                                />
+                            </div>
+                        </div>
+                }
+            </div>
+
+            {/* Event details modal */}
+
+            <dialog ref={detailsModalRef} className="modal modal-middle">
+                <div className="modal-box max-w-md">
+                    <div className="flex items-center justify-between mb-4">
+                        <p className="text-lg font-bold text-gray-900">
+                            {selectedEvent?.type === "appointment" ? "Appointment Details" : "Class Details"}
+                        </p>
+                        <button
+                            type="button"
+                            className="btn btn-sm btn-circle btn-ghost"
+                            onClick={closeDetailsModal}
+                        >
+                            ✕
+                        </button>
+                    </div>
+
+                    {
+                        selectedEvent?.type === "appointment" ? (
+                            <div className="flex flex-col gap-3 text-sm text-gray-700">
+                                <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+                                    <p className="text-xs font-semibold text-gray-500 mb-1">Student</p>
+                                    <p className="font-medium text-gray-900">{formatName(selectedEvent?.studentName)}</p>
+                                    <p className="text-xs text-gray-500">{selectedEvent?.studentEmail || "No email"}</p>
+                                </div>
+
+                                <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+                                    <p><span className="font-semibold">Time:</span> {format(selectedEvent?.start, "hh:mm a")} - {format(selectedEvent?.end, "hh:mm a")}</p>
+                                    <p><span className="font-semibold">Mode:</span> {formatName(selectedEvent?.mode)}</p>
+                                    <p><span className="font-semibold">Type:</span> {formatName(selectedEvent?.meetingType)}</p>
+                                </div>
+
+                                <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+                                    <p className="text-xs font-semibold text-gray-500 mb-1">Purpose</p>
+                                    <p>{selectedEvent?.purpose || "No purpose provided"}</p>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col gap-3 text-sm text-gray-700">
+                                <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+                                    <p className="text-xs font-semibold text-gray-500 mb-1">Course</p>
+                                    <p className="font-medium text-gray-900">{formatName(selectedEvent?.courseName) || "Unknown course"}</p>
+                                </div>
+
+                                <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+                                    <p><span className="font-semibold">Day:</span> {selectedEvent?.day}</p>
+                                    <p><span className="font-semibold">Time:</span> {selectedEvent?.startTime} - {selectedEvent?.endTime}</p>
+                                </div>
+                            </div>
+                        )
+                    }
+                </div>
+            </dialog>
+
         </div>
     );
 };
