@@ -9,7 +9,7 @@ import { FaRegEdit } from 'react-icons/fa';
 import { FiLock } from "react-icons/fi";
 
 const FacultyMyProfile = () => {
-    const { userData, setUserData, passwordReset,updateUser } = useContext(AuthContext);
+    const { userData, setUserData, passwordReset, updateUser } = useContext(AuthContext);
     const [loading, setLoading] = useState(false);
     const [imageLoading, setImageLoading] = useState(false);
 
@@ -104,6 +104,7 @@ const FacultyMyProfile = () => {
         const name = form.name.value;
         const room = form.room.value || null;
         const biography = form.biography.value.trim();
+        const phone = form.phone.value.trim();
 
         let updatedFields = {}
 
@@ -112,6 +113,9 @@ const FacultyMyProfile = () => {
 
         if (room !== userData?.room)
             updatedFields.room = room;
+
+        if (phone !== userData?.phone)
+            updatedFields.phone = phone;
 
         if (biography !== userData?.biography)
             updatedFields.biography = biography;
@@ -132,9 +136,9 @@ const FacultyMyProfile = () => {
                 toast.error("Profile update failed");
                 return;
             }
-            
-            if(updatedFields.name)
-                await updateUser({displayName:updatedFields.name});
+
+            if (updatedFields.name)
+                await updateUser({ displayName: updatedFields.name });
 
             setUserData(prev => ({
                 ...prev,
@@ -279,6 +283,21 @@ const FacultyMyProfile = () => {
                                 type="text"
                                 name="name"
                                 defaultValue={userData?.name}
+                                className="input input-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                        </div>
+
+                        {/* Phone number */}
+
+                        <div className="flex flex-col gap-1">
+                            <label className="text-sm font-semibold text-gray-700">Phone number</label>
+                            <input
+                                type="tel"
+                                name="phone"
+                                placeholder="01*********"
+                                maxLength={11}
+                                minLength={11}
+                                pattern="[0-9]{11}"
                                 className="input input-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
                             />
                         </div>
