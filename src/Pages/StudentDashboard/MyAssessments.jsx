@@ -41,11 +41,9 @@ const gradeColor = (marks, total) => {
 };
 
 // Status is returned after comparing with due date
-const deriveStatus = (assignment, userId) => {
-    const submissions = Array.isArray(assignment.submissions) ? assignment.submissions : [];
-    const my = submissions.find(s => (s.student?._id ?? s.student).toString() === userId.toString());
-    if (my) return my.marks != null ? 'graded' : 'submitted';
-    return new Date(assignment.dueDate) < new Date() ? 'missed' : 'pending';
+const deriveStatus = (submission, dueDate) => {
+    if (submission) return submission.isGraded ? 'graded' : 'submitted';
+    return new Date(dueDate) < new Date() ? 'missed' : 'pending';
 };
 
 const getWeekRange = () => {
@@ -184,7 +182,7 @@ const AssignmentRow = ({assignment, onSubmitted, onUnsubmitted}) => {
             const res = await axiosSecure.post(`/assignment/${id}/submit`, data);
 
             if (res.status === 200) {
-                onSubmitted(id, data.submissionURL, res.data.submission._id);
+                onSubmitted(id, data.submissionURL);
                 toast.success("Assignment submitted successfully");
                 setFileName('');
                 if (fileInputRef.current) {
@@ -700,52 +698,63 @@ const MyAssessments = () => {
                 const supervisorRels = studentSupervisorRes.data.supervisors || [];
 
                 // Get all assignments paired with the course
-                const courseDataRes = await Promise.all(
+                const courseDataWithSubmissionRes = await Promise.all(
                     activeCourses.map(async (course) => {
-                        // Get all assignments corresponding to the course
                         const assignmentsRes = await axiosSecure.get(`/course/${course._id}/assignments`);
+                        const assignments = assignmentsRes.data.assignments || [];
+
+                        const assignmentsWithSubmissions = await Promise.all(
+                            assignments.map(async (assignment) => {
+                                const assignmentWithSubmissionRes = await axiosSecure.get(`/course/${course._id}/assignment/${assignment._id}`);
+
+                                return {
+                                    assignment,
+                                    submission: assignmentWithSubmissionRes.data.submission
+                                };
+                            })
+                        );
 
                         return {
                             course,
-                            assignments: assignmentsRes.data.assignments
-                        }
+                            assignments: assignmentsWithSubmissions
+                        };
                     })
                 );
 
                 // Map and complete assignments collection
-                const mappedAssignments = courseDataRes.flatMap((item) => {
+                const mappedAssignments = courseDataWithSubmissionRes.flatMap((item) => {
                     // Allocate the course
                     const course = item.course;
 
                     // Allocate the assignments
                     return (item.assignments || []).map(a => {
-                        const submissions = Array.isArray(a.submissions) ? a.submissions : [];
-                        const my = submissions.find(s => s?.student.toString() === userData._id.toString());
                         return {
-                            id: a._id,
-                            title: a.title,
-                            description: a.description,
-                            dueDate: new Date(a.dueDate).toLocaleDateString('en-US', {
+                            id: a.assignment._id,
+                            title: a.assignment.title,
+                            description: a.assignment.description,
+                            dueDate: new Date(a.assignment.dueDate).toLocaleDateString('en-US', {
                                 year: 'numeric',
                                 month: 'short',
                                 day: 'numeric'
                             }),
-                            dueDateRaw: new Date(a.dueDate),
-                            totalMarks: a.totalMarks,
-                            attachments: Array.isArray(a.attachments) ? a.attachments : [],
+                            dueDateRaw: new Date(a.assignment.dueDate),
+                            totalMarks: a.assignment.totalMarks,
+                            attachments: Array.isArray(a.assignment.attachments) ? a.assignment.attachments : [],
                             courseCode: course.courseCode,
                             courseName: course.courseName,
                             courseId: course._id,
-                            status: deriveStatus(a, userData._id),
-                            submittedAt: my?.submittedAt
-                                ? new Date(my.submittedAt).toLocaleDateString('en-US', {
+                            status: deriveStatus(a.submission, a.assignment.dueDate),
+                            submissionId: a.submission?._id,
+                            submissionURL: a.submission?.submissionURL || null,
+                            submittedAt: a.submission?.submittedAt
+                                ? new Date(a.submission?.submittedAt).toLocaleDateString('en-US', {
                                     year: 'numeric',
                                     month: 'short',
                                     day: 'numeric'
                                 })
                                 : null,
-                            marks: my?.marks ?? 0,
-                            feedback: my?.feedback ?? null,
+                            marks: a.submission?.marks ?? null,
+                            feedback: a.submission?.feedback ?? null,
                         };
                     });
                 });
@@ -967,11 +976,10 @@ const MyAssessments = () => {
                                 <AssignmentRow
                                     key={a.id}
                                     assignment={a}
-                                    onSubmitted={(id, url, submissionId) => setAssignments(prev =>
+                                    onSubmitted={(id, url) => setAssignments(prev =>
                                         prev.map(x => x.id === id ? {
                                             ...x,
                                             status: 'submitted',
-                                            submissionId,
                                             submissionURL: url,
                                             submittedAt: new Date().toLocaleDateString('en-US', {
                                                 year: 'numeric',
