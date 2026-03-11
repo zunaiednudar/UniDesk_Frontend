@@ -6,7 +6,7 @@ import axiosSecure from "../../utils/axiosSecure.js";
 import {formatErrorMessage} from "../../utils/formatErrorMessages.js";
 import {Camera} from "lucide-react";
 
-const Profile = () => {
+const StudentProfile = () => {
     const {userData, setUserData, setUser, updateUser, passwordReset} = useContext(AuthContext);
 
     const [name, setName] = useState("");
@@ -268,4 +268,4 @@ const Profile = () => {
     );
 };
 
-export default Profile;
+export default StudentProfile;

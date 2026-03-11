@@ -13,7 +13,7 @@ import MyAssessments from "../Pages/StudentDashboard/MyAssessments.jsx";
 import AskMentor from "../Pages/StudentDashboard/AskMentor.jsx";
 import PublicRoute from "../Providers/PublicRoute/PublicRoute.jsx";
 import StudentRoute from "../Providers/RoleWiseRoutes/StudentRoute/StudentRoute.jsx";
-import Profile from "../Pages/Profile/Profile.jsx";
+import StudentProfile from "../Pages/Profile/StudentProfile.jsx";
 import Notification from "../Pages/Notification/Notification.jsx";
 import CourseDetails from "../Components/Course/CourseDetails.jsx";
 
@@ -21,6 +21,7 @@ import AdminDashboard from "../Pages/AdminDashboard/AdminDashboard.jsx";
 import Overview from "../Pages/AdminDashboard/Overview.jsx";
 import Users from "../Pages/AdminDashboard/Users.jsx";
 import AdminRoute from "../Providers/RoleWiseRoutes/AdminRoute/AdminRoute.jsx";
+import AdminProfile from "../Pages/Profile/AdminProfile.jsx";
 
 export const router = createBrowserRouter([
     {
@@ -98,7 +99,7 @@ export const router = createBrowserRouter([
             {
                 path: "profile",
                 element: <StudentRoute>
-                    <Profile></Profile>
+                    <StudentProfile></StudentProfile>
                 </StudentRoute>
             },
             {
@@ -141,6 +142,12 @@ export const router = createBrowserRouter([
                 path: "users",
                 element: <AdminRoute>
                     <Users></Users>
+                </AdminRoute>
+            },
+            {
+                path: "profile",
+                element: <AdminRoute>
+                    <AdminProfile></AdminProfile>
                 </AdminRoute>
             },
             {
