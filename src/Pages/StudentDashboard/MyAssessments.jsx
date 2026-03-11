@@ -158,6 +158,7 @@ const AssignmentRow = ({assignment, onSubmitted, onUnsubmitted}) => {
 
     const handleSubmit = async (id) => {
         const file = fileInputRef.current?.files[0];
+        console.log(file);
 
         if (!file) {
             toast.error("You must provide the assignment file!");
@@ -176,6 +177,8 @@ const AssignmentRow = ({assignment, onSubmitted, onUnsubmitted}) => {
             cloudinaryId: fileData.public_id,
             resourceType: fileData.resource_type
         };
+
+        console.log(data);
 
         try {
             const res = await axiosSecure.post(`/assignment/${id}/submit`, data);
@@ -717,7 +720,7 @@ const MyAssessments = () => {
                     // Allocate the assignments
                     return (item.assignments || []).map(a => {
                         const submissions = Array.isArray(a.submissions) ? a.submissions : [];
-                        const my = submissions.find(s => (s.student?._id ?? s.student).toString() === userData._id.toString());
+                        const my = submissions.find(s => s?.student.toString() === userData._id.toString());
                         return {
                             id: a._id,
                             title: a.title,
@@ -734,7 +737,6 @@ const MyAssessments = () => {
                             courseName: course.courseName,
                             courseId: course._id,
                             status: deriveStatus(a, userData._id),
-                            submissionId: my?._id ?? null,
                             submittedAt: my?.submittedAt
                                 ? new Date(my.submittedAt).toLocaleDateString('en-US', {
                                     year: 'numeric',
@@ -742,8 +744,7 @@ const MyAssessments = () => {
                                     day: 'numeric'
                                 })
                                 : null,
-                            submissionURL: my?.submissionURL ?? null,
-                            marks: my?.marks ?? null,
+                            marks: my?.marks ?? 0,
                             feedback: my?.feedback ?? null,
                         };
                     });
