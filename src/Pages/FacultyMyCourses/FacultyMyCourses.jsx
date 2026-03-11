@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { Link } from 'react-router';
 import CardSkeleton from '../../Components/CardSkeleton/CardSkeleton.jsx';
 import PaginationTemplate from '../../Components/PaginationTemplate/PaginationTemplate.jsx';
+import formatName from '../../utils/formatName.js';
 
 const FacultyMyCourses = () => {
     // Filtering
@@ -306,7 +307,7 @@ const FacultyMyCourses = () => {
                                                                     <img src={faculty?.photoURL} alt={faculty?.name} className="w-5 h-5 rounded-full object-cover mr-2"
                                                                     />
                                                                     <div className="flex flex-col items-start min-w-0">
-                                                                        <p className="text-sm text-gray-500 truncate">{faculty?.name}</p>
+                                                                        <p className="text-sm text-gray-500 truncate">{formatName(faculty?.name)}</p>
                                                                         <p className="text-xs text-gray-400 break-all">{faculty?.email}</p>
                                                                     </div>
                                                                 </div>
@@ -379,7 +380,7 @@ const FacultyMyCourses = () => {
                                                                     <img src={faculty?.photoURL} alt={faculty?.name} className="w-5 h-5 rounded-full object-cover mr-2"
                                                                     />
                                                                     <div className="flex flex-col items-start min-w-0">
-                                                                        <p className="text-sm text-gray-500 truncate">{faculty?.name}</p>
+                                                                        <p className="text-sm text-gray-500 truncate">{formatName(faculty?.name)}</p>
                                                                         <p className="text-xs text-gray-400 break-all">{faculty?.email}</p>
                                                                     </div>
                                                                 </div>

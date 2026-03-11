@@ -34,7 +34,7 @@ const FacultyCourseDetails = () => {
 
     const [description, setDescription] = useState("");
     const [status, setStatus] = useState("");
-    const [inviteLink, setInviteLink] = useState("");
+    const [inviteCode, setInviteCode] = useState("");
     const [copied, setCopied] = useState(false);
 
     // Edit course modal related
@@ -49,7 +49,7 @@ const FacultyCourseDetails = () => {
 
         setDescription(course?.description || "");
         setStatus(course?.status || "");
-        setInviteLink(
+        setInviteCode(
             course?.invitationCode
                 ? course?.invitationCode
                 : ""
@@ -87,9 +87,8 @@ const FacultyCourseDetails = () => {
             });
 
             const nextInvitationCode = res?.data?.invitationCode || extractCodeFromLink(res?.data?.newInvitationLink);
-            const nextInviteLink = nextInvitationCode ? `${import.meta.env.VITE_LIVE_LINK}/join-course?code=${nextInvitationCode}` : (res?.data?.newInvitationLink || "");
 
-            setInviteLink(nextInviteLink);
+            setInviteCode(nextInvitationCode);
             setCourse((prev) => ({
                 ...prev,
                 invitationCode: nextInvitationCode || prev?.invitationCode
@@ -106,11 +105,11 @@ const FacultyCourseDetails = () => {
     // Copy invitation link function
 
     const handleCopyInvite = async () => {
-        if (!inviteLink)
+        if (!inviteCode)
             return;
 
         try {
-            await navigator.clipboard.writeText(inviteLink);
+            await navigator.clipboard.writeText(inviteCode);
             setCopied(true);
 
             setTimeout(() => {
@@ -1068,7 +1067,8 @@ const FacultyCourseDetails = () => {
 
     // Submission grading function
 
-    const handleGradeSubmission = async () => {
+    const handleGradeSubmission = async (e) => {
+        e.preventDefault();
         if (!selectedAssignment?._id || !submissionToGrade?._id)
             return;
 
@@ -1523,14 +1523,14 @@ const FacultyCourseDetails = () => {
 
                                         <input
                                             readOnly
-                                            value={inviteLink}
+                                            value={inviteCode}
                                             placeholder="Click generate to create invitation code"
                                             className="input input-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         />
 
                                         <button
                                             type="button"
-                                            disabled={!inviteLink}
+                                            disabled={!inviteCode}
                                             onClick={handleCopyInvite}
                                             className={`btn flex items-center gap-2 transition-all duration-200 ${copied
                                                 ? "bg-green-600 text-white border-green-600"
@@ -1555,7 +1555,7 @@ const FacultyCourseDetails = () => {
                                         {
                                             loadingGenerateLink
                                                 ? <span className="loading loading-dots loading-md"></span>
-                                                : (inviteLink ? "Regenerate Invitation Link" : "Generate Invitation Link")
+                                                : (inviteCode ? "Regenerate Invitation Code" : "Generate Invitation Code")
                                         }
                                     </button>
                                 </div>
@@ -2306,7 +2306,7 @@ const FacultyCourseDetails = () => {
             {/* Assignment Submission grading modal */}
 
             <dialog ref={gradeSubmissionModalRef} className="modal modal-middle">
-                <div className="modal-box max-w-md">
+                <form onSubmit={handleGradeSubmission} className="modal-box max-w-md">
                     <p className="text-lg font-bold mb-3">Grade Submission</p>
 
                     <div className="flex flex-col gap-3">
@@ -2318,19 +2318,21 @@ const FacultyCourseDetails = () => {
                             placeholder="Marks"
                             value={gradeMarks}
                             onChange={(e) => setGradeMarks(e.target.value)}
+                            required
                         />
                         <textarea
                             rows="4"
-                            className="textarea textarea-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="textarea textarea-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                             placeholder="Feedback"
                             value={gradeFeedback}
                             onChange={(e) => setGradeFeedback(e.target.value)}
+                            required
                         />
                     </div>
 
                     <div className="flex justify-end gap-2 mt-4">
-                        <button className="btn btn-soft" onClick={closeGradeSubmissionModal}>Cancel</button>
-                        <button className="btn bg-[#1E40AF] text-white hover:bg-blue-600" onClick={handleGradeSubmission} disabled={loadingGrade}>
+                        <button type="button" className="btn btn-soft" onClick={closeGradeSubmissionModal}>Cancel</button>
+                        <button type="submit" className="btn w-30 bg-[#1E40AF] text-white hover:bg-blue-600" disabled={loadingGrade}>
                             {
                                 loadingGrade ?
                                     <span className="loading loading-dots loading-md"></span>
@@ -2339,7 +2341,7 @@ const FacultyCourseDetails = () => {
                             }
                         </button>
                     </div>
-                </div>
+                </form>
             </dialog>
 
             {/* Assignment deletion confirmation modal */}
