@@ -18,8 +18,8 @@ import Notification from "../Pages/Notification/Notification.jsx";
 import CourseDetails from "../Components/Course/CourseDetails.jsx";
 
 import AdminDashboard from "../Pages/AdminDashboard/AdminDashboard.jsx";
-import AdminOverview from "../Pages/AdminDashboard/AdminOverview.jsx";
-import AdminUser from "../Pages/AdminDashboard/AdminUser.jsx";
+import Overview from "../Pages/AdminDashboard/Overview.jsx";
+import Users from "../Pages/AdminDashboard/Users.jsx";
 import AdminRoute from "../Providers/RoleWiseRoutes/AdminRoute/AdminRoute.jsx";
 
 export const router = createBrowserRouter([
@@ -134,13 +134,13 @@ export const router = createBrowserRouter([
             {
                 path: "overview",
                 element: <AdminRoute>
-                    <AdminOverview></AdminOverview>
+                    <Overview></Overview>
                 </AdminRoute>
             },
             {
                 path: "users",
                 element: <AdminRoute>
-                    <AdminUser></AdminUser>
+                    <Users></Users>
                 </AdminRoute>
             },
             {

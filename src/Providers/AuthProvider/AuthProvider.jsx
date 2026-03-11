@@ -44,7 +44,7 @@ const AuthProvider = ({ children }) => {
         }
     };
 
-    // Update User Profile
+    // Update Users Profile
 
     const updateUser = (updatedData) => {
         return updateProfile(auth.currentUser, updatedData);
@@ -62,7 +62,7 @@ const AuthProvider = ({ children }) => {
         return deleteUser(auth.currentUser);
     }
 
-    // User Data
+    // Users Data
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {

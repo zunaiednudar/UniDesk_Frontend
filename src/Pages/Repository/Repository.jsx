@@ -546,7 +546,7 @@ const Repository = () => {
                     exchange study materials, participate in discussions, and contribute valuable academic resources</p>
             </div>
 
-            {/* Unregistered User - Stats */}
+            {/* Unregistered Users - Stats */}
             {!id && (
                 <div className={`grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-4`}>
                     <StatCard
@@ -575,7 +575,7 @@ const Repository = () => {
 
             {/* Contribution graph + Leaderboard */}
             <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-4">
-                {/* Registered User */}
+                {/* Registered Users */}
                 {id && (
                     <div className="flex flex-col gap-4">
                         {/* Stats */}
