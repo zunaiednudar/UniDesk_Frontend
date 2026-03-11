@@ -11,6 +11,7 @@ import timeAgo from "../../utils/timeAgo.js";
 import formatName from "../../utils/formatName.js";
 import {AuthContext} from "../../Providers/AuthProvider/AuthProvider.jsx";
 import CourseFilesDrawer from "../../Components/Course/CourseFilesDrawer.jsx";
+import {toast} from "sonner";
 
 const statusBadgeConfig = {
     active: {badge: 'bg-green-100 text-green-700 border border-green-200', dot: 'bg-green-500'},
@@ -175,26 +176,30 @@ const CourseDetails = () => {
                 const assignRes = await axiosSecure.get(`/course/${id}/assignments`);
                 const allAssignments = assignRes.data.assignments || [];
 
-                const mapped = allAssignments.map(a => {
-                    const submissions = Array.isArray(a.submissions) ? a.submissions : [];
-                    const userSub = submissions.find(s => s.student === userData._id);
+                // Fetch each assignment's submission for the current student
+                const assignmentsWithSubmissions = await Promise.all(
+                    allAssignments.map(async (assignment) => {
+                        const { data } = await axiosSecure.get(`/course/${id}/assignment/${assignment._id}`);
+                        return { assignment, submission: data.submission };
+                    })
+                );
+
+                const mapped = assignmentsWithSubmissions.map(({ assignment, submission }) => {
                     let status = 'pending';
-                    if (userSub) {
-                        const diffHrs = (new Date(userSub.submittedAt) - new Date(a.dueDate)) / (1000 * 60 * 60);
+                    if (submission?.submittedAt) {
+                        const diffHrs = (new Date(submission.submittedAt) - new Date(assignment.dueDate)) / (1000 * 60 * 60);
                         status = diffHrs <= 0 ? 'completed' : 'late';
-                    } else if (new Date(a.dueDate) < new Date()) {
+                    } else if (new Date(assignment.dueDate) < new Date()) {
                         status = 'missed';
                     }
                     return {
-                        id: a._id,
-                        title: a.title,
-                        description: a.description,
-                        dueDate: new Date(a.dueDate).toLocaleDateString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric'
+                        id: assignment._id,
+                        title: assignment.title,
+                        description: assignment.description,
+                        dueDate: new Date(assignment.dueDate).toLocaleDateString('en-US', {
+                            month: 'short', day: 'numeric', year: 'numeric'
                         }),
-                        dueDateRaw: a.dueDate,
+                        dueDateRaw: assignment.dueDate,
                         status,
                     };
                 }).sort((a, b) => new Date(a.dueDateRaw) - new Date(b.dueDateRaw));
@@ -215,8 +220,8 @@ const CourseDetails = () => {
                     }));
                 setNotices(allNotices);
 
-            } catch (err) {
-                console.error(err);
+            } catch {
+                toast.error("Error fetching data");
             } finally {
                 setLoading(false);
             }
