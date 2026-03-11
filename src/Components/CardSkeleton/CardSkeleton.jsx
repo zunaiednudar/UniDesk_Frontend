@@ -6,13 +6,14 @@ const CardSkeleton = ({ variant = "list", lines = 3 }) => {
 
     if (variant === "stat")
         return (
-            <div className="w-full px-5 py-10 rounded-lg shadow-xl flex justify-between animate-pulse">
-                <div className="space-y-3 w-2/3">
-                    <div className="h-3 bg-gray-300 rounded w-1/2"></div>
-                    <div className="h-8 bg-gray-300 rounded w-1/3"></div>
+            <div className="w-full p-5 rounded-lg shadow-lg flex flex-col gap-2 box-border border border-gray-100 animate-pulse">
+                <div className="flex gap-2 items-center">
+                    <div className="w-5 h-5 rounded bg-gray-200" />
+                    <div className="h-3 w-20 rounded bg-gray-200" />
                 </div>
-                <div className="w-10 h-10 bg-gray-300 rounded-lg"></div>
+                <div className="h-4 w-24 rounded bg-gray-300" />
             </div>
+
         );
 
     if (variant === "pendingAssignment")
@@ -58,6 +59,58 @@ const CardSkeleton = ({ variant = "list", lines = 3 }) => {
                 <div className="w-full h-10 bg-gray-200 rounded-lg"></div>
 
             </div>
+        );
+
+    if (variant === "appointmentCard")
+        return (
+            <div className="flex flex-col gap-4 p-5 rounded-2xl bg-white border border-gray-200 shadow-sm animate-pulse">
+                <div className="flex items-start justify-between">
+                    <div className="min-w-0 flex-1">
+                        <div className="h-4 w-32 rounded bg-gray-200 mb-2"></div>
+                        <div className="h-3 w-44 rounded bg-gray-200"></div>
+                    </div>
+                    <div className="h-3 w-16 rounded bg-gray-200"></div>
+                </div>
+
+                <div className="flex items-center justify-between">
+                    <div className="h-7 w-24 rounded-full bg-gray-200"></div>
+                    <div className="h-7 w-20 rounded-full bg-gray-200"></div>
+                </div>
+
+                <div className="space-y-2">
+                    <div className="h-3 w-full rounded bg-gray-200"></div>
+                    <div className="h-3 w-3/4 rounded bg-gray-200"></div>
+                </div>
+
+                <div className="border-t border-gray-100"></div>
+
+                <div className="grid grid-cols-2 gap-3">
+                    <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-md bg-gray-200"></div>
+                        <div className="h-3 w-24 rounded bg-gray-200"></div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-md bg-gray-200"></div>
+                        <div className="h-3 w-20 rounded bg-gray-200"></div>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                    <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-md bg-gray-200"></div>
+                        <div className="h-3 w-16 rounded bg-gray-200"></div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-md bg-gray-200"></div>
+                        <div className="h-3 w-24 rounded bg-gray-200"></div>
+                    </div>
+                </div>
+
+                <div className="h-8 w-full rounded-md bg-gray-300"></div>
+            </div>
+
         );
 
     // For cards inside a container

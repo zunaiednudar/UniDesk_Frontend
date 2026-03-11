@@ -8,6 +8,9 @@ import timeAgo from '../../utils/timeAgo.js';
 import { formatAppointmentDate, formatAppointmentTime } from '../../utils/formatAppointmentDate.js';
 import { CalendarClock, Clock3, Eye, Globe, MapPin, UserRound } from 'lucide-react';
 import CardSkeleton from '../../Components/CardSkeleton/CardSkeleton.jsx';
+import { MdOutlineUpcoming, MdPendingActions } from 'react-icons/md';
+import { GrCompliance } from "react-icons/gr";
+import { FaPeopleGroup } from "react-icons/fa6";
 
 const FacultyMyAppointments = () => {
     const { userData } = useContext(AuthContext);
@@ -21,6 +24,10 @@ const FacultyMyAppointments = () => {
     // Appointments data
 
     const [appointments, setAppointments] = useState([]);
+    const [upcomingAppointments, setUpcomingAppointments] = useState(0);
+    const [pendingAppointments, setPendingAppointments] = useState(0);
+    const [completedAppointments, setCompletedAppointments] = useState(0);
+    const [students, setStudents] = useState(0);
 
     // Loading states
 
@@ -48,8 +55,25 @@ const FacultyMyAppointments = () => {
 
                 setTotalPages(res?.data?.pagination?.totalPages || 1);
 
-                setAppointments(data);
+                const studentsSet = new Set();
+                let upcoming = 0, pending = 0, completed = 0;
 
+                data.forEach((appointment) => {
+                    if (appointment?.status === "approved")
+                        upcoming++;
+                    else if (appointment?.status === "pending")
+                        pending++;
+                    else if (appointment?.status === "completed")
+                        completed++;
+                    studentsSet.add(appointment?.student);
+                });
+
+                setCompletedAppointments(completed);
+                setUpcomingAppointments(upcoming);
+                setPendingAppointments(pending);
+                setStudents(studentsSet.size);
+
+                setAppointments(data);
             } catch (error) {
                 toast.error("Appointments fetch failed");
             } finally {
@@ -59,7 +83,7 @@ const FacultyMyAppointments = () => {
 
         if (userData?._id)
             fetchAppointments();
-    }, [userData?._id, page, status]);
+    }, [userData?._id, page, status, completedAppointments, upcomingAppointments, pendingAppointments]);
 
     // UI helper function for modal
 
@@ -315,12 +339,64 @@ const FacultyMyAppointments = () => {
 
     const canJoin = canJoinAppointment(selectedAppointment, currentTime);
 
+
+    // Stats card information
+
+    const stats = [
+        {
+            logo: MdOutlineUpcoming,
+            title: "Upcoming Appointments",
+            info: `${upcomingAppointments}`
+        },
+        {
+            logo: MdPendingActions,
+            title: "Pending Appointments",
+            info: `${pendingAppointments}`
+        },
+        {
+            logo: GrCompliance,
+            title: "Completed Appointments",
+            info: `${completedAppointments}`
+        },
+        {
+            logo: FaPeopleGroup,
+            title: "Connected with",
+            info: `${students} ${students > 1 ? "students" : "student"}`
+        }
+    ];
+
     return (
         <div className='w-full max-w-full p-5 flex flex-col gap-10 gilroy'>
             <div className='w-full max-w-full'>
                 <p className='text-3xl graphik font-bold text-black'>My Appointments</p>
                 <p className='text-gray-500'>Manage your student appointments</p>
             </div>
+
+            {/* Stats card */}
+
+            <div className='w-full max-w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 justify-items-center gap-3'>
+                {
+                    loadingAppointments ? (
+                        Array.from({ length: 4 }).map((_, i) => (
+                            <CardSkeleton key={i} variant="stat" />
+                        )
+                        )
+                    ) :
+                        (
+                            stats.map(stat =>
+                                <div key={stat.title} className='w-full p-5 rounded-lg shadow-lg flex flex-col gap-2 box-border border border-gray-100 hover:-translate-y-1 transition-all duration-300'>
+                                    <div className='flex gap-2 items-center'>
+                                        <stat.logo className='w-5 h-5 text-gray-500' />
+                                        <p className='text-gray-500 text-xs'>{stat.title}</p>
+
+                                    </div>
+                                    <p className='graphik text-sm font-medium'>{stat.info}</p>
+                                </div>
+                            )
+                        )
+                }
+            </div>
+
             <select
                 value={status}
                 onChange={(e) => {
@@ -340,7 +416,7 @@ const FacultyMyAppointments = () => {
                     loadingAppointments
                         ?
                         Array.from({ length: 6 }).map((_, i) => (
-                            <CardSkeleton key={i} lines={4} />
+                            <CardSkeleton key={i} lines={4} variant="appointmentCard" />
                         ))
                         :
                         appointments.length === 0

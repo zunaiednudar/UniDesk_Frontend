@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useState } from 'react';
 import { AuthContext } from '../../Providers/AuthProvider/AuthProvider';
 import axiosSecure from '../../utils/axiosSecure.js';
 import { GraduationCap } from 'lucide-react';
-import { MdOutlineCalendarToday, MdPeopleOutline } from 'react-icons/md';
+import { MdOutlineCalendarToday, MdOutlineUpcoming, MdPeopleOutline } from 'react-icons/md';
 import { VscLayersActive } from 'react-icons/vsc';
 import { SiGoogleclassroom } from 'react-icons/si';
 import { formatAppointmentDate } from '../../utils/formatAppointmentDate.js';
@@ -124,27 +124,23 @@ const FacultyDashboard = () => {
     const stats = [
         {
             title: "Total Courses",
-            count: (activeCourses.length + completedCourses.length >= 0) ? activeCourses.length + completedCourses.length : "0",
-            logo: GraduationCap,
-            logoBg: "bg-blue-600"
+            info: (activeCourses.length + completedCourses.length >= 0) ? activeCourses.length + completedCourses.length : "0",
+            logo: GraduationCap
         },
         {
             title: "Total Students",
-            count: totalStudents,
-            logo: MdPeopleOutline,
-            logoBg: "bg-green-600"
+            info: totalStudents,
+            logo: MdPeopleOutline
         },
         {
             title: "Active Courses",
-            count: activeCourses.length,
-            logo: VscLayersActive,
-            logoBg: "bg-yellow-600"
+            info: activeCourses.length,
+            logo: VscLayersActive
         },
         {
             title: "Upcoming Appointments",
-            count: appointments.length,
-            logo: MdOutlineCalendarToday,
-            logoBg: "bg-purple-600"
+            info: appointments.length,
+            logo: MdOutlineUpcoming
         },
     ];
 
@@ -174,14 +170,13 @@ const FacultyDashboard = () => {
                     ) :
                         (
                             stats.map(stat =>
-                                <div key={stat.title} className='w-full px-5 py-10 rounded-lg shadow-xl flex items-start justify-between box-border hover:-translate-y-1 transition-all duration-300'>
-                                    <div>
-                                        <p className='text-gray-500 text-sm'>{stat.title}</p>
-                                        <p className='graphik text-5xl font-bold'>{stat.count}</p>
+                                <div key={stat.title} className='w-full p-5 rounded-lg shadow-lg flex flex-col gap-2 box-border border border-gray-100 hover:-translate-y-1 transition-all duration-300'>
+                                    <div className='flex gap-2 items-center'>
+                                        <stat.logo className='w-5 h-5 text-gray-500' />
+                                        <p className='text-gray-500 text-xs'>{stat.title}</p>
+
                                     </div>
-                                    <div className={`w-10 h-10 ${stat.logoBg} rounded-lg flex justify-center items-center`}>
-                                        <stat.logo className='w-5 h-5 text-white' />
-                                    </div>
+                                    <p className='graphik text-sm font-medium'>{stat.info}</p>
                                 </div>
                             )
                         )

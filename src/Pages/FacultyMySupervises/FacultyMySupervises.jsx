@@ -200,7 +200,7 @@ const FacultyMySupervises = () => {
             fetchSupervises();
     }, [userData?._id, page, search,relationshipType]);
 
-    console.log(activeSupervises, completedSupervises);
+    // console.log(activeSupervises, completedSupervises);
 
     return (
         <>
