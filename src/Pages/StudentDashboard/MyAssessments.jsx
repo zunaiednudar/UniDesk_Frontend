@@ -3,7 +3,7 @@ import {useNavigate} from 'react-router';
 import {
     ClipboardCheck, Search, Upload, Download, Calendar,
     CheckCircle2, Clock, AlertCircle, Star, MessageSquare, ChevronDown, ChevronUp,
-    GraduationCap, BookOpen, Briefcase, X, Trash2
+    GraduationCap, BookOpen, Briefcase, X, Trash2, ScanEye
 } from 'lucide-react';
 import axiosSecure from "../../utils/axiosSecure.js";
 import formatName from "../../utils/formatName.js";
@@ -41,9 +41,12 @@ const gradeColor = (marks, total) => {
 };
 
 // Status is returned after comparing with due date
-const deriveStatus = (submission, dueDate) => {
-    if (submission) return submission.isGraded ? 'graded' : 'submitted';
-    return new Date(dueDate) < new Date() ? 'missed' : 'pending';
+const deriveStatus = (a) => {
+    const submission = a.submission;
+    const dueDate = a.assignment.dueDate;
+    if (!submission) return new Date(dueDate) < new Date() ? 'missed' : 'pending';
+    if (submission.isGraded) return 'graded';
+    return 'submitted';
 };
 
 const getWeekRange = () => {
@@ -139,9 +142,11 @@ const DayColumn = ({day, date, assignments}) => {
 };
 
 // Row for each assignment in the assignments section
-const AssignmentRow = ({assignment, onSubmitted, onUnsubmitted}) => {
+const AssignmentRow = ({assignment, onSubmitted, onUnsubmitted, onRecheckSent}) => {
     const [expanded, setExpanded] = useState(false);
     const [unsubmitting, setUnsubmitting] = useState(false);
+    const [recheckSending, setRecheckSending] = useState(false);
+    const [recheckMessage, setRecheckMessage] = useState('');
 
     const fileInputRef = useRef(null);
     const [fileName, setFileName] = useState('');
@@ -156,7 +161,6 @@ const AssignmentRow = ({assignment, onSubmitted, onUnsubmitted}) => {
 
     const handleSubmit = async (id) => {
         const file = fileInputRef.current?.files[0];
-        console.log(file);
 
         if (!file) {
             toast.error("You must provide the assignment file!");
@@ -176,8 +180,6 @@ const AssignmentRow = ({assignment, onSubmitted, onUnsubmitted}) => {
             resourceType: fileData.resource_type
         };
 
-        console.log(data);
-
         try {
             const res = await axiosSecure.post(`/assignment/${id}/submit`, data);
 
@@ -195,6 +197,33 @@ const AssignmentRow = ({assignment, onSubmitted, onUnsubmitted}) => {
             if (fileInputRef.current) {
                 fileInputRef.current.value = "";
             }
+        }
+    }
+
+    const handleRecheckSend = async () => {
+        if (!recheckMessage.trim()) {
+            toast.error("You need to provide a message to proceed with recheck");
+            return;
+        }
+
+        setRecheckSending(true);
+
+        try {
+            const res = await axiosSecure.post(
+                `/submission/recheck/${assignment.submissionId}`,
+                { message: recheckMessage },
+                { headers: { 'Content-Type': 'application/json' } }
+            );
+
+            if (res.status === 200) {
+                toast.success("Recheck request sent successfully!");
+                onRecheckSent(assignment.id);
+                setRecheckMessage('');
+            }
+        } catch {
+            toast.error("Recheck send failed");
+        } finally {
+            setRecheckSending(false);
         }
     }
 
@@ -266,7 +295,7 @@ const AssignmentRow = ({assignment, onSubmitted, onUnsubmitted}) => {
             </div>
 
             {expanded && (
-                <div className="px-10 pb-4 space-y-3">
+                <div className={`px-10 pb-4 space-y-3`}>
                     {assignment.description && (
                         <p className="text-sm text-gray-500 leading-relaxed">{assignment.description}</p>
                     )}
@@ -333,6 +362,43 @@ const AssignmentRow = ({assignment, onSubmitted, onUnsubmitted}) => {
                                     </a>
                                 ))}
                             </div>
+                        </div>
+                    )}
+
+                    {assignment.status === "graded" && assignment.recheckRequested && !assignment.recheckResolved && (
+                        <div className="flex items-center gap-3 bg-indigo-50 border border-indigo-200 rounded-xl px-4 py-3">
+                            <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center shrink-0">
+                                <ScanEye size={15} className="text-indigo-500"/>
+                            </div>
+                            <div>
+                                <p className="text-xs font-bold text-indigo-600">Recheck Requested</p>
+                                <p className="text-[11px] text-indigo-400 mt-0.5">Your request is being reviewed by the instructor.</p>
+                            </div>
+                        </div>
+                    )}
+
+                    {assignment.status === "graded" && (!assignment.recheckRequested || assignment.recheckResolved) && (
+                        <div className="flex flex-col gap-4">
+                            <input
+                                type="text"
+                                value={recheckMessage}
+                                onChange={(e) => setRecheckMessage(e.target.value)}
+                                className="w-full text-sm text-gray-700 bg-white border border-gray-200 rounded-xl px-3 py-2 outline-none transition focus:ring-2 focus:ring-blue-400 focus:border-blue-400 placeholder:text-gray-400 shadow-sm"
+                                placeholder="Reason for recheck..."
+                            />
+                            <button
+                                onClick={handleRecheckSend}
+                                disabled={recheckSending || !recheckMessage.trim()}
+                                className="ml-auto flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold border border-blue-200 text-blue-500 rounded-lg hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                            >
+                                {recheckSending ? (
+                                    <svg className="animate-spin w-3 h-3" viewBox="0 0 24 24" fill="none">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+                                    </svg>
+                                ) : <ScanEye size={12}/>}
+                                {recheckSending ? 'Sending…' : 'Send for recheck'}
+                            </button>
                         </div>
                     )}
 
@@ -743,7 +809,9 @@ const MyAssessments = () => {
                             courseCode: course.courseCode,
                             courseName: course.courseName,
                             courseId: course._id,
-                            status: deriveStatus(a.submission, a.assignment.dueDate),
+                            status: deriveStatus(a),
+                            recheckRequested: a.submission?.recheckRequested,
+                            recheckResolved: a.submission?.recheckResolved,
                             submissionId: a.submission?._id,
                             submissionURL: a.submission?.submissionURL || null,
                             submittedAt: a.submission?.submittedAt
@@ -988,6 +1056,7 @@ const MyAssessments = () => {
                                             }),
                                         } : x)
                                     )}
+
                                     onUnsubmitted={id => setAssignments(prev =>
                                         prev.map(x => x.id === id ? {
                                             ...x,
@@ -996,6 +1065,14 @@ const MyAssessments = () => {
                                             submittedAt: null,
                                             marks: null,
                                             feedback: null,
+                                        } : x)
+                                    )}
+
+                                    onRecheckSent={id => setAssignments(prev =>
+                                        prev.map(x => x.id === id ? {
+                                            ...x,
+                                            recheckRequested: true,
+                                            recheckResolved: false,
                                         } : x)
                                     )}
                                 />
