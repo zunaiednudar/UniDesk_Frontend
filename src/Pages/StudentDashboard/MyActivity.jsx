@@ -9,6 +9,7 @@ import {AuthContext} from "../../Providers/AuthProvider/AuthProvider.jsx";
 import RecentNotices from "../../Components/RecentNotices/RecentNotices.jsx";
 import CalendarF from "../../Components/Calendar/Calendar.jsx"
 import {NavLink} from "react-router";
+import {toast} from "sonner";
 
 // Design helpers for due date
 const getDueDateClasses = (dateStr, isCompleted) => {
@@ -255,11 +256,21 @@ const MyActivity = () => {
                             axiosSecure.get(`/course/${course._id}/announcements`)
                         ]);
 
+                        const assignments = assignmentsRes.data.assignments || [];
+
+                        // Fetch each assignment's submission for the current student
+                        const assignmentsWithSubmissions = await Promise.all(
+                            assignments.map(async (assignment) => {
+                                const { data } = await axiosSecure.get(`/course/${course._id}/assignment/${assignment._id}`);
+                                return { assignment, submission: data.submission };
+                            })
+                        );
+
                         return {
                             course,
-                            assignments: assignmentsRes.data,
+                            assignments: assignmentsWithSubmissions,
                             announcements: announcementsRes.data
-                        }
+                        };
                     })
                 );
 
@@ -278,42 +289,31 @@ const MyActivity = () => {
 
                 setNotices(recentNotices);
 
-                // List all assignments with course details
-                const allAssignments = courseDataRes.flatMap(res =>
-                    (res?.assignments?.assignments || []).map(assignment => ({
-                        course: res.course,
-                        ...assignment
-                    }))
-                );
-
                 // Map all assignments to user tasks
-                const userTasks = allAssignments.map((assignment, idx) => {
-                    const submissions = Array.isArray(assignment.submissions) ? assignment.submissions : [];
-                    const userSubmission = submissions.find(s => s.student === userData._id);
+                const userTasks = courseDataRes.flatMap(res =>
+                    (res.assignments || []).map((item) => {
+                        const { assignment, submission } = item;
 
-                    // Set 'pending' as default status
-                    let status = 'pending';
+                        let status = 'pending';
 
-                    if (userSubmission && userSubmission.submittedAt) {
-                        const diffHrs = (new Date(userSubmission.submittedAt) - new Date(assignment.dueDate)) / (1000 * 60 * 60);
+                        if (submission?.submittedAt) {
+                            const diffHrs = (new Date(submission.submittedAt) - new Date(assignment.dueDate)) / (1000 * 60 * 60);
+                            status = diffHrs <= 0 ? 'completed' : 'late';
+                        } else if (new Date() > new Date(assignment.dueDate)) {
+                            status = 'missed';
+                        }
 
-                        // 'completed' if submitted on or before due date, otherwise 'late'
-                        status = diffHrs <= 0 ? 'completed' : 'late';
-                    } else if (new Date() > new Date(assignment.dueDate)) {
-                        // Set 'missed' if the date exceeds due date
-                        status = 'missed';
-                    }
-
-                    return {
-                        id: idx + 1,
-                        title: assignment.title,
-                        description: assignment.description,
-                        course: assignment.course.name,
-                        dueDate: new Date(assignment.dueDate).toLocaleDateString(),
-                        dueDateRaw: assignment.dueDate,
-                        status,
-                    };
-                });
+                        return {
+                            id: `${res.course._id}_${assignment._id}`,
+                            title: assignment.title,
+                            description: assignment.description,
+                            course: res.course.courseName,
+                            dueDate: new Date(assignment.dueDate).toLocaleDateString(),
+                            dueDateRaw: assignment.dueDate,
+                            status,
+                        };
+                    })
+                );
 
                 // Submission stats for pie chart
                 const { onTime, late, missed } = userTasks.reduce((acc, t) => {
@@ -331,11 +331,11 @@ const MyActivity = () => {
 
                 setStats({
                     enrolledCourses: (coursesRes.data.activeCourses || []).length,
-                    pendingAssignments: userTasks.filter(t => t.status == 'pending').length,
+                    pendingAssignments: userTasks.filter(t => t.status === 'pending').length,
                     upcomingAppointments: upcomingAppointments.length,
                 });
-            } catch (error) {
-                console.error(error);
+            } catch {
+                toast.error("Error fetching data");
             } finally {
                 setLoading(false);
             }
