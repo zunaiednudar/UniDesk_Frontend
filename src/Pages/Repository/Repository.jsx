@@ -446,7 +446,7 @@ const Repository = () => {
 
     // Pagination setup
 
-    const itemsPerPage = 10;
+    const itemsPerPage = 9;
 
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -546,7 +546,7 @@ const Repository = () => {
                     exchange study materials, participate in discussions, and contribute valuable academic resources</p>
             </div>
 
-            {/* Unregistered User - Stats */}
+            {/* Unregistered Users - Stats */}
             {!id && (
                 <div className={`grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-4`}>
                     <StatCard
@@ -575,7 +575,7 @@ const Repository = () => {
 
             {/* Contribution graph + Leaderboard */}
             <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-4">
-                {/* Registered User */}
+                {/* Registered Users */}
                 {id && (
                     <div className="flex flex-col gap-4">
                         {/* Stats */}
@@ -746,8 +746,8 @@ const Repository = () => {
                 )}
 
                 {currentMaterials.length > 0 ? (
-                    <div className="h-[800px] flex flex-col justify-between gap-6 overflow-y-auto">
-                        <div className={`grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4 ${!id ? "mt-5" : ""}`}>
+                    <div className="max-h-[800px] flex flex-col justify-between gap-6 overflow-y-auto">
+                        <div className={`grid grid-cols-1 md:grid-cols-3 gap-4 ${!id ? "mt-5" : ""}`}>
                             {currentMaterials.map( repoItem => (
                                 <ItemCard
                                     id={id}

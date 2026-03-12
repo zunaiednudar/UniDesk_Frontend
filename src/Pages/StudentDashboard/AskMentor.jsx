@@ -1,5 +1,5 @@
 import {useContext, useEffect, useRef, useState} from 'react';
-import {useLocation, useNavigate} from 'react-router';
+import {useLocation} from 'react-router';
 import {
     Search, Mail, Calendar, MapPin, BookOpen,
     AlertCircle, Users, Clock, CheckCircle2,
@@ -10,6 +10,7 @@ import {
 import axiosSecure from "../../utils/axiosSecure.js";
 import formatName from "../../utils/formatName.js";
 import {AuthContext} from "../../Providers/AuthProvider/AuthProvider.jsx";
+import {toast} from "sonner";
 
 const availabilityConfig = {
     verified: {dot: 'bg-green-400', badge: 'bg-green-100 text-green-700', label: 'Available'},
@@ -18,9 +19,27 @@ const availabilityConfig = {
 };
 
 const supervisorRelConfig = {
-    thesis:     {label: 'Thesis',     bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-100', icon: BookOpen},
-    project:    {label: 'Project',    bg: 'bg-blue-50',   text: 'text-blue-700',   border: 'border-blue-100',   icon: Briefcase},
-    internship: {label: 'Internship', bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-100', icon: FlaskConical},
+    thesis: {
+        label: 'Thesis',
+        bg: 'bg-purple-50',
+        text: 'text-purple-700',
+        border: 'border-purple-100',
+        icon: BookOpen
+    },
+    project: {
+        label: 'Project',
+        bg: 'bg-blue-50',
+        text: 'text-blue-700',
+        border: 'border-blue-100',
+        icon: Briefcase
+    },
+    internship: {
+        label: 'Internship',
+        bg: 'bg-orange-50',
+        text: 'text-orange-700',
+        border: 'border-orange-100',
+        icon: FlaskConical
+    },
 };
 
 const appointmentStatusConfig = {
@@ -51,6 +70,13 @@ const appointmentStatusConfig = {
         text: 'text-gray-600',
         label: 'Cancelled',
         icon: X
+    },
+    completed: {
+        badge: 'bg-blue-50 border border-blue-200',
+        dot: 'bg-blue-500',
+        text: 'text-blue-700',
+        label: 'Completed',
+        icon: CheckCircle2
     },
 };
 
@@ -152,21 +178,7 @@ const MEETING_TYPES = [
     {value: 'project', label: 'Project'},
 ];
 
-const JS_DAY_TO_SCHEDULE = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-
-const isTimeBusy = (schedule, dayName, time) => {
-    if (!schedule) return false;
-    const dayEntry = schedule.weeklySchedule?.find(d => d.day === dayName);
-    if (!dayEntry) return false;
-    const allSlots = [...(dayEntry.classes || []), ...(dayEntry.freeSlots || [])];
-    const busySlots = dayEntry.classes || [];
-    return busySlots.some(slot => {
-        const slotStart = slot.startTime ?? slot.from;
-        const slotEnd   = slot.endTime   ?? slot.to;
-        if (!slotStart || !slotEnd) return false;
-        return time >= slotStart && time < slotEnd;
-    });
-};
+const JS_DAY_TO_SCHEDULE = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 const rangeOverlapsBusy = (schedule, dayName, from, to) => {
     if (!schedule || !from || !to) return false;
@@ -175,9 +187,8 @@ const rangeOverlapsBusy = (schedule, dayName, from, to) => {
     const busySlots = dayEntry.classes || [];
     return busySlots.some(slot => {
         const slotStart = slot.startTime ?? slot.from;
-        const slotEnd   = slot.endTime   ?? slot.to;
+        const slotEnd = slot.endTime ?? slot.to;
         if (!slotStart || !slotEnd) return false;
-        // overlap: from < slotEnd AND to > slotStart
         return from < slotEnd && to > slotStart;
     });
 };
@@ -210,10 +221,9 @@ const BookingModal = ({instructor, onClose, onBooked}) => {
                 const raw = r.data?.schedule ?? r.data ?? null;
                 // Validate it actually has weeklySchedule before storing
                 const parsed = raw?.weeklySchedule ? raw : null;
-                console.log('[Schedule] raw:', raw, '→ parsed:', parsed);
                 setSchedule(parsed);
-            } catch (err) {
-                console.warn('[Schedule] fetch failed:', err?.response?.status, err?.response?.data);
+            } catch {
+                toast.error('Error fetching schedule');
                 setSchedule(null);
             } finally {
                 setScheduleLoading(false);
@@ -301,15 +311,13 @@ const BookingModal = ({instructor, onClose, onBooked}) => {
                 meetingType: form.meetingType || 'general',
             };
 
-            const res = await axiosSecure.post('/appointment', payload);
-            console.log('Appointment booked:', res);
+            await axiosSecure.post('/appointment', payload);
 
             onBooked();
             setSuccess(true);
             setForm(emptyForm);
-        } catch (err) {
-            console.error('Booking error:', err);
-            setFormError(err?.response?.data?.message ?? 'Booking failed. Please try again.');
+        } catch {
+            toast.error('Booking failed. Please try again.');
         } finally {
             setSubmitting(false);
         }
@@ -381,7 +389,7 @@ const BookingModal = ({instructor, onClose, onBooked}) => {
                                 </p>
                                 {busySlotsForDay.map((slot, i) => {
                                     const s = slot.startTime ?? slot.from ?? '';
-                                    const e = slot.endTime   ?? slot.to   ?? '';
+                                    const e = slot.endTime ?? slot.to ?? '';
                                     return (
                                         <p key={i} className="text-xs text-red-500 pl-4">
                                             {slot.courseName || slot.subject || 'Class'}: {to12hr(s)} – {to12hr(e)}
@@ -401,7 +409,8 @@ const BookingModal = ({instructor, onClose, onBooked}) => {
                                 </p>
                             );
                             return freeSlots.length > 0 ? (
-                                <div className="mt-2 bg-green-50 border border-green-100 rounded-xl px-3 py-2.5 space-y-1">
+                                <div
+                                    className="mt-2 bg-green-50 border border-green-100 rounded-xl px-3 py-2.5 space-y-1">
                                     <p className="text-xs font-semibold text-green-700 flex items-center gap-1.5">
                                         <CheckCircle2 size={11}/> Available slots on {selectedDayName}
                                     </p>
@@ -450,9 +459,11 @@ const BookingModal = ({instructor, onClose, onBooked}) => {
                                    }`}/>
                         </div>
                     </div>
+
                     {/* Real-time overlap warning */}
                     {form.from && form.to && selectedDayName && rangeOverlapsBusy(schedule, selectedDayName, form.from, form.to) && (
-                        <div className="flex items-center gap-2 text-xs text-red-600 bg-red-50 border border-red-100 rounded-xl px-3 py-2 -mt-2">
+                        <div
+                            className="flex items-center gap-2 text-xs text-red-600 bg-red-50 border border-red-100 rounded-xl px-3 py-2 -mt-2">
                             <AlertCircle size={13} className="flex-shrink-0"/>
                             This time overlaps with the faculty's class. Please pick a different slot.
                         </div>
@@ -542,14 +553,16 @@ const SupervisorCard = ({supervisor, onBookClick}) => {
     const RelIcon = relCfg.icon;
 
     return (
-        <div className={`rounded-2xl border ${relCfg.border} ${relCfg.bg} p-5 flex flex-col gap-4 hover:shadow-md transition-shadow duration-200`}>
+        <div
+            className={`rounded-2xl border ${relCfg.border} ${relCfg.bg} p-5 flex flex-col gap-4 hover:shadow-md transition-shadow duration-200`}>
             {/* Header */}
             <div className="flex items-start gap-3">
                 <Avatar photoURL={supervisor.photoURL} name={supervisor.name} size="md"/>
                 <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-gray-900 truncate">{supervisor.name}</p>
                     <p className="text-xs text-gray-400 truncate">{supervisor.email}</p>
-                    <span className={`mt-1.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold border ${relCfg.bg} ${relCfg.text} ${relCfg.border}`}>
+                    <span
+                        className={`mt-1.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold border ${relCfg.bg} ${relCfg.text} ${relCfg.border}`}>
                         <RelIcon size={10} strokeWidth={2.5}/>{relCfg.label}
                     </span>
                 </div>
@@ -668,7 +681,10 @@ const CancelModal = ({appointment, onClose, onCancelled}) => {
     const [error, setError] = useState('');
 
     const handleCancel = async () => {
-        if (!reason.trim()) { setError('Please provide a reason.'); return; }
+        if (!reason.trim()) {
+            setError('Please provide a reason.');
+            return;
+        }
         setSubmitting(true);
         try {
             await axiosSecure.patch(`/appointment/${appointment.id}`, {
@@ -693,7 +709,8 @@ const CancelModal = ({appointment, onClose, onCancelled}) => {
                 </div>
                 <div className="px-5 py-4 space-y-3">
                     <p className="text-xs text-gray-500">
-                        Cancelling appointment with <span className="font-semibold text-gray-700">{appointment.facultyName}</span>.
+                        Cancelling appointment with <span
+                        className="font-semibold text-gray-700">{appointment.facultyName}</span>.
                         This will send a cancellation request to the faculty.
                     </p>
                     <div>
@@ -703,13 +720,17 @@ const CancelModal = ({appointment, onClose, onCancelled}) => {
                         <textarea
                             rows={3}
                             value={reason}
-                            onChange={e => { setReason(e.target.value); setError(''); }}
+                            onChange={e => {
+                                setReason(e.target.value);
+                                setError('');
+                            }}
                             placeholder="Why are you cancelling this appointment?"
                             className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-red-300 focus:border-red-300 outline-none transition resize-none"
                         />
                     </div>
                     {error && (
-                        <div className="flex items-center gap-2 text-xs text-red-600 bg-red-50 border border-red-100 rounded-xl px-3 py-2">
+                        <div
+                            className="flex items-center gap-2 text-xs text-red-600 bg-red-50 border border-red-100 rounded-xl px-3 py-2">
                             <AlertCircle size={12} className="flex-shrink-0"/>{error}
                         </div>
                     )}
@@ -721,7 +742,8 @@ const CancelModal = ({appointment, onClose, onCancelled}) => {
                     </button>
                     <button onClick={handleCancel} disabled={submitting}
                             className="flex-1 py-2.5 text-sm font-semibold bg-red-500 text-white rounded-xl hover:bg-red-600 disabled:opacity-60 transition flex items-center justify-center gap-2">
-                        {submitting ? <><Loader2 size={13} className="animate-spin"/> Cancelling…</> : <><Trash2 size={13}/> Confirm Cancel</>}
+                        {submitting ? <><Loader2 size={13} className="animate-spin"/> Cancelling…</> : <><Trash2
+                            size={13}/> Confirm Cancel</>}
                     </button>
                 </div>
             </div>
@@ -737,6 +759,7 @@ const AppointmentRow = ({appointment, onCancelClick}) => {
     const end = new Date(appointment.endTime);
     const isPast = end < now;
     const isOngoing = start <= now && now <= end;
+
     // Show join button 15 min before start until end
     const msUntilStart = start - now;
     const canJoin = appointment.status === 'approved'
@@ -747,7 +770,8 @@ const AppointmentRow = ({appointment, onCancelClick}) => {
     const canCancel = ['pending', 'approved'].includes(appointment.status) && !isPast;
 
     return (
-        <div className={`flex flex-wrap items-center gap-3 px-2 py-3 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 rounded-md transition-colors ${isPast && appointment.status === 'pending' ? 'opacity-60' : ''}`}>
+        <div
+            className={`flex flex-wrap items-center gap-3 px-2 py-3 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 rounded-md transition-colors ${isPast && appointment.status === 'pending' ? 'opacity-60' : ''}`}>
             {/* Status dot */}
             <div className={`w-2 h-2 rounded-full flex-shrink-0 ${cfg.dot}`}/>
 
@@ -761,7 +785,8 @@ const AppointmentRow = ({appointment, onCancelClick}) => {
 
             {/* Mode pill */}
             {appointment.mode && (
-                <span className="hidden sm:inline-flex flex-shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 capitalize">
+                <span
+                    className="hidden sm:inline-flex flex-shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 capitalize">
                     {appointment.mode === 'online' ? '🎥 Online' : '🏢 In-Person'}
                 </span>
             )}
@@ -775,7 +800,8 @@ const AppointmentRow = ({appointment, onCancelClick}) => {
             </div>
 
             {/* Status badge */}
-            <div className={`flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${cfg.badge}`}>
+            <div
+                className={`flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${cfg.badge}`}>
                 <Icon size={11} className={cfg.text} strokeWidth={2.5}/>
                 <span className={cfg.text}>{cfg.label}</span>
             </div>
@@ -802,7 +828,6 @@ const AppointmentRow = ({appointment, onCancelClick}) => {
 const AskMentor = () => {
     const {userData} = useContext(AuthContext);
 
-    const navigate = useNavigate();
     const location = useLocation();
 
     const [instructors, setInstructors] = useState([]);
@@ -887,8 +912,7 @@ const AskMentor = () => {
                 });
 
                 setInstructors(enriched);
-            } catch (err) {
-                console.error('Failed to fetch faculties:', err);
+            } catch {
                 setInstError('Failed to load faculties. Please try again.');
             } finally {
                 setLoadingInst(false);
@@ -936,7 +960,6 @@ const AskMentor = () => {
         setLoadingAppt(true);
         try {
             const res = await axiosSecure.get(`/appointment/student/${userData._id}`);
-            console.log('Appointments:', res);
             const raw = res.data.appointments || [];
 
             const mapped = raw.map(a => ({
@@ -955,8 +978,8 @@ const AskMentor = () => {
             mapped.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
 
             setAppointments(mapped);
-        } catch (err) {
-            console.error('Failed to fetch appointments:', err);
+        } catch {
+            toast.error('Failed to fetch appointments');
         } finally {
             setLoadingAppt(false);
         }
@@ -989,7 +1012,9 @@ const AskMentor = () => {
                     if (Notification.permission === 'granted') {
                         notify();
                     } else if (Notification.permission !== 'denied') {
-                        Notification.requestPermission().then(p => { if (p === 'granted') notify(); });
+                        Notification.requestPermission().then(p => {
+                            if (p === 'granted') notify();
+                        });
                     }
                 }
             });
@@ -1107,7 +1132,8 @@ const AskMentor = () => {
                     ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             {supervisors.map(s => (
-                                <SupervisorCard key={s.id + s.relationshipType} supervisor={s} onBookClick={setBookingFor}/>
+                                <SupervisorCard key={s.id + s.relationshipType} supervisor={s}
+                                                onBookClick={setBookingFor}/>
                             ))}
                         </div>
                     )}
@@ -1132,7 +1158,7 @@ const AskMentor = () => {
 
                     {/* Filter pills */}
                     <div className="flex items-center gap-1.5 flex-wrap">
-                        {['all', 'pending', 'approved', 'rejected', 'cancelled'].map(s => {
+                        {['all', 'pending', 'approved', 'rejected', 'cancelled', 'completed'].map(s => {
                             const isActive = apptFilter === s;
                             const count = s === 'all' ? appointments.length : (apptCounts[s] ?? 0);
                             return (
@@ -1170,7 +1196,8 @@ const AskMentor = () => {
                             {apptFilter === 'all' ? 'No appointments booked yet.' : `No ${apptFilter} appointments.`}
                         </div>
                     ) : (
-                        filteredAppt.map(a => <AppointmentRow key={a.id} appointment={a} onCancelClick={setCancellingAppt}/>)
+                        filteredAppt.map(a => <AppointmentRow key={a.id} appointment={a}
+                                                              onCancelClick={setCancellingAppt}/>)
                     )}
                 </div>
             </div>

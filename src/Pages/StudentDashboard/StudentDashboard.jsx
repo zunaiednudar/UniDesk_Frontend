@@ -42,7 +42,7 @@ const StudentDashboard = () => {
         }
     ];
 
-    return <DashboardLayout menuItems={studentMenuItems} userRole="student" />
+    return <DashboardLayout menuItems={studentMenuItems} role="student" />
 };
 
 export default StudentDashboard;
