@@ -119,35 +119,39 @@ export const router = createBrowserRouter([
         children:[
             {
                 index:true,
-                element:<Navigate to="my-dashboard"/>
+                element:<Navigate to="activity"/>
             },
             {
-                path:"my-dashboard",
+                path:"activity",
                 Component:FacultyDashboard
             },
             {
-                path:"my-profile",
+                path:"profile",
                 Component:FacultyMyProfile
             },
             {
-                path:"my-courses",
+                path:"courses",
                 Component:FacultyMyCourses
             },
             {
-                path:"my-supervises",
+                path:"supervises",
                 Component:FacultyMySupervises
             },
             {
-                path:"my-appointments",
+                path:"appointments",
                 Component:FacultyMyAppointments
             },
             {
-                path:"my-schedule",
+                path:"schedule",
                 Component:FacultyMySchedule
             },
             {
-                path:"my-courses/:id",
+                path:"courses/:id",
                 Component:FacultyCourseDetails
+            },
+            {
+                path: ":id/repository",
+                Component: Repository
             }
         ]
     },

@@ -1,24 +1,106 @@
-import React, { useContext } from 'react';
-import { Outlet } from 'react-router';
-import Navbar from '../../Components/FacultyDashboardComponents/Navbar/Navbar';
-import Sidebar from '../../Components/FacultyDashboardComponents/Sidebar/Sidebar';
-import { AuthContext } from '../../Providers/AuthProvider/AuthProvider';
+import React, { useContext, useEffect, useState } from "react";
+import { NavLink, Outlet, useLocation } from "react-router";
+import { Bell, PanelLeft } from "lucide-react";
+import Sidebar from "../../Components/FacultyDashboardComponents/Sidebar/Sidebar";
+import { AuthContext } from "../../Providers/AuthProvider/AuthProvider";
 
 const FacultyDashboardLayout = () => {
-    const {userData,logout}=useContext(AuthContext);
-    return (
-        <div className="drawer lg:drawer-open bg-white">
-            <input id="my-drawer-4" type="checkbox" className="drawer-toggle" />
-            <div className="drawer-content flex flex-col min-h-screen">
-                {/* Navbar */}
-                <Navbar userData={userData}></Navbar>
-                <div className='p-6'>
-                    <Outlet></Outlet>
-                </div>
+  const { userData, logout } = useContext(AuthContext);
+
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(
+    window.matchMedia("(min-width: 1024px)").matches
+  );
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(min-width: 1024px)");
+
+    const handleResize = (e) => {
+      setIsMobile(!e.matches);
+      setIsSidebarOpen(e.matches);
+    };
+
+    mediaQuery.addEventListener("change", handleResize);
+
+    return () => {
+      mediaQuery.removeEventListener("change", handleResize);
+    };
+  }, []);
+
+  const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
+
+  // Path filtering and organizing
+
+  const location = useLocation();
+  const pathSegments = location.pathname.split("/").filter(Boolean);
+  const filteredSegments = pathSegments.filter(
+    (segment) =>
+      segment !== "faculty" &&
+      segment !== "dashboard" &&
+      !/^[a-f\d]{24}$/i.test(segment)
+  );
+
+  const formattedSegments = filteredSegments.map((segment) =>
+    segment
+      .split("-")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ")
+  );
+
+  const formattedPath = ["Dashboard", ...formattedSegments].join(" / ");
+
+  return (
+    <div className="gilroy flex h-dvh bg-white">
+      <Sidebar
+        logout={logout}
+        userData={userData}
+        isSidebarOpen={isSidebarOpen}
+        setIsSidebarOpen={setIsSidebarOpen}
+        toggleSidebar={toggleSidebar}
+        isMobile={isMobile}
+      />
+
+      <main className="flex flex-col flex-1 gap-2 w-full overflow-y-auto">
+        <div className="sticky top-0 z-40 w-full bg-white">
+          <div className="w-full h-full flex justify-between items-center min-h-10 px-2.5">
+            <div className="flex items-center">
+              {
+                (isMobile || (!isMobile && !isSidebarOpen)) && (
+                  <button
+                    onClick={toggleSidebar}
+                    className="hover:bg-gray-200 p-2 rounded-lg transition cursor-pointer"
+                  >
+                    <PanelLeft className="w-6 h-6 text-gray-500" />
+                  </button>
+                )
+              }
+
+              <span
+                className={`pb-0.5 pl-2 graphik text-gray-500 text-md capitalize ${isSidebarOpen ? "ml-10" : ""
+                  }`}
+              >
+                {formattedPath}
+              </span>
             </div>
-            <Sidebar logout={logout}></Sidebar>
+
+            <div className="ml-auto">
+              <button className="hover:bg-gray-200 p-2 rounded-lg transition cursor-pointer">
+                <Bell className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+
+          <div className="border border-gray-200 mt-0.5 mb-3.5 mx-2.5"></div>
         </div>
-    );
+
+        <div className="w-full flex-1 p-2.5">
+          <div className="w-full px-12">
+            <Outlet />
+          </div>
+        </div>
+      </main>
+    </div>
+  );
 };
 
 export default FacultyDashboardLayout;

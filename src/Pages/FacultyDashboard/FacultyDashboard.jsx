@@ -201,7 +201,7 @@ const FacultyDashboard = () => {
                                 ) :
                                 (
                                     activeCourses.map((course) => (
-                                        <Link to={`/dashboard/faculty/my-courses/${course._id}`}
+                                        <Link to={`/dashboard/faculty/courses/${course._id}`}
                                             key={course._id}
                                             className="w-full p-6 rounded-xl bg-white shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 flex flex-col gap-4"
                                         >
@@ -284,7 +284,7 @@ const FacultyDashboard = () => {
                             )
                         }
                     </div>
-                    <NavLink to="/dashboard/faculty/my-appointments" className="bg-[#1E40AF] text-white px-5 py-2 rounded-lg cursor-pointer text-center transition-colors hover:bg-blue-600 duration-500">View All Appointments</NavLink>
+                    <NavLink to="/dashboard/faculty/appointments" className="bg-[#1E40AF] text-white px-5 py-2 rounded-lg cursor-pointer text-center transition-colors hover:bg-blue-600 duration-500">View All Appointments</NavLink>
                 </div>
             </div>
 
