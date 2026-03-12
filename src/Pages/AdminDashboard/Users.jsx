@@ -4,7 +4,7 @@ import React, {useContext, useEffect, useState} from "react";
 import {AuthContext} from "../../Providers/AuthProvider/AuthProvider.jsx";
 import {
     AlertCircle, CalendarCheck, GraduationCap, School, SquarePen,
-    UsersRound, Trash2, ShieldCheck, TrendingUp
+    UsersRound, Trash2, ShieldCheck, TrendingUp, ShieldUser
 } from "lucide-react";
 import {useNavigate} from "react-router";
 
@@ -94,7 +94,7 @@ const UserStatusChart = ({data, loading}) => (
     <div className="w-full h-full bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
         <SectionHeader
             icon={ShieldCheck}
-            title="User Status Overview"
+            title="Status Overview"
             iconBg="bg-indigo-50"
             iconColor="text-indigo-500"
         />
@@ -102,13 +102,13 @@ const UserStatusChart = ({data, loading}) => (
             <SkeletonBlock className="h-48"/>
         ) : (
             <>
-                <ResponsiveContainer width="100%" height={240}>
+                <ResponsiveContainer width="100%" height={360}>
                     <PieChart>
                         <Pie
                             data={data}
                             dataKey="value"
                             nameKey="name"
-                            outerRadius={90}
+                            outerRadius={100}
                             label={({ percent }) => percent > 0 ? `${(percent * 100).toFixed(0)}%` : ''}
                             labelLine={false}
                         >
@@ -141,7 +141,7 @@ const UserGrowthChart = ({data, loading}) => (
     <div className="flex-1 bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col">
         <SectionHeader
             icon={TrendingUp}
-            title="User Growth"
+            title="Growth Overview"
             iconBg="bg-purple-50"
             iconColor="text-purple-500"
         />
@@ -284,7 +284,6 @@ const UserItem = ({user, navigate, setUserList}) => {
 
 const Users = () => {
     const [userList, setUserList] = useState([]);
-    const [userCount, setUserCount] = useState(0);
 
     // Design helper states representing loading
     const [loading, setLoading] = useState(false);
@@ -292,6 +291,8 @@ const Users = () => {
     const navigate = useNavigate();
 
     const {userData} = useContext(AuthContext);
+
+    const [stats, setStats] = useState({});
 
     const [barChartData, setBarChartData] = useState([]);
     const [pieChartData, setPieChartData] = useState([]);
@@ -305,7 +306,7 @@ const Users = () => {
                 // Fetch all users
                 const usersRes = await axiosSecure.get(`/admin/users`);
 
-                let users = usersRes.data.users.map((user) => {
+                const users = usersRes.data.users.map((user) => {
                     return {
                         batch: user.batch,
                         biography: user.biography,
@@ -328,13 +329,34 @@ const Users = () => {
                     }
                 });
 
+                const students = users.filter(user => user.role === "student");
+                const faculties = users.filter(user => user.role === "faculty");
+                const admins = users.filter(user => user.role === "admin");
+
                 // Filter out admins
-                users = users.filter(user => user.role !== 'admin');
+                const usersWithoutAdmins = users.filter(user => user.role !== 'admin');
+
+                // Set user list
+                setUserList(usersWithoutAdmins);
+
+                // Map stats
+
+                const totalStudentCount = students.length;
+                const totalFacultyCount = faculties.length;
+                const totalAdminCount = admins.length;
+                const totalUserCount = totalStudentCount + totalFacultyCount + totalAdminCount;
+
+                setStats({
+                    totalUsers: totalUserCount,
+                    totalStudents: totalStudentCount,
+                    totalFaculties: totalFacultyCount,
+                    totalAdmins: totalAdminCount,
+                });
 
                 // Map bar chart data
 
                 // Track student count
-                const studentRawCount = users.filter(user => user.role === "student")
+                const studentRawCount = students
                     .reduce((acc, user) => {
                         const month = new Date(user.createdAtRaw).getMonth();
                         if (new Date(user.createdAtRaw).getFullYear() === new Date().getFullYear())
@@ -343,7 +365,7 @@ const Users = () => {
                     }, Array(12).fill(0));
 
                 // Track faculty count
-                const facultyRawCount = users.filter(user => user.role === "faculty")
+                const facultyRawCount = faculties
                     .reduce((acc, user) => {
                         const month = new Date(user.createdAtRaw).getMonth();
                         if (new Date(user.createdAtRaw).getFullYear() === new Date().getFullYear())
@@ -377,18 +399,15 @@ const Users = () => {
 
                 // Map pie chart data
 
-                const pendingCount = users.filter(u => u.status === 'pending').length;
-                const approvedCount = users.filter(u => u.status === 'approved').length;
-                const suspendedCount = users.filter(u => u.status === 'suspended').length;
+                const pendingCount = usersWithoutAdmins.filter(u => u.status === 'pending').length;
+                const approvedCount = usersWithoutAdmins.filter(u => u.status === 'approved').length;
+                const suspendedCount = usersWithoutAdmins.filter(u => u.status === 'suspended').length;
 
                 const pieGraphData = [
                     {name: 'Pending', value: pendingCount},
                     {name: 'Approved', value: approvedCount},
                     {name: 'Suspended', value: suspendedCount},
                 ];
-
-                setUserList(users);
-                setUserCount(users.length);
 
                 setBarChartData(barGraphData);
                 setPieChartData(pieGraphData);
@@ -411,14 +430,42 @@ const Users = () => {
             </div>
 
             {/* Stats */}
-            <div className="flex items-stretch gap-10">
+            <div className="flex flex-col lg:flex-row items-stretch gap-10">
                 <UserGrowthChart data={barChartData} loading={loading}/>
 
                 <div className="flex-1 flex flex-col justify-between gap-4">
-                    <div>
-                        <p>Total Users</p>
-                        <p>Total Students</p>
-                        <p>Total Faculties</p>
+                    <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-2">
+                        <StatCard
+                            icon={UsersRound}
+                            value={stats.totalUsers}
+                            label="Total Users"
+                            iconBg="bg-blue-50"
+                            iconColor="text-blue-500"
+                        />
+
+                        <StatCard
+                            icon={School}
+                            value={stats.totalStudents}
+                            label="Total Students"
+                            iconBg="bg-emerald-50"
+                            iconColor="text-emerald-500"
+                        />
+
+                        <StatCard
+                            icon={GraduationCap}
+                            value={stats.totalFaculties}
+                            label="Total Faculties"
+                            iconBg="bg-orange-50"
+                            iconColor="text-orange-500"
+                        />
+
+                        <StatCard
+                            icon={ShieldUser}
+                            value={stats.totalAdmins}
+                            label="Total Admins"
+                            iconBg="bg-purple-50"
+                            iconColor="text-purple-500"
+                        />
                     </div>
 
                     <UserStatusChart data={pieChartData} loading={loading}/>
@@ -434,7 +481,7 @@ const Users = () => {
                     title="All Users"
                     iconBg="bg-blue-50"
                     iconColor="text-blue-500"
-                    count={loading ? undefined : userCount}
+                    count={loading ? undefined : userList.length}
                 />
 
                 {loading ? (
