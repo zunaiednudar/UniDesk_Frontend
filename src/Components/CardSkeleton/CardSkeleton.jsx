@@ -166,6 +166,14 @@ const CardSkeleton = ({ variant = "list", lines = 3 }) => {
 
         );
 
+    if (variant === "chart")
+        return (
+            <div className="bg-white border border-gray-100 rounded-2xl shadow-lg p-5 min-h-[360px] animate-pulse">
+                <div className="h-6 w-40 bg-gray-200 rounded mb-6"></div>
+                <div className="h-[280px] w-full bg-gray-100 rounded-xl"></div>
+            </div>
+        );
+
     // For cards inside a container
 
     return (

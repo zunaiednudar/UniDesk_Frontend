@@ -9,6 +9,21 @@ import { formatAppointmentDate } from '../../utils/formatAppointmentDate.js';
 import CardSkeleton from '../../Components/CardSkeleton/CardSkeleton.jsx';
 import { Link, NavLink } from 'react-router';
 import { toast } from 'sonner';
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, ArcElement, PointElement, LineElement, Tooltip, Legend } from "chart.js";
+import { Bar, Doughnut, Line } from "react-chartjs-2";
+
+// Chartjs register
+
+ChartJS.register(
+    CategoryScale,
+    LinearScale,
+    BarElement,
+    ArcElement,
+    PointElement,
+    LineElement,
+    Tooltip,
+    Legend
+);
 
 const FacultyDashboard = () => {
     const { userData } = useContext(AuthContext);
@@ -146,6 +161,115 @@ const FacultyDashboard = () => {
 
     // console.log(activeCourses.length+completedCourses.length);
     // console.log(assignments);
+
+    // Data for charts
+
+    const courseEnrollmentData = {
+        labels: activeCourses.map(course => course.courseCode),
+        datasets: [
+            {
+                label: "Students",
+                data: activeCourses.map(course => course.students?.length || 0),
+                backgroundColor: "#2563EB",
+                borderRadius: 8,
+                barThickness: 36,
+            },
+        ],
+    };
+
+    const courseStatusData = {
+        labels: ["Active Courses", "Completed Courses"],
+        datasets: [
+            {
+                data: [activeCourses.length, completedCourses.length],
+                backgroundColor: ["#2563EB", "#10B981"],
+                borderWidth: 0,
+            },
+        ],
+    };
+
+    const appointmentsByDayMap = appointments.reduce((acc, appointment) => {
+        const day = new Date(appointment.startTime).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+        });
+
+        acc[day] = (acc[day] || 0) + 1;
+        return acc;
+    }, {});
+
+    const appointmentsChartData = {
+        labels: Object.keys(appointmentsByDayMap),
+        datasets: [
+            {
+                label: "Appointments",
+                data: Object.values(appointmentsByDayMap),
+                borderColor: "#F59E0B",
+                backgroundColor: "rgba(245, 158, 11, 0.2)",
+                fill: true,
+                tension: 0.35,
+                pointBackgroundColor: "#F59E0B",
+            },
+        ],
+    };
+
+    const pendingGradingChartData = {
+        labels: assignments.map(assignment => assignment.courseCode),
+        datasets: [
+            {
+                label: "Pending Grading",
+                data: assignments.map(assignment => assignment.pendingGrading || 0),
+                backgroundColor: "#EF4444",
+                borderRadius: 8,
+                barThickness: 36,
+            },
+        ],
+    };
+
+    // Chart configuration objects
+
+    const commonChartOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                labels: {
+                    color: "#374151",
+                },
+            },
+        },
+    };
+
+    const barChartOptions = {
+        ...commonChartOptions,
+        scales: {
+            x: {
+                ticks: { color: "#6B7280" },
+                grid: { display: false },
+            },
+            y: {
+                beginAtZero: true,
+                ticks: { color: "#6B7280", precision: 0 },
+                grid: { color: "#E5E7EB" },
+            },
+        },
+    };
+
+    const lineChartOptions = {
+        ...commonChartOptions,
+        scales: {
+            x: {
+                ticks: { color: "#6B7280" },
+                grid: { display: false },
+            },
+            y: {
+                beginAtZero: true,
+                ticks: { color: "#6B7280", precision: 0 },
+                grid: { color: "#E5E7EB" },
+            },
+        },
+    };
+
     return (
         <div className='w-full max-w-full p-5 flex flex-col gap-10 gilroy'>
 
