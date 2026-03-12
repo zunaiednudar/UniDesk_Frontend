@@ -282,7 +282,7 @@ const UserItem = ({user, navigate, setUserList}) => {
     );
 }
 
-const Users = () => {
+const ManageUsers = () => {
     const [userList, setUserList] = useState([]);
 
     // Design helper states representing loading
@@ -425,7 +425,7 @@ const Users = () => {
         <div className="gilroy space-y-6">
             {/* Page Title */}
             <div>
-                <h1 className="graphik text-3xl font-semibold text-gray-900">Manage Users</h1>
+                <h1 className="graphik text-3xl font-semibold text-gray-900">Manage ManageUsers</h1>
                 <p className="text-sm text-gray-400 mt-1">Monitor your users, manage accounts efficiently, and keep your community organized with real-time insights</p>
             </div>
 
@@ -438,7 +438,7 @@ const Users = () => {
                         <StatCard
                             icon={UsersRound}
                             value={stats.totalUsers}
-                            label="Total Users"
+                            label="Total ManageUsers"
                             iconBg="bg-blue-50"
                             iconColor="text-blue-500"
                         />
@@ -472,13 +472,13 @@ const Users = () => {
                 </div>
             </div>
 
-            {/* Users List */}
+            {/* ManageUsers List */}
             <div
                 className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
             >
                 <SectionHeader
                     icon={UsersRound}
-                    title="All Users"
+                    title="All ManageUsers"
                     iconBg="bg-blue-50"
                     iconColor="text-blue-500"
                     count={loading ? undefined : userList.length}
@@ -507,4 +507,4 @@ const Users = () => {
     );
 };
 
-export default Users;
+export default ManageUsers;

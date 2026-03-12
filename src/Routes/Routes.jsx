@@ -19,10 +19,10 @@ import CourseDetails from "../Components/Course/CourseDetails.jsx";
 
 import AdminDashboard from "../Pages/AdminDashboard/AdminDashboard.jsx";
 import Overview from "../Pages/AdminDashboard/Overview.jsx";
-import Users from "../Pages/AdminDashboard/Users.jsx";
+import ManageUsers from "../Pages/AdminDashboard/ManageUsers.jsx";
 import AdminRoute from "../Providers/RoleWiseRoutes/AdminRoute/AdminRoute.jsx";
-import AdminProfile from "../Pages/Profile/AdminProfile.jsx";
 import UserDetails from "../Components/User/UserDetails.jsx";
+import ManageCourses from "../Pages/AdminDashboard/ManageCourses.jsx";
 
 export const router = createBrowserRouter([
     {
@@ -142,7 +142,13 @@ export const router = createBrowserRouter([
             {
                 path: "users",
                 element: <AdminRoute>
-                    <Users></Users>
+                    <ManageUsers></ManageUsers>
+                </AdminRoute>
+            },
+            {
+                path: "courses",
+                element: <AdminRoute>
+                    <ManageCourses></ManageCourses>
                 </AdminRoute>
             },
             {

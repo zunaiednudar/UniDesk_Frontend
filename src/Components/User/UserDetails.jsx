@@ -62,7 +62,7 @@ const UserDetails = () => {
     };
 
     // User deletion logic
-    // Same as Users.jsx
+    // Same as ManageUsers.jsx
     const handleDelete = async () => {
         setDeleting(true);
 
