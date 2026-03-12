@@ -11,6 +11,7 @@ import { Link, NavLink } from 'react-router';
 import { toast } from 'sonner';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, ArcElement, PointElement, LineElement, Tooltip, Legend } from "chart.js";
 import { Bar, Doughnut, Line } from "react-chartjs-2";
+import ChartCard from '../../Components/ChartCard/ChartCard.jsx';
 
 // Chartjs register
 
@@ -39,7 +40,7 @@ const FacultyDashboard = () => {
     // Data collection
 
     const [activeCourses, setActiveCourses] = useState([]);
-    const [completedCourses, setCompletedCourses] = useState({});
+    const [completedCourses, setCompletedCourses] = useState([]);
     const [totalStudents, setTotalStudents] = useState(0);
     const [appointments, setAppointments] = useState([]);
     const [assignments, setAssignments] = useState([]);
@@ -164,15 +165,15 @@ const FacultyDashboard = () => {
 
     // Data for charts
 
-    const courseEnrollmentData = {
+    const courseTeachingData = {
         labels: activeCourses.map(course => course.courseCode),
         datasets: [
             {
                 label: "Students",
                 data: activeCourses.map(course => course.students?.length || 0),
                 backgroundColor: "#2563EB",
-                borderRadius: 8,
-                barThickness: 36,
+                borderRadius: 4,
+                barThickness: 18,
             },
         ],
     };
@@ -220,8 +221,8 @@ const FacultyDashboard = () => {
                 label: "Pending Grading",
                 data: assignments.map(assignment => assignment.pendingGrading || 0),
                 backgroundColor: "#EF4444",
-                borderRadius: 8,
-                barThickness: 36,
+                borderRadius: 4,
+                barThickness: 18,
             },
         ],
     };
@@ -270,6 +271,11 @@ const FacultyDashboard = () => {
         },
     };
 
+    // Chart loading
+
+    const chartsLoading = loadingCourses || loadingAppointments || loadingAssignments;
+
+
     return (
         <div className='w-full max-w-full p-5 flex flex-col gap-10 gilroy'>
 
@@ -307,7 +313,74 @@ const FacultyDashboard = () => {
                 }
             </div>
 
-            <div className='w-full max-w-full flex flex-col md:flex-row justify-items-center gap-10'>
+            {/* Charts */}
+
+            <div className="w-full grid grid-cols-1 xl:grid-cols-2 gap-6">
+                {
+                    chartsLoading ? (
+                        <>
+                            <CardSkeleton variant="chart" />
+                            <CardSkeleton variant="chart" />
+                            <CardSkeleton variant="chart" />
+                            <CardSkeleton variant="chart" />
+                        </>
+                    ) : (
+                        <>
+                            <ChartCard title="Course Teaching">
+                                {
+                                    activeCourses.length === 0 ? (
+                                        <div className="h-full flex items-center justify-center text-sm text-gray-400">
+                                            No active course data available
+                                        </div>
+                                    ) : (
+                                        <Bar data={courseTeachingData} options={barChartOptions} />
+                                    )
+                                }
+                            </ChartCard>
+
+                            <ChartCard title="Pending Grading by Course">
+                                {
+                                    assignments.length === 0 ? (
+                                        <div className="h-full flex items-center justify-center text-sm text-gray-400">
+                                            No pending grading data
+                                        </div>
+                                    ) : (
+                                        <Bar data={pendingGradingChartData} options={barChartOptions} />
+                                    )
+                                }
+                            </ChartCard>
+
+                            <ChartCard title="Active vs Completed Courses">
+                                {
+                                    (activeCourses.length === 0 && completedCourses.length === 0) ? (
+                                        <div className="h-full flex items-center justify-center text-sm text-gray-400">
+                                            No course status data available
+                                        </div>
+                                    ) : (
+                                        <Doughnut data={courseStatusData} options={commonChartOptions} />
+                                    )
+                                }
+                            </ChartCard>
+
+                            <ChartCard title="Upcoming Appointments Overview">
+                                {
+                                    appointments.length === 0 ? (
+                                        <div className="h-full flex items-center justify-center text-sm text-gray-400">
+                                            No upcoming appointments
+                                        </div>
+                                    ) : (
+                                        <Line data={appointmentsChartData} options={lineChartOptions} />
+                                    )
+                                }
+                            </ChartCard>
+
+                        </>
+                    )
+                }
+            </div>
+
+
+            <div className='w-full max-w-full flex flex-col md:flex-row items-start gap-10'>
                 {/* Recent Courses */}
                 <div className='w-full md:flex-2 shadow-xl p-5 flex flex-col gap-5'>
                     <p className='text-lg md:text-xl font-bold graphik'>Recent Courses</p>
