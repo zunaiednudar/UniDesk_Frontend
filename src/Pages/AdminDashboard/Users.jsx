@@ -138,7 +138,7 @@ const UserStatusChart = ({data, loading}) => (
 );
 
 const UserGrowthChart = ({data, loading}) => (
-    <div className="flex-1 bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col">
+    <div className="flex-1 bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col overflow-x-auto">
         <SectionHeader
             icon={TrendingUp}
             title="Growth Overview"
@@ -147,20 +147,20 @@ const UserGrowthChart = ({data, loading}) => (
         />
 
         {loading ? <SkeletonBlock className="h-72"/> : (
-            <ResponsiveContainer width="100%" height={400}>
-                <BarChart
-                    data={data}
-                    margin={{ top: 5, right: 0, left: 0, bottom: 5 }}
-                >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis allowDecimals={false} />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="student" fill="#8884d8" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="faculty" fill="#82ca9d" radius={[4, 4, 0, 0]} />
-                </BarChart>
-            </ResponsiveContainer>
+            <BarChart
+                width={600}
+                height={400}
+                data={data}
+                margin={{ top: 5, right: 0, left: 0, bottom: 5 }}
+            >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis allowDecimals={false} />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="student" fill="#8884d8" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="faculty" fill="#82ca9d" radius={[4, 4, 0, 0]} />
+            </BarChart>
         )}
     </div>
 );
