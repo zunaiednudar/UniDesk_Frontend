@@ -2,8 +2,7 @@ import React from 'react';
 import DashboardLayout from '../../Layouts/DashboardLayout/DashboardLayout.jsx';
 import {
     ChartPie,
-    UserCog,
-    BookOpen
+    UserCog
 } from "lucide-react";
 
 const AdminDashboard = () => {
@@ -19,12 +18,6 @@ const AdminDashboard = () => {
             icon: <UserCog className="w-5 h-5" />,
             label: 'Manage Users',
             path: '/dashboard/admin/users'
-        },
-        {
-            id: 'courses',
-            icon: <BookOpen className="w-5 h-5" />,
-            label: 'Manage Courses',
-            path: '/dashboard/admin/courses'
         },
     ];
 
