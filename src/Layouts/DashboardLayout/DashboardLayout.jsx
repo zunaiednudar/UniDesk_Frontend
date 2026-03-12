@@ -127,7 +127,8 @@ const DashboardLayout = ({ menuItems, role }) => {
     const pathSegments = location.pathname.split("/").filter(Boolean);
     const filteredSegments = pathSegments.filter(segment =>
         segment !== "student" && segment !== "admin" &&
-        !/^[a-f\d]{24}$/i.test(segment) // remove Mongo ObjectId
+        !/^[a-f\d]{24}$/i.test(segment) && // remove Mongo ObjectId
+        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(segment) // remove emails
     );
     const formattedPath = filteredSegments.map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1)).join(" / ");
 

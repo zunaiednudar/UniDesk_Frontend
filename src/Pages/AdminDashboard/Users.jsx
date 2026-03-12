@@ -78,8 +78,8 @@ const roleConfig = {
 };
 
 const userStatusConfig = {
-    approved: {
-        badge: 'bg-green-50 border border-green-200', dot: 'bg-green-500', label: 'Approved',
+    verified: {
+        badge: 'bg-green-50 border border-green-200', dot: 'bg-green-500', label: 'Verified',
     }, suspended: {
         badge: 'bg-red-50 border border-red-200', dot: 'bg-red-500', label: 'Suspended',
     }, pending: {
@@ -245,7 +245,7 @@ const UserItem = ({user, navigate, setUserList}) => {
             {/* Actions */}
             <div className="flex-shrink-0 flex items-center gap-1.5">
                 <button
-                    onClick={() => navigate(`dashboard/admin/user/${user.id}/details`)}
+                    onClick={() => navigate(`/dashboard/admin/users/${user.email}/details`)}
                     className="cursor-pointer p-1.5 rounded-lg text-gray-400 hover:text-blue-500 transition">
                     <SquarePen size={18}/>
                 </button>
@@ -400,12 +400,12 @@ const Users = () => {
                 // Map pie chart data
 
                 const pendingCount = usersWithoutAdmins.filter(u => u.status === 'pending').length;
-                const approvedCount = usersWithoutAdmins.filter(u => u.status === 'approved').length;
+                const verifiedCount = usersWithoutAdmins.filter(u => u.status === 'verified').length;
                 const suspendedCount = usersWithoutAdmins.filter(u => u.status === 'suspended').length;
 
                 const pieGraphData = [
                     {name: 'Pending', value: pendingCount},
-                    {name: 'Approved', value: approvedCount},
+                    {name: 'Verified', value: verifiedCount},
                     {name: 'Suspended', value: suspendedCount},
                 ];
 

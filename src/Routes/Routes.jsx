@@ -22,6 +22,7 @@ import Overview from "../Pages/AdminDashboard/Overview.jsx";
 import Users from "../Pages/AdminDashboard/Users.jsx";
 import AdminRoute from "../Providers/RoleWiseRoutes/AdminRoute/AdminRoute.jsx";
 import AdminProfile from "../Pages/Profile/AdminProfile.jsx";
+import UserDetails from "../Components/User/UserDetails.jsx";
 
 export const router = createBrowserRouter([
     {
@@ -70,7 +71,7 @@ export const router = createBrowserRouter([
         children: [
             {
                 index: true,
-                element: <Navigate to="activity" replace />
+                element: <Navigate to="activity" replace/>
             },
             {
                 path: "activity",
@@ -130,7 +131,7 @@ export const router = createBrowserRouter([
         children: [
             {
                 index: true,
-                element: <Navigate to="overview" replace />
+                element: <Navigate to="overview" replace/>
             },
             {
                 path: "overview",
@@ -145,9 +146,9 @@ export const router = createBrowserRouter([
                 </AdminRoute>
             },
             {
-                path: "profile",
+                path: "users/:email/details",
                 element: <AdminRoute>
-                    <AdminProfile></AdminProfile>
+                    <UserDetails></UserDetails>
                 </AdminRoute>
             },
             {
