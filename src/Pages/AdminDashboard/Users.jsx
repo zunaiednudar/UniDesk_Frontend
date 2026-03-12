@@ -4,9 +4,26 @@ import React, {useContext, useEffect, useState} from "react";
 import {AuthContext} from "../../Providers/AuthProvider/AuthProvider.jsx";
 import {
     AlertCircle, CalendarCheck, GraduationCap, School, SquarePen,
-    UsersRound, Trash2
+    UsersRound, Trash2, ShieldCheck, TrendingUp
 } from "lucide-react";
 import {useNavigate} from "react-router";
+
+import {
+    PieChart,
+    BarChart,
+    Bar,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
+    Legend, ResponsiveContainer, Pie, Cell,
+} from 'recharts';
+
+// Helper for month mapping
+const months = [
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+];
 
 // Design helper that represents loading
 const SkeletonBlock = ({className}) => (
@@ -69,6 +86,84 @@ const userStatusConfig = {
         badge: 'bg-gray-50 border border-gray-200', dot: 'bg-gray-400', label: 'Pending',
     },
 };
+
+// Design helpers for pie chart
+const PIE_COLORS = ['#6366f1', '#22c55e', '#ef4444'];
+
+const UserStatusChart = ({data, loading}) => (
+    <div className="w-full h-full bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <SectionHeader
+            icon={ShieldCheck}
+            title="User Status Overview"
+            iconBg="bg-indigo-50"
+            iconColor="text-indigo-500"
+        />
+        {loading ? (
+            <SkeletonBlock className="h-48"/>
+        ) : (
+            <>
+                <ResponsiveContainer width="100%" height={240}>
+                    <PieChart>
+                        <Pie
+                            data={data}
+                            dataKey="value"
+                            nameKey="name"
+                            outerRadius={90}
+                            label={({ percent }) => percent > 0 ? `${(percent * 100).toFixed(0)}%` : ''}
+                            labelLine={false}
+                        >
+                            {data.map((_, idx) => (
+                                <Cell key={idx} fill={PIE_COLORS[idx]}/>
+                            ))}
+                        </Pie>
+                        <Tooltip formatter={(value, name) => [value, name]}/>
+                    </PieChart>
+                </ResponsiveContainer>
+
+                {/* Legend */}
+                <div className="flex justify-around mt-4">
+                    {data.map((entry, idx) => (
+                        <div key={idx} className="flex flex-col items-center gap-1">
+                            <div className="flex items-center gap-1">
+                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: PIE_COLORS[idx] }}/>
+                                <span className="text-xs text-gray-500">{entry.name}</span>
+                            </div>
+                            <span className="text-sm font-bold text-gray-900">{entry.value}</span>
+                        </div>
+                    ))}
+                </div>
+            </>
+        )}
+    </div>
+);
+
+const UserGrowthChart = ({data, loading}) => (
+    <div className="flex-1 bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col">
+        <SectionHeader
+            icon={TrendingUp}
+            title="User Growth"
+            iconBg="bg-purple-50"
+            iconColor="text-purple-500"
+        />
+
+        {loading ? <SkeletonBlock className="h-72"/> : (
+            <ResponsiveContainer width="100%" height={400}>
+                <BarChart
+                    data={data}
+                    margin={{ top: 5, right: 0, left: 0, bottom: 5 }}
+                >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis allowDecimals={false} />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="student" fill="#8884d8" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="faculty" fill="#82ca9d" radius={[4, 4, 0, 0]} />
+                </BarChart>
+            </ResponsiveContainer>
+        )}
+    </div>
+);
 
 // Design for a single user item
 // Each item consists of - ID, Profile Picture, Name, Email, Role, Status, Created At, Actions (Edit - Delete)
@@ -151,8 +246,8 @@ const UserItem = ({user, navigate, setUserList}) => {
             <div className="flex-shrink-0 flex items-center gap-1.5">
                 <button
                     onClick={() => navigate(`dashboard/admin/user/${user.id}/details`)}
-                    className="p-1.5 rounded-lg hover:bg-white/80 text-gray-400 hover:text-blue-500 transition">
-                    <SquarePen size={13}/>
+                    className="cursor-pointer p-1.5 rounded-lg text-gray-400 hover:text-blue-500 transition">
+                    <SquarePen size={18}/>
                 </button>
                 {deleting ? (
                     <svg className="animate-spin w-4 h-4 text-red-400" viewBox="0 0 24 24" fill="none">
@@ -162,8 +257,8 @@ const UserItem = ({user, navigate, setUserList}) => {
                 ) : (
                     <button
                         onClick={() => document.getElementById(`delete_modal_${user.id}`).showModal()}
-                        className="p-1.5 rounded-lg hover:bg-white/80 text-gray-400 hover:text-red-500 transition">
-                        <Trash2 size={13}/>
+                        className="cursor-pointer p-1.5 rounded-lg text-gray-400 hover:text-red-500 transition">
+                        <Trash2 size={18}/>
                     </button>
                 )}
             </div>
@@ -198,6 +293,9 @@ const Users = () => {
 
     const {userData} = useContext(AuthContext);
 
+    const [barChartData, setBarChartData] = useState([]);
+    const [pieChartData, setPieChartData] = useState([]);
+
     useEffect(() => {
         const fetchUsers = async () => {
             if (userData?._id == null) return;
@@ -216,6 +314,7 @@ const Users = () => {
                             month: "short",
                             day: "numeric"
                         }),
+                        createdAtRaw: user.createdAt,
                         department: user.department,
                         designation: user.designation,
                         email: user.email,
@@ -230,11 +329,69 @@ const Users = () => {
                 });
 
                 // Filter out admins
-
                 users = users.filter(user => user.role !== 'admin');
+
+                // Map bar chart data
+
+                // Track student count
+                const studentRawCount = users.filter(user => user.role === "student")
+                    .reduce((acc, user) => {
+                        const month = new Date(user.createdAtRaw).getMonth();
+                        if (new Date(user.createdAtRaw).getFullYear() === new Date().getFullYear())
+                            acc[month] = (acc[month] || 0) + 1;
+                        return acc;
+                    }, Array(12).fill(0));
+
+                // Track faculty count
+                const facultyRawCount = users.filter(user => user.role === "faculty")
+                    .reduce((acc, user) => {
+                        const month = new Date(user.createdAtRaw).getMonth();
+                        if (new Date(user.createdAtRaw).getFullYear() === new Date().getFullYear())
+                            acc[month] = (acc[month] || 0) + 1;
+                        return acc;
+                    }, Array(12).fill(0));
+
+                const currentMonth = new Date().getMonth();
+
+                const studentCount = [];
+                const facultyCount = [];
+
+                for (let m = 0; m <= currentMonth; m++) {
+                    let sTotal = 0;
+                    let fTotal = 0;
+                    for (let i = 0; i <= m; i++) {
+                        sTotal += studentRawCount[i];
+                        fTotal += facultyRawCount[i];
+                    }
+                    studentCount.push(sTotal);
+                    facultyCount.push(fTotal);
+                }
+
+                const barGraphData = months
+                    .slice(0, currentMonth + 1)
+                    .map((month, index) => ({
+                    name: month,
+                    student: studentCount[index],
+                    faculty: facultyCount[index]
+                }));
+
+                // Map pie chart data
+
+                const pendingCount = users.filter(u => u.status === 'pending').length;
+                const approvedCount = users.filter(u => u.status === 'approved').length;
+                const suspendedCount = users.filter(u => u.status === 'suspended').length;
+
+                const pieGraphData = [
+                    {name: 'Pending', value: pendingCount},
+                    {name: 'Approved', value: approvedCount},
+                    {name: 'Suspended', value: suspendedCount},
+                ];
 
                 setUserList(users);
                 setUserCount(users.length);
+
+                setBarChartData(barGraphData);
+                setPieChartData(pieGraphData);
             } catch {
                 toast.error('Error fetching users');
             } finally {
@@ -247,24 +404,25 @@ const Users = () => {
 
     return (
         <div className="gilroy space-y-6">
+            {/* Page Title */}
             <div>
-                Stats
-                <p>Total Users</p>
-                <p>Total Students</p>
-                <p>Total Faculties</p>
+                <h1 className="graphik text-3xl font-semibold text-gray-900">Manage Users</h1>
+                <p className="text-sm text-gray-400 mt-1">Monitor your users, manage accounts efficiently, and keep your community organized with real-time insights</p>
             </div>
 
-            <div>
-                Bar chart (all years)
-                Student Trend
-                Faculty Trend
-            </div>
+            {/* Stats */}
+            <div className="flex items-stretch gap-10">
+                <UserGrowthChart data={barChartData} loading={loading}/>
 
-            <div>
-                Pie chart
-                Pending
-                Approved
-                Suspended
+                <div className="flex-1 flex flex-col justify-between gap-4">
+                    <div>
+                        <p>Total Users</p>
+                        <p>Total Students</p>
+                        <p>Total Faculties</p>
+                    </div>
+
+                    <UserStatusChart data={pieChartData} loading={loading}/>
+                </div>
             </div>
 
             {/* Users List */}
