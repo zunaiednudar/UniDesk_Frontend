@@ -53,10 +53,10 @@ const EmptyState = ({message}) => (
 
 const roleConfig = {
     student: {
-        icon: School, badge: 'bg-blue-50 border border-blue-200'
+        icon: School, badge: 'bg-blue-50', tag: 'bg-blue-200', roleIconTag: 'text-blue-400'
     },
     faculty: {
-        icon: GraduationCap, badge: 'bg-orange-50 border border-orange-200'
+        icon: GraduationCap, badge: 'bg-orange-50', tag: 'bg-orange-200', roleIconTag: 'text-orange-400'
     }
 };
 
@@ -84,7 +84,6 @@ const UserItem = ({user, navigate, setUserList}) => {
 
         try {
             const deleteRes = await axiosSecure.delete(`/admin/users/${email}`);
-            console.log(deleteRes);
 
             if (deleteRes.status === 200) {
                 toast.success("User deleted successfully.");
@@ -100,22 +99,29 @@ const UserItem = ({user, navigate, setUserList}) => {
     }
 
     return (
-        <div className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border mb-1.5 ${roleConfig[user.role]?.badge ?? 'bg-gray-50 border-gray-200'}`}>
+        <div className={`w-full flex items-center gap-3 px-3 py-2.5 ${roleConfig[user.role]?.badge ?? 'bg-gray-50 border-gray-200'} overflow-x-auto`}>
             {/* Role Icon */}
             <div className="flex-shrink-0">
-                <RoleIcon size={14} className="text-gray-400"/>
+                <RoleIcon size={20} className={`${roleConfig[user.role]?.roleIconTag ?? 'text-gray-400'}`}/>
             </div>
 
             {/* Profile Picture */}
-            {/*<div className="flex-shrink-0 w-7 h-7 rounded-full bg-gradient-to-br from-purple-100 to-purple-200 flex items-center justify-center overflow-hidden">*/}
-            {/*    {user.photoURL ? (*/}
-            {/*        <img src={user.photoURL} alt={user.name} className="w-full h-full object-cover"/>*/}
-            {/*    ) : (*/}
-            {/*        <span className="text-xs font-bold text-purple-600">*/}
-            {/*        {user.name?.[0]?.toUpperCase() || '?'}*/}
-            {/*    </span>*/}
-            {/*    )}*/}
-            {/*</div>*/}
+            <div
+                className="flex-shrink-0 w-7 h-7 rounded-full overflow-hidden"
+                style={user.photoURL ? {
+                    backgroundImage: `url(${user.photoURL})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                } : undefined}
+            >
+                {!user.photoURL && (
+                    <div className="w-full h-full bg-gradient-to-br from-purple-100 to-purple-200 flex items-center justify-center">
+                    <span className="text-xs font-bold text-purple-600">
+                        {user.name?.[0]?.toUpperCase() || '?'}
+                    </span>
+                    </div>
+                )}
+            </div>
 
             {/* Name + Email */}
             <div className="flex flex-col min-w-0 flex-1">
@@ -123,8 +129,14 @@ const UserItem = ({user, navigate, setUserList}) => {
                 <span className="text-xs text-gray-400 truncate">{user.email}</span>
             </div>
 
+            {/* ID */}
+            <span className="flex-1 hidden md:block text-xs text-gray-400">ID: {user.id}</span>
+
+            {/* Role */}
+            <span className={`flex-shrink-0 text-xs font-semibold text-gray-500 capitalize px-2 py-1 rounded-xl ${roleConfig[user.role]?.tag ?? 'bg-gray-50 border-gray-200'}`}>{user.role}</span>
+
             {/* Status */}
-            <div className={`flex-shrink-0 flex items-center gap-1.5 rounded-full px-2.5 py-1 ${cfg.badge}`}>
+            <div className={`flex-shrink-0 flex items-center gap-1.5 rounded-full px-2 py-1 ${cfg.badge}`}>
                 <div className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`}/>
                 <span className="text-xs font-semibold text-gray-600">{cfg.label}</span>
             </div>
@@ -149,12 +161,28 @@ const UserItem = ({user, navigate, setUserList}) => {
                     </svg>
                 ) : (
                     <button
-                        onClick={() => handleDelete(user.email)}
+                        onClick={() => document.getElementById(`delete_modal_${user.id}`).showModal()}
                         className="p-1.5 rounded-lg hover:bg-white/80 text-gray-400 hover:text-red-500 transition">
                         <Trash2 size={13}/>
                     </button>
                 )}
             </div>
+
+            {/* Logout confirmation modal */}
+            <dialog id={`delete_modal_${user.id}`} className="modal modal-bottom sm:modal-middle">
+                <div className="modal-box">
+                    <p className="text-sm text-gray-500">Are you sure you want to delete this user permanently?</p>
+
+                    <div className="modal-action">
+                        <button className="btn btn-ghost btn-sm" onClick={() => document.getElementById(`delete_modal_${user.id}`).close()}>Keep User</button>
+                        <button className="btn btn-error btn-sm text-white" onClick={() => handleDelete(user.email)}>Delete User</button>
+                    </div>
+                </div>
+
+                <form method="dialog" className="modal-backdrop">
+                    <button>close</button>
+                </form>
+            </dialog>
         </div>
     );
 }
@@ -178,9 +206,8 @@ const Users = () => {
             try {
                 // Fetch all users
                 const usersRes = await axiosSecure.get(`/admin/users`);
-                console.log("Users data (Users.jsx): ", usersRes);
 
-                const users = usersRes.data.users.map((user) => {
+                let users = usersRes.data.users.map((user) => {
                     return {
                         batch: user.batch,
                         biography: user.biography,
@@ -201,6 +228,10 @@ const Users = () => {
                         id: user._id
                     }
                 });
+
+                // Filter out admins
+
+                users = users.filter(user => user.role !== 'admin');
 
                 setUserList(users);
                 setUserCount(users.length);
