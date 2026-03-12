@@ -425,7 +425,7 @@ const ManageUsers = () => {
         <div className="gilroy space-y-6">
             {/* Page Title */}
             <div>
-                <h1 className="graphik text-3xl font-semibold text-gray-900">Manage ManageUsers</h1>
+                <h1 className="graphik text-3xl font-semibold text-gray-900">Manage Users</h1>
                 <p className="text-sm text-gray-400 mt-1">Monitor your users, manage accounts efficiently, and keep your community organized with real-time insights</p>
             </div>
 
@@ -438,7 +438,7 @@ const ManageUsers = () => {
                         <StatCard
                             icon={UsersRound}
                             value={stats.totalUsers}
-                            label="Total ManageUsers"
+                            label="Total Users"
                             iconBg="bg-blue-50"
                             iconColor="text-blue-500"
                         />
@@ -472,13 +472,13 @@ const ManageUsers = () => {
                 </div>
             </div>
 
-            {/* ManageUsers List */}
+            {/* Users List */}
             <div
                 className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
             >
                 <SectionHeader
                     icon={UsersRound}
-                    title="All ManageUsers"
+                    title="All Users"
                     iconBg="bg-blue-50"
                     iconColor="text-blue-500"
                     count={loading ? undefined : userList.length}
