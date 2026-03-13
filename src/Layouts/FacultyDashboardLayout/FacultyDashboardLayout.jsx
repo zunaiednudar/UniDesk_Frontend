@@ -62,7 +62,7 @@ const FacultyDashboardLayout = () => {
 
       <main className="flex flex-col flex-1 gap-2 w-full overflow-y-auto">
         <div className="sticky top-0 z-50 w-full bg-white shrink-0">
-          <div className="w-full flex justify-between items-center h-[60px] px-2.5 border-b border-gray-200 box-border">
+          <div className="w-full flex justify-between items-center h-[60px] px-2 border-b border-gray-200 box-border">
             <div className="flex items-center">
               {
                 (isMobile || (!isMobile && !isSidebarOpen)) && (

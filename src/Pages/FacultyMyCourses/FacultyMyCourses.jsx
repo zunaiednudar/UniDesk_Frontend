@@ -25,6 +25,7 @@ const FacultyMyCourses = () => {
 
     const [activeCourses, setActiveCourses] = useState([]);
     const [completedCourses, setCompletedCourses] = useState([]);
+    const [totalCompleted,setTotalCompleted]=useState(0);
 
     // Modal refs
 
@@ -189,7 +190,7 @@ const FacultyMyCourses = () => {
             toast.success("Joined course successfully");
         } catch (error) {
             toast.error(error.response?.data?.message || "Something went wrong");
-        }finally{
+        } finally {
             setLoadingJoinCourse(false);
         }
     };
@@ -211,6 +212,7 @@ const FacultyMyCourses = () => {
                 setActiveCourses(data.activeCourses);
                 setCompletedCourses(data.completedCourses);
                 setTotalPages(data.completedPagination?.totalPages || 1);
+                setTotalCompleted(data.completedPagination?.totalCompleted || 0);
             } catch (error) {
                 toast.error("Course fetch failed");
             } finally {
@@ -333,7 +335,10 @@ const FacultyMyCourses = () => {
                 {/* Completed courses */}
 
                 <div className='w-full md:flex-2  flex flex-col gap-5'>
-                    <p className='font-semibold text-gray-800 graphik'>Completed Courses</p>
+                    <div className="flex items-center gap-2">
+                        <p className='font-semibold text-gray-800 graphik'>Completed Courses</p>
+                        <span className="text-xs text-gray-400 font-medium bg-gray-100 px-2 py-0.5 rounded-full">{totalCompleted}</span>
+                    </div>
                     <hr className='border-gray-200' />
                     <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5'>
                         {

@@ -4,8 +4,7 @@ import { AuthContext } from '../../Providers/AuthProvider/AuthProvider.jsx';
 import axiosSecure from '../../utils/axiosSecure.js';
 import CardSkeleton from '../../Components/CardSkeleton/CardSkeleton.jsx';
 import PaginationTemplate from '../../Components/PaginationTemplate/PaginationTemplate.jsx';
-import { IoMdAdd } from 'react-icons/io';
-import { BookOpen, Briefcase, Check, MessageCircle, Search, Settings, Trash2 } from 'lucide-react';
+import { BookOpen, Briefcase, Check, MessageCircle, Search, Settings } from 'lucide-react';
 import formatName from '../../utils/formatName.js';
 import EmptyState from '../../Components/EmptyState/EmptyState.jsx';
 
@@ -16,7 +15,7 @@ const FacultyMySupervises = () => {
     const [search, setSearch] = useState("");
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
-    const [relationshipType,setRelationshipType]=useState("");
+    const [relationshipType, setRelationshipType] = useState("");
 
     // All supervisee data and loading state
 
@@ -34,6 +33,7 @@ const FacultyMySupervises = () => {
     const [superviseeStatus, setSuperviseeStatus] = useState("active");
     const [loadingStatusUpdate, setLoadingStatusUpdate] = useState(false);
     const [loadingRemoveSupervisee, setLoadingRemoveSupervisee] = useState(false);
+    const [totalCompletedSupervises, setTotalCompletedSupervises] = useState(0)
 
     // Open details modal function
 
@@ -111,13 +111,18 @@ const FacultyMySupervises = () => {
                 return;
             }
 
+            const previousStatus = selectedSupervisee?.status;
+
+
             const updatedSupervisee = {
                 ...selectedSupervisee,
                 status: superviseeStatus
             };
 
-            setSelectedSupervisee(updatedSupervisee);
             updateSuperviseeInLists(updatedSupervisee);
+
+            if (previousStatus === "active" && superviseeStatus === "completed")
+                setTotalCompletedSupervises((prev) => prev + 1);
 
             handleCloseDetailsModal();
 
@@ -188,7 +193,9 @@ const FacultyMySupervises = () => {
 
                 setCompletedSupervises(res?.data?.completedSupervises || []);
 
-                setTotalPages(res?.data?.completedPagination?.totalPages || 1)
+                setTotalPages(res?.data?.completedPagination?.totalPages || 1);
+
+                setTotalCompletedSupervises(res?.data?.completedPagination?.totalCompleted || 0)
 
             } catch (error) {
                 toast.error("Supervises fetch failed");
@@ -199,7 +206,7 @@ const FacultyMySupervises = () => {
 
         if (userData?._id)
             fetchSupervises();
-    }, [userData?._id, page, search,relationshipType]);
+    }, [userData?._id, page, search, relationshipType]);
 
     // console.log(activeSupervises, completedSupervises);
 
@@ -348,7 +355,11 @@ const FacultyMySupervises = () => {
                     {/* Completed supervises block */}
 
                     <div className='w-full md:flex-2  flex flex-col gap-5'>
-                        <p className='font-semibold text-gray-800 graphik'>Completed Supervisions</p>
+                        <div className="flex items-center gap-2">
+                            <p className='font-semibold text-gray-800 graphik'>Completed Supervisions</p>
+                            <span className="text-xs text-gray-400 font-medium bg-gray-100 px-2 py-0.5 rounded-full">{totalCompletedSupervises}</span>
+                        </div>
+
                         <hr className='border-gray-200' />
                         <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5'>
                             {

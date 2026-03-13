@@ -6,14 +6,14 @@ const CardSkeleton = ({ variant = "list", lines = 3 }) => {
 
     if (variant === "stat")
         return (
-            <div className="w-full p-5 rounded-lg shadow-lg flex flex-col gap-2 box-border border border-gray-100 animate-pulse">
+            <div className="w-full min-w-0 p-5 rounded-lg shadow-lg flex flex-col gap-2 box-border border border-gray-100 animate-pulse">
                 <div className="flex gap-2 items-center">
-                    <div className="w-5 h-5 rounded bg-gray-200" />
-                    <div className="h-3 w-20 rounded bg-gray-200" />
+                    <div className="w-10 h-10 rounded-xl bg-gray-200 shrink-0"></div>
+                    <div className="h-4 w-28 bg-gray-200 rounded"></div>
                 </div>
-                <div className="h-4 w-24 rounded bg-gray-300" />
-            </div>
 
+                <div className="h-8 w-16 bg-gray-300 rounded"></div>
+            </div>
         );
 
     if (variant === "pendingAssignment")

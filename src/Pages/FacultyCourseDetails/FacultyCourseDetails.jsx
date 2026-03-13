@@ -1225,7 +1225,7 @@ const FacultyCourseDetails = () => {
 
                     {/* Go back button */}
 
-                    <Link to="/dashboard/faculty/my-courses" className='flex items-center gap-1 text-sm text-gray-500'><ArrowLeft className='w-4 h-4' /> <span>Back to Courses</span>
+                    <Link to="/dashboard/faculty/courses" className='flex items-center gap-1 text-sm text-gray-500'><ArrowLeft className='w-4 h-4' /> <span>Back to Courses</span>
                     </Link>
 
                     {/* Course name,code and leave button */}

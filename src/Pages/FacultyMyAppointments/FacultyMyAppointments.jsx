@@ -381,7 +381,7 @@ const FacultyMyAppointments = () => {
                         (
                             stats.map(stat =>
                                 <div key={stat.title} className='w-full min-w-0 p-5 rounded-lg shadow-lg flex flex-col gap-2 box-border border border-gray-100 hover:-translate-y-1 transition-all duration-300'>
-                                    <div className='flex gap-2 items-center'>
+                                    <div className='flex gap-3 items-center'>
                                         <div className={`w-10 h-10 rounded-xl flex justify-center items-center ${stat.iconBg}`}>
                                             <stat.logo className={`w-5 h-5 ${stat.icon} shrink-0`} />
                                         </div>
