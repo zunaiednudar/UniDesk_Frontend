@@ -71,7 +71,7 @@ const FacultyMyAppointments = () => {
 
         if (userData?._id)
             fetchAppointments();
-    }, [userData?._id, page, status, completedAppointments, upcomingAppointments, pendingAppointments]);
+    }, [userData?._id, page, status]);
 
     // UI helper function for modal
 
@@ -333,23 +333,31 @@ const FacultyMyAppointments = () => {
     const stats = [
         {
             logo: MdOutlineUpcoming,
-            title: "Upcoming Appointments",
-            info: `${upcomingAppointments}`
+            title: "Upcoming",
+            info: `${upcomingAppointments}`,
+            iconBg: "bg-orange-100",
+            icon: "text-orange-700"
         },
         {
             logo: MdPendingActions,
-            title: "Pending Appointments",
-            info: `${pendingAppointments}`
+            title: "Pending",
+            info: `${pendingAppointments}`,
+            iconBg: "bg-blue-100",
+            icon: "text-blue-700"
         },
         {
             logo: GrCompliance,
-            title: "Completed Appointments",
-            info: `${completedAppointments}`
+            title: "Completed",
+            info: `${completedAppointments}`,
+            iconBg: "bg-green-100",
+            icon: "text-green-700"
         },
         {
             logo: FaPeopleGroup,
             title: "Connected with",
-            info: `${students} ${students > 1 ? "students" : "student"}`
+            info: `${students}`,
+            iconBg: "bg-purple-100",
+            icon: "text-purple-700"
         }
     ];
 
@@ -372,13 +380,16 @@ const FacultyMyAppointments = () => {
                     ) :
                         (
                             stats.map(stat =>
-                                <div key={stat.title} className='w-full p-5 rounded-lg shadow-lg flex flex-col gap-2 box-border border border-gray-100 hover:-translate-y-1 transition-all duration-300'>
+                                <div key={stat.title} className='w-full min-w-0 p-5 rounded-lg shadow-lg flex flex-col gap-2 box-border border border-gray-100 hover:-translate-y-1 transition-all duration-300'>
                                     <div className='flex gap-2 items-center'>
-                                        <stat.logo className='w-5 h-5 text-gray-500' />
-                                        <p className='text-gray-500 text-xs'>{stat.title}</p>
+                                        <div className={`w-10 h-10 rounded-xl flex justify-center items-center ${stat.iconBg}`}>
+                                            <stat.logo className={`w-5 h-5 ${stat.icon} shrink-0`} />
+                                        </div>
+
+                                        <p className='text-gray-500 text-sm font-medium min-w-0 break-words'>{stat.title}</p>
 
                                     </div>
-                                    <p className='graphik text-sm font-medium'>{stat.info}</p>
+                                    <p className='text-3xl font-bold'>{stat.info}</p>
                                 </div>
                             )
                         )

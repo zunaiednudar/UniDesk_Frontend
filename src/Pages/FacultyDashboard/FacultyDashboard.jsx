@@ -173,22 +173,30 @@ const FacultyDashboard = () => {
         {
             title: "Total Courses",
             info: (activeCourses.length + completedCourses.length >= 0) ? activeCourses.length + completedCourses.length : "0",
-            logo: GraduationCap
+            logo: GraduationCap,
+            iconBg:"bg-orange-100",
+            icon:"text-orange-700"
         },
         {
             title: "Total Students",
             info: totalStudents,
-            logo: MdPeopleOutline
+            logo: MdPeopleOutline,
+            iconBg:"bg-blue-100",
+            icon:"text-blue-700"
         },
         {
             title: "Active Courses",
             info: activeCourses.length,
-            logo: VscLayersActive
+            logo: VscLayersActive,
+            iconBg:"bg-green-100",
+            icon:"text-green-700"
         },
         {
-            title: "Upcoming Appointments",
+            title: "Upcoming Appts",
             info: appointments.length,
-            logo: MdOutlineUpcoming
+            logo: MdOutlineUpcoming,
+            iconBg:"bg-purple-100",
+            icon:"text-purple-700"
         },
     ];
 
@@ -326,13 +334,16 @@ const FacultyDashboard = () => {
                     ) :
                         (
                             stats.map(stat =>
-                                <div key={stat.title} className='w-full p-5 rounded-lg shadow-lg flex flex-col gap-2 box-border border border-gray-100 hover:-translate-y-1 transition-all duration-300'>
+                                <div key={stat.title} className='w-full min-w-0 p-5 rounded-lg shadow-lg flex flex-col gap-2 box-border border border-gray-100 hover:-translate-y-1 transition-all duration-300'>
                                     <div className='flex gap-2 items-center'>
-                                        <stat.logo className='w-5 h-5 text-gray-500' />
-                                        <p className='text-gray-500 text-xs'>{stat.title}</p>
+                                        <div className={`w-10 h-10 rounded-xl flex justify-center items-center ${stat.iconBg}`}>
+                                            <stat.logo className={`w-5 h-5 ${stat.icon} shrink-0`} />
+                                        </div>
+                                        
+                                        <p className='text-gray-500 text-sm font-medium min-w-0 break-words'>{stat.title}</p>
 
                                     </div>
-                                    <p className='graphik text-sm font-medium'>{stat.info}</p>
+                                    <p className='text-3xl font-bold'>{stat.info}</p>
                                 </div>
                             )
                         )

@@ -87,14 +87,14 @@ const Sidebar = ({ logout, userData, isSidebarOpen, setIsSidebarOpen, toggleSide
             }
 
             <aside
-                className={`gilroy fixed lg:sticky top-0 flex flex-col justify-between z-40 h-screen bg-gray-100 transition-all duration-200 ease-in-out overflow-hidden
+                className={`gilroy fixed lg:sticky top-0 flex flex-col justify-between z-51 h-screen bg-gray-100 transition-all duration-200 ease-in-out overflow-hidden
                     ${isSidebarOpen
                         ? "w-72 lg:w-96 translate-x-0"
                         : "w-0 -translate-x-full lg:translate-x-0"
                     }`
                 }
             >
-                <div className="w-full flex items-center justify-between gap-4 border-b-2 border-gray-200 px-2">
+                <div className="w-full h-[60px] flex items-center justify-between gap-4 border-b border-gray-200 px-2.5 shrink-0">
                     <NavLink to="/" className="flex items-center gap-2 px-2 py-3">
                         <div className="w-9 h-9 bg-[#1E40AF] rounded-lg flex justify-center items-center">
                             <GraduationCap className="w-6 h-6 text-white" />
