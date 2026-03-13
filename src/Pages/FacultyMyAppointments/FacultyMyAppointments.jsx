@@ -11,6 +11,7 @@ import CardSkeleton from '../../Components/CardSkeleton/CardSkeleton.jsx';
 import { MdOutlineUpcoming, MdPendingActions } from 'react-icons/md';
 import { GrCompliance } from "react-icons/gr";
 import { FaPeopleGroup } from "react-icons/fa6";
+import EmptyState from '../../Components/EmptyState/EmptyState.jsx';
 
 const FacultyMyAppointments = () => {
     const { userData } = useContext(AuthContext);
@@ -408,9 +409,7 @@ const FacultyMyAppointments = () => {
                         :
                         appointments.length === 0
                             ?
-                            <p className='col-span-full text-gray-500 text-sm lg:text-lg text-center py-10'>
-                                No appointment found
-                            </p>
+                            <EmptyState message={"No appointment found"}></EmptyState>
                             :
                             appointments.map(appointment =>
                                 <div

@@ -191,7 +191,7 @@ const Sidebar = ({ logout, userData, isSidebarOpen, setIsSidebarOpen, toggleSide
                                         <NavLink to="/dashboard/faculty/profile">Settings</NavLink>
                                     </li>
                                     <li>
-                                        <a className="p-2 cursor-pointer" onClick={handleOpenModal}>
+                                        <a className="cursor-pointer" onClick={handleOpenModal}>
                                             Logout
                                         </a>
                                     </li>
@@ -242,7 +242,7 @@ const Sidebar = ({ logout, userData, isSidebarOpen, setIsSidebarOpen, toggleSide
                             className="btn btn-error btn-sm text-white"
                             onClick={handleLogout}
                         >
-                            Logout
+                            Log out
                         </button>
                     </div>
                 </div>

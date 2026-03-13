@@ -7,6 +7,7 @@ import { uploadToCloudinary } from '../../utils/uploadToCloudinary';
 import axiosSecure from '../../utils/axiosSecure';
 import { FaRegEdit } from 'react-icons/fa';
 import { FiLock } from "react-icons/fi";
+import EmptyState from '../../Components/EmptyState/EmptyState';
 
 const FacultyMyProfile = () => {
     const { userData, setUserData, passwordReset, updateUser } = useContext(AuthContext);
@@ -234,24 +235,44 @@ const FacultyMyProfile = () => {
 
                 </div>
                 <hr className='text-gray-500' />
-                <div className='flex flex-col items-start gap-2'>
-                    <p className='text-xl graphik font-bold'>Biography</p>
-                    <p className='text-justify text-sm text-gray-500'>{
-                        userData?.biography ? userData?.biography : "No biography found"
-                    }</p>
+                <div className='flex flex-col gap-2'>
+                    <p className='font-semibold text-gray-800 graphik'>Biography</p>
+
+                    {
+                        userData?.biography ? (
+                            <p className='text-justify text-sm text-gray-500'>
+                                {userData.biography}
+                            </p>
+                        ) : (
+                            <div className="w-full flex justify-center">
+                                <EmptyState message="No biography found" />
+                            </div>
+                        )
+                    }
                 </div>
-                <div className='flex flex-col items-start gap-2'>
-                    <p className='text-xl graphik font-bold'>Research Interests</p>
-                    <div className='flex flex-wrap gap-2'>
-                        {
-                            userData?.researchInterests.length > 0 ? (userData?.researchInterests.map(interest => <span
-                                key={interest}
-                                className="px-3 py-1 rounded-full text-sm font-medium bg-[#1E40AF]/10 text-[#1E40AF]"
-                            >
-                                {interest.trim()}
-                            </span>)) : <p className='text-justify text-sm text-gray-500'>No research interests found</p>
-                        }
-                    </div>
+
+
+                <div className='flex flex-col gap-2'>
+                    <p className='font-semibold text-gray-800 graphik'>Research Interests</p>
+
+                    {
+                        userData?.researchInterests?.length > 0 ? (
+                            <div className='w-full flex flex-wrap gap-2 justify-start'>
+                                {userData.researchInterests.map((interest) => (
+                                    <span
+                                        key={interest}
+                                        className="px-3 py-1 rounded-full text-sm font-medium bg-[#1E40AF]/10 text-[#1E40AF]"
+                                    >
+                                        {interest.trim()}
+                                    </span>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="w-full flex justify-center">
+                                <EmptyState message="No research interests found" />
+                            </div>
+                        )
+                    }
                 </div>
             </div>
 

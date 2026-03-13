@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, ArcElement, PointElement, LineElement, Tooltip, Legend } from "chart.js";
 import { Bar, Doughnut, Line } from "react-chartjs-2";
 import ChartCard from '../../Components/ChartCard/ChartCard.jsx';
+import EmptyState from '../../Components/EmptyState/EmptyState.jsx';
 
 // Chartjs register
 
@@ -282,10 +283,8 @@ const FacultyDashboard = () => {
             {/* Welcome texts */}
 
             <div className='w-full max-w-full'>
-                <p className='text-3xl graphik font-semibold text-gray-900'>Dashboard</p>
-                <p className='text-gray-500'>Welcome back, {userData.name.split(" ")
-                    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                    .join(" ")}</p>
+                <p className='text-3xl graphik font-semibold text-gray-900'>My Activity</p>
+                <p className='text-gray-500'>Streamline teaching, monitor academic activities and make informed decisions with real time insights.</p>
             </div>
 
             {/* Stats Card */}
@@ -329,9 +328,7 @@ const FacultyDashboard = () => {
                             <ChartCard title="Course Teaching">
                                 {
                                     activeCourses.length === 0 ? (
-                                        <div className="h-full flex items-center justify-center text-sm text-gray-400">
-                                            No active course data available
-                                        </div>
+                                        <EmptyState message={"No active course data available"}></EmptyState>
                                     ) : (
                                         <Bar data={courseTeachingData} options={barChartOptions} />
                                     )
@@ -341,9 +338,7 @@ const FacultyDashboard = () => {
                             <ChartCard title="Pending Grading by Course">
                                 {
                                     assignments.length === 0 ? (
-                                        <div className="h-full flex items-center justify-center text-sm text-gray-400">
-                                            No pending grading data
-                                        </div>
+                                        <EmptyState message={"No pending grading data"}></EmptyState>
                                     ) : (
                                         <Bar data={pendingGradingChartData} options={barChartOptions} />
                                     )
@@ -353,9 +348,7 @@ const FacultyDashboard = () => {
                             <ChartCard title="Active vs Completed Courses">
                                 {
                                     (activeCourses.length === 0 && completedCourses.length === 0) ? (
-                                        <div className="h-full flex items-center justify-center text-sm text-gray-400">
-                                            No course status data available
-                                        </div>
+                                        <EmptyState message={"No course status data available"}></EmptyState>
                                     ) : (
                                         <Doughnut data={courseStatusData} options={commonChartOptions} />
                                     )
@@ -365,9 +358,7 @@ const FacultyDashboard = () => {
                             <ChartCard title="Upcoming Appointments Overview">
                                 {
                                     appointments.length === 0 ? (
-                                        <div className="h-full flex items-center justify-center text-sm text-gray-400">
-                                            No upcoming appointments
-                                        </div>
+                                        <EmptyState message={"No upcoming appointments"}></EmptyState>
                                     ) : (
                                         <Line data={appointmentsChartData} options={lineChartOptions} />
                                     )
@@ -392,9 +383,7 @@ const FacultyDashboard = () => {
                                 ))
                             ) : activeCourses.length === 0 ?
                                 (
-                                    <p className='text-gray-400 text-sm text-center py-10'>
-                                        No active courses
-                                    </p>
+                                    <EmptyState message={"No active courses"}></EmptyState>
                                 ) :
                                 (
                                     activeCourses.map((course) => (
@@ -450,9 +439,7 @@ const FacultyDashboard = () => {
                                     <CardSkeleton key={i} lines={3} />
                                 ))
                             ) : appointments.length === 0 ? (
-                                <p className='text-gray-400 text-sm text-center py-10'>
-                                    No upcoming appointments
-                                </p>
+                                <EmptyState message={"No upcoming appointments"}></EmptyState>
                             ) : (
                                 appointments.map((appointment) => (
                                     <div
@@ -496,9 +483,7 @@ const FacultyDashboard = () => {
                         ))
                     ) : assignments.length === 0 ?
                         (
-                            <p className='text-gray-400 text-sm text-center py-10'>
-                                No active courses with pending grading
-                            </p>
+                            <EmptyState message={"No active courses with pending grading"}></EmptyState>
                         ) :
                         (
                             assignments.map((assignment) => (

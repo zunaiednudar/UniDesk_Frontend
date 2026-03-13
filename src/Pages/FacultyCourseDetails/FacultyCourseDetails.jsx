@@ -16,6 +16,7 @@ import formatName from '../../utils/formatName.js';
 import { uploadFileToCloudinary } from '../../utils/uploadToCloudinary.js';
 import { fetchAssignmentSubmissions } from '../../utils/fetchAssignmentSubmissions.js';
 import { getAttachmentName, getAttachmentURL } from '../../utils/attachmentHelpers.js';
+import EmptyState from '../../Components/EmptyState/EmptyState.jsx';
 
 const FacultyCourseDetails = () => {
     const { id } = useParams();
@@ -1305,9 +1306,7 @@ const FacultyCourseDetails = () => {
                     <div className='flex flex-col gap-2'>
                         {
                             announcements.length === 0 ?
-                                <p className='col-span-full text-gray-500 text-sm md:text- md lg:text-lg text-center py-10'>
-                                    No announcement found
-                                </p>
+                                <EmptyState message={"No announcement found"}></EmptyState>
                                 :
                                 announcements.map(announcement =>
                                     <div key={announcement?._id} onClick={() => openViewAnnouncementModal(announcement)} className='flex flex-col gap-1 p-3 rounded-xl bg-gray-50 border border-gray-100 hover:border-blue-100 hover:bg-blue-50/30 transition-all duration-500 cursor-pointer'>
@@ -1345,9 +1344,7 @@ const FacultyCourseDetails = () => {
                         <div className='flex flex-col gap-2'>
                             {
                                 assignments.length === 0 ?
-                                    <p className='w-full text-gray-500 text-sm md:text- md lg:text-lg text-center py-10'>
-                                        No assignment found
-                                    </p>
+                                    <EmptyState message={"No assignment found"}></EmptyState>
                                     :
                                     assignments.map(assignment =>
                                         <div key={assignment?._id} className='flex flex-col gap-3 p-4 rounded-xl bg-gray-50 border border-gray-100 hover:border-blue-100 hover:bg-blue-50/30 transition-all duration-500 cursor-pointer' onClick={() => openViewAssignmentModal(assignment)}>
@@ -1383,9 +1380,7 @@ const FacultyCourseDetails = () => {
                                 {
                                     (!course?.faculties || course.faculties.length === 0)
                                         ?
-                                        <p className='w-full text-gray-500 text-xs text-center py-10'>
-                                            No instructor found
-                                        </p>
+                                        <EmptyState message={"No instructor found"}></EmptyState>
                                         :
                                         course?.faculties.map(faculty =>
                                             <div key={faculty?._id || faculty?.email} className='w-full h-auto flex items-center gap-3 min-w-0'>
@@ -1804,7 +1799,7 @@ const FacultyCourseDetails = () => {
                     <div className="flex flex-col gap-2">
                         {
                             filteredStudents.length === 0 ? (
-                                <p className="text-gray-500 text-sm text-center py-10">No student found</p>
+                                <EmptyState message={"No student found"}></EmptyState>
                             ) : (
                                 paginatedStudents.map((student) => (
                                     <div key={student._id} className="flex items-center justify-between gap-3 p-3 rounded-xl border border-gray-200 bg-gray-50">
@@ -1897,7 +1892,7 @@ const FacultyCourseDetails = () => {
                     <div className="flex flex-col gap-2">
                         {
                             filteredMaterials.length === 0 ? (
-                                <p className="text-gray-500 text-sm text-center py-10">No material found</p>
+                                <EmptyState message={"No material found"}></EmptyState>
                             ) : (
                                 paginatedMaterials.map((material) => (
                                     <div key={material._id} className="flex items-center justify-between gap-3 p-3 rounded-xl border border-gray-200 bg-gray-50">
@@ -2263,7 +2258,7 @@ const FacultyCourseDetails = () => {
                                                     loadingSubmissions ? (
                                                         <span className="loading loading-dots loading-md"></span>
                                                     ) : assignmentSubmissions.length === 0 ? (
-                                                        <p className="text-sm text-gray-500 text-center py-6">No submission found</p>
+                                                        <EmptyState message={"No submission found"}></EmptyState>
                                                     ) : (
                                                         [...assignmentSubmissions]
                                                             .sort((a, b) => {

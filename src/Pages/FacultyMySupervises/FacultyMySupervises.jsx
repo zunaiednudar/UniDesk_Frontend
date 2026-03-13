@@ -7,6 +7,7 @@ import PaginationTemplate from '../../Components/PaginationTemplate/PaginationTe
 import { IoMdAdd } from 'react-icons/io';
 import { BookOpen, Briefcase, Check, MessageCircle, Search, Settings, Trash2 } from 'lucide-react';
 import formatName from '../../utils/formatName.js';
+import EmptyState from '../../Components/EmptyState/EmptyState.jsx';
 
 const FacultyMySupervises = () => {
     const { userData } = useContext(AuthContext);
@@ -266,9 +267,7 @@ const FacultyMySupervises = () => {
                                     )
                                 ) : activeSupervises.length === 0 ?
                                     (
-                                        <p className='col-span-full text-gray-500 md:text-xl lg:text-2xl text-center py-10'>
-                                            No supervisee found
-                                        </p>
+                                        <EmptyState message={"No supervisee found"}></EmptyState>
                                     ) :
                                     (
                                         activeSupervises.map(supervisee =>
@@ -360,9 +359,7 @@ const FacultyMySupervises = () => {
                                     )
                                 ) : completedSupervises.length === 0 ?
                                     (
-                                        <p className='col-span-full text-gray-500 md:text-xl lg:text-2xl text-center py-10'>
-                                            No supervisee found
-                                        </p>
+                                        <EmptyState message={"No supervisee found"}></EmptyState>
                                     ) :
                                     (
                                         completedSupervises.map(supervisee => <div className={`w-full flex flex-col gap-3 p-6 rounded-xl box-border shadow-md  hover:shadow-xl hover:-translate-y-1 transition-all duration-300 ${supervisee.relationshipType === "thesis" ?

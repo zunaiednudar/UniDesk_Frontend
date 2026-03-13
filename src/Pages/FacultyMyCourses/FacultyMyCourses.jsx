@@ -7,6 +7,7 @@ import { Link } from 'react-router';
 import CardSkeleton from '../../Components/CardSkeleton/CardSkeleton.jsx';
 import PaginationTemplate from '../../Components/PaginationTemplate/PaginationTemplate.jsx';
 import formatName from '../../utils/formatName.js';
+import EmptyState from '../../Components/EmptyState/EmptyState.jsx';
 
 const FacultyMyCourses = () => {
     // Filtering
@@ -272,9 +273,7 @@ const FacultyMyCourses = () => {
                                 )
                             ) : activeCourses.length === 0 ?
                                 (
-                                    <p className='col-span-full text-gray-500 md:text-xl lg:text-2xl text-center py-10'>
-                                        No active course found
-                                    </p>
+                                    <EmptyState message={"No active course found"}></EmptyState>
                                 ) :
                                 (
                                     activeCourses.map(course =>
@@ -345,9 +344,7 @@ const FacultyMyCourses = () => {
                                 )
                             ) : completedCourses.length === 0 ?
                                 (
-                                    <p className='col-span-full text-gray-500 md:text-xl lg:text-2xl text-center py-10'>
-                                        No completed course found
-                                    </p>
+                                    <EmptyState message={"No completed course found"}></EmptyState>
                                 ) :
                                 (
                                     completedCourses.map(course =>
