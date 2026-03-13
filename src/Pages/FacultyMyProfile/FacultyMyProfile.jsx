@@ -171,7 +171,7 @@ const FacultyMyProfile = () => {
         <div className='w-full max-w-full p-5 flex flex-col gap-10 gilroy'>
 
             <div className='w-full max-w-full'>
-                <p className='text-3xl graphik font-bold text-black'>My Profile</p>
+                <p className='text-3xl graphik font-semibold text-gray-900'>My Profile</p>
                 <p className='text-gray-500'>View and manage your profile information</p>
             </div>
 

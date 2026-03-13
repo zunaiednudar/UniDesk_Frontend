@@ -355,7 +355,7 @@ const FacultyMyAppointments = () => {
     return (
         <div className='w-full max-w-full p-5 flex flex-col gap-10 gilroy'>
             <div className='w-full max-w-full'>
-                <p className='text-3xl graphik font-bold text-black'>My Appointments</p>
+                <p className='text-3xl graphik font-semibold text-gray-900'>My Appointments</p>
                 <p className='text-gray-500'>Manage your student appointments</p>
             </div>
 

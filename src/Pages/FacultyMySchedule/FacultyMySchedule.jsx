@@ -329,7 +329,7 @@ const FacultyMySchedule = () => {
         <div className='w-full max-w-full p-5 flex flex-col gap-10 gilroy'>
             <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
                 <div>
-                    <p className='text-3xl graphik font-bold text-black'>My Schedule</p>
+                    <p className='text-3xl graphik font-semibold text-gray-900'>My Schedule</p>
                     <p className='text-gray-500'>Sunday to Thursday schedule</p>
                 </div>
 

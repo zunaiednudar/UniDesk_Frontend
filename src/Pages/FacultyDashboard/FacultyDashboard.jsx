@@ -282,7 +282,7 @@ const FacultyDashboard = () => {
             {/* Welcome texts */}
 
             <div className='w-full max-w-full'>
-                <p className='text-3xl graphik font-bold text-black'>Dashboard</p>
+                <p className='text-3xl graphik font-semibold text-gray-900'>Dashboard</p>
                 <p className='text-gray-500'>Welcome back, {userData.name.split(" ")
                     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
                     .join(" ")}</p>
@@ -383,7 +383,7 @@ const FacultyDashboard = () => {
             <div className='w-full max-w-full flex flex-col md:flex-row items-start gap-10'>
                 {/* Recent Courses */}
                 <div className='w-full md:flex-2 shadow-xl p-5 flex flex-col gap-5'>
-                    <p className='text-lg md:text-xl font-bold graphik'>Recent Courses</p>
+                    <p className='font-semibold text-gray-800 graphik'>Recent Courses</p>
                     <div className='flex flex-col gap-3'>
                         {
                             dashboardLoading ? (
@@ -442,7 +442,7 @@ const FacultyDashboard = () => {
 
                 {/* Upcoming Appointments */}
                 <div className='w-full md:flex-1 shadow-xl p-5 flex flex-col gap-5'>
-                    <p className='text-lg md:text-xl font-bold graphik'>Upcoming Appointments</p>
+                    <p className='font-semibold text-gray-800 graphik'>Upcoming Appointments</p>
                     <div className='flex flex-col gap-3'>
                         {
                             dashboardLoading ? (
@@ -488,7 +488,7 @@ const FacultyDashboard = () => {
             {/* Pending Grading course wise */}
 
             <div className='w-full shadow-xl p-5 flex flex-col gap-5'>
-                <p className='text-lg md:text-xl font-bold graphik'>Pending Grading</p>
+                <p className='font-semibold text-gray-800 graphik'>Pending Grading</p>
                 {
                     dashboardLoading ? (
                         Array.from({ length: 3 }).map((_, i) => (

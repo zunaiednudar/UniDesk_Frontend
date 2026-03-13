@@ -229,7 +229,7 @@ const FacultyMyCourses = () => {
     return (
         <div className='w-full max-w-full p-5 flex flex-col gap-10 gilroy'>
             <div className='w-full max-w-full'>
-                <p className='text-3xl graphik font-bold text-black'>My Courses</p>
+                <p className='text-3xl graphik font-semibold text-gray-900'>My Courses</p>
                 <p className='text-gray-500'>Manage and track courses</p>
             </div>
             <div className='w-full flex flex-col items-start md:items-center md:flex-row gap-5'>
@@ -259,7 +259,7 @@ const FacultyMyCourses = () => {
                 <div className='w-full flex flex-col gap-5'>
                     <div className="flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full bg-green-500" />
-                        <p className="graphik text-xl font-bold text-gray-800">Active Courses</p>
+                        <p className='font-semibold text-gray-800 graphik'>Active Courses</p>
                         <span className="text-xs text-gray-400 font-medium bg-gray-100 px-2 py-0.5 rounded-full">{activeCourses.length}</span>
                     </div>
                     <hr className='border-gray-200' />
@@ -334,7 +334,7 @@ const FacultyMyCourses = () => {
                 {/* Completed courses */}
 
                 <div className='w-full md:flex-2  flex flex-col gap-5'>
-                    <p className="graphik text-xl font-bold text-gray-800">Completed Courses</p>
+                    <p className='font-semibold text-gray-800 graphik'>Completed Courses</p>
                     <hr className='border-gray-200' />
                     <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5'>
                         {
