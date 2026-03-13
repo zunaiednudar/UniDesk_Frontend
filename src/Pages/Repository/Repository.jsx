@@ -94,6 +94,7 @@ const ItemCard = ({id, item, onDownload, onView, onDelete}) => {
             <div className="shrink-0 w-10 h-10 rounded-xl flex items-center justify-center bg-gray-100">
                 <FileIcon className={`w-5 h-5 ${fileConfig.text}`} strokeWidth={1.75}/>
             </div>
+
             <div className="flex-1 min-w-0">
                 <span className={`text-[10px] font-semibold uppercase tracking-wide ${fileConfig.text}`}>
                     {item.itemType ?? fileConfig.label}
@@ -116,12 +117,26 @@ const ItemCard = ({id, item, onDownload, onView, onDelete}) => {
                 <span className="text-xs font-medium text-gray-500 capitalize">{item?.courseName}</span>
             </div>
 
+            {/* Tags */}
+            {item.tags?.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                    {item.tags.map((tag, index) => (
+                        <span
+                            key={index}
+                            className="px-2 py-0.5 text-[10px] font-medium bg-blue-50 text-blue-600 rounded-full border border-blue-100"
+                        >
+                {tag}
+            </span>
+                    ))}
+                </div>
+            )}
+
             {/* Uploader + Date */}
             <div className="flex flex-col items-start justify-between text-xs text-gray-400">
                 <div className="flex items-center gap-2 min-w-0">
                     <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-[10px] font-bold shrink-0 uppercase overflow-hidden">
                         {item.uploader?.photoURL
-                            ? <img src={item.uploader.photoURL} alt={item.uploader.name} className="w-full h-full object-cover" />
+                            ? <img src={item.uploader?.photoURL} alt={item.uploader?.name} className="w-full h-full object-cover" />
                             : item.uploader?.name?.[0] ?? "?"
                         }
                     </div>
@@ -153,14 +168,14 @@ const ItemCard = ({id, item, onDownload, onView, onDelete}) => {
                 </div>
 
                 <div className="flex items-center gap-1.5">
-                    <button
-                        onClick={() => {
-                            onView?.(item);
-                        }}
-                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
-                        <Eye className="w-3.5 h-3.5" />
-                        View
-                    </button>
+                    {/*<button*/}
+                    {/*    onClick={() => {*/}
+                    {/*        onView?.(item);*/}
+                    {/*    }}*/}
+                    {/*    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition">*/}
+                    {/*    <Eye className="w-3.5 h-3.5" />*/}
+                    {/*    View*/}
+                    {/*</button>*/}
 
                     <button
                         onClick={() => {
@@ -170,18 +185,18 @@ const ItemCard = ({id, item, onDownload, onView, onDelete}) => {
                         <Download className="w-3.5 h-3.5" />
                         Download
                     </button>
-                </div>
 
-                {(item.uploader._id === id) && (
-                    <button
-                        onClick={() => {
-                            onDelete?.(item);
-                        }}
-                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-orange-700 rounded-lg hover:bg-orange-800 transition">
-                        <Trash2 className="w-3.5 h-3.5" />
-                        Delete
-                    </button>
-                )}
+                    {(item.uploader?._id === id) && (
+                        <button
+                            onClick={() => {
+                                onDelete?.(item);
+                            }}
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-orange-700 rounded-lg hover:bg-orange-800 transition">
+                            <Trash2 className="w-3.5 h-3.5" />
+                            Delete
+                        </button>
+                    )}
+                </div>
             </div>
         </div>
     );
@@ -237,6 +252,24 @@ const Repository = () => {
 
     const [currentPage, setCurrentPage] = useState(1);
 
+    const [tags, setTags] = useState([]);
+    const [tagInput, setTagInput] = useState('');
+
+    const handleTagKeyDown = (e) => {
+        if (e.key === 'Enter' || e.key === ',') {
+            e.preventDefault();
+            const newTag = tagInput.trim().toLowerCase();
+            if (newTag && !tags.includes(newTag)) {
+                setTags(prev => [...prev, newTag]);
+            }
+            setTagInput('');
+        }
+    };
+
+    const removeTag = (tagToRemove) => {
+        setTags(prev => prev.filter(t => t !== tagToRemove));
+    };
+
     const handleDownload = async (url, title) => {
         try {
             const res = await fetch(url);
@@ -286,21 +319,22 @@ const Repository = () => {
                 ]);
 
                 const repositoryItems = repositoryRes.data.items;
+                console.log(repositoryItems);
 
                 const totalContributionPoints = repositoryItems.reduce((sum, item) => {
-                    if (item.uploader._id === id) return sum + item.contributionPoints;
+                    if (item.uploader?._id === id) return sum + item.contributionPoints;
                     return sum;
                 }, 0);
 
                 const totalApproved = repositoryItems.reduce((sum, item) => {
-                    if (item.uploader._id === id) return sum + 1;
+                    if (item.uploader?._id === id) return sum + 1;
                     return sum;
                 }, 0);
 
                 const totalContributors = new Set(
                     repositoryItems
                         .filter(item => item.contributionPoints > 0)
-                        .map(item => item.uploader._id)
+                        .map(item => item.uploader?._id)
                 ).size;
 
                 const totalUploaded = repositoryItems.length;
@@ -311,22 +345,22 @@ const Repository = () => {
 
                 const allPersonalNotes = repositoryItems
                     .filter(item => {
-                        return (item.uploader._id === id) && (item.itemType.toLowerCase() === "notes");
+                        return (item.uploader?._id === id) && (item.itemType.toLowerCase() === "notes");
                     });
 
                 const allQuestionBanksAnswers = repositoryItems
                     .filter(item => {
-                        return (item.uploader._id === id) && ((item.itemType.toLowerCase() === "question bank") || (item.itemType.toLowerCase() === "solved questions"));
+                        return (item.uploader?._id === id) && ((item.itemType.toLowerCase() === "question bank") || (item.itemType.toLowerCase() === "solved questions"));
                     });
 
                 const allAssessments = repositoryItems
                     .filter(item => {
-                        return (item.uploader._id === id) && ((item.itemType.toLowerCase() === "project_report") || (item.itemType.toLowerCase() === "lab_report") || (item.itemType.toLowerCase() === "assignment"));
+                        return (item.uploader?._id === id) && ((item.itemType.toLowerCase() === "project_report") || (item.itemType.toLowerCase() === "lab_report") || (item.itemType.toLowerCase() === "assignment"));
                     });
 
                 const otherMaterials = repositoryItems
                     .filter(item => {
-                        return (item.uploader._id === id)
+                        return (item.uploader?._id === id)
                             && (item.itemType.toLowerCase() !== "notes")
                             && (item.itemType.toLowerCase() !== "question bank")
                             && (item.itemType.toLowerCase() !== "solved questions")
@@ -434,10 +468,13 @@ const Repository = () => {
                 item.title.toLowerCase().includes(q) ||
                 item.courseCode.toLowerCase().includes(q) ||
                 item.courseName.toLowerCase().includes(q) ||
+                item.tags?.some(tag => tag.toLowerCase().includes(q)) ||
                 item.uploader?.name?.toLowerCase().includes(q);
 
             const matchesStatus =
-                statusFilter === "all" || (statusFilter === "personal" && item.uploader._id === id);
+                statusFilter === "all" ||
+                (statusFilter === "approved" && item.status === "approved" && item.uploader?._id === id) ||
+                (statusFilter === "pending" && item.status === "pending" && item.uploader?._id === id);
 
             return matchesSearch && matchesStatus;
         });
@@ -465,7 +502,8 @@ const Repository = () => {
             courseName: formData.get("course-name")?.trim(),
             year: formData.get("year")?.trim(),
             semester: formData.get("semester")?.trim(),
-            itemType: itemType
+            itemType: itemType,
+            tags: tags
         };
 
         if (!material) {
@@ -520,6 +558,8 @@ const Repository = () => {
                 document.getElementById("my_modal_1").close();
                 e.target.reset();
                 setItemType("notes");
+                setTags([]);
+                setTagInput('');
 
                 setMaterial(null);
                 if (fileInputRef.current) {
@@ -615,7 +655,7 @@ const Repository = () => {
                                 return (
 
                                     <div
-                                        key={person.user._id ?? person.rank}
+                                        key={person.user?._id ?? person.rank}
                                         className={`${style.bg} ${style.border} border rounded-2xl px-5 py-4 flex items-center gap-4 overflow-x-auto`}
                                     >
                                         {/* Rank badge */}
@@ -631,15 +671,15 @@ const Repository = () => {
                                         <div className="flex items-center gap-3 shrink-0">
                                             <div
                                                 className="overflow-hidden w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-sm font-bold shrink-0 uppercase">
-                                                {person.user.photoURL
-                                                    ? <img src={person.user.photoURL} alt={person.user.name}
+                                                {person.user?.photoURL
+                                                    ? <img src={person.user?.photoURL} alt={person.user?.name}
                                                            className="w-full h-full object-cover"/>
-                                                    : person.user.name?.[0] ?? "?"
+                                                    : person.user?.name?.[0] ?? "?"
                                                 }
                                             </div>
                                             <div className="min-w-0">
-                                                <p className="text-sm font-semibold text-gray-900">{formatName(person.user.name)}</p>
-                                                <p className="text-xs text-gray-400">{person.user.studentID ?? ""}</p>
+                                                <p className="text-sm font-semibold text-gray-900">{formatName(person.user?.name)}</p>
+                                                <p className="text-xs text-gray-400">{person.user?.studentID ?? ""}</p>
                                             </div>
                                         </div>
 
@@ -687,7 +727,7 @@ const Repository = () => {
                         <Search size={15} className="text-gray-400 absolute left-3 top-1/2 -translate-y-1/2"/>
                         <input
                             type="text"
-                            placeholder="Search by course title, course code, course name, material type or uploader name…"
+                            placeholder="Search by course title, course code, course name, material type, tags or uploader name…"
                             value={searchQuery}
                             onChange={e => {
                                 setSearchQuery(e.target.value);
@@ -709,7 +749,8 @@ const Repository = () => {
                             className={optionCls}
                         >
                             <option value="all">All</option>
-                            <option value="personal">Personal</option>
+                            <option value="approved">Approved</option>
+                            <option value="pending">Pending</option>
                         </select>
                     )}
 
@@ -732,7 +773,7 @@ const Repository = () => {
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 shrink-0 stroke-current" fill="none" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        <span>Study material uploaded successfully!</span>
+                        <span>Study material uploaded successfully. Please wait for approval!</span>
                     </div>
                 )}
 
@@ -794,6 +835,8 @@ const Repository = () => {
                                     document.getElementById("my_modal_1").close();
                                     setMaterial(null);
                                     if (fileInputRef.current) fileInputRef.current.value = "";
+                                    setTags([]);
+                                    setTagInput('');
                                 }}
                                 className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
 
@@ -843,6 +886,35 @@ const Repository = () => {
                                 <input type="text" name="course-name" className={inputCls} placeholder="System Development Project" />
                             </div>
 
+                            {/* Tags */}
+                            <div>
+                                <label className={labelCls}>Tags</label>
+                                <div className={`${inputCls} flex flex-wrap gap-1.5 min-h-[42px] cursor-text`}>
+                                    {tags.map((tag, index) => (
+                                        <span
+                                            key={index}
+                                            className="flex items-center gap-1 px-2 py-0.5 text-[11px] font-medium bg-blue-50 text-blue-600 rounded-full border border-blue-100"
+                                        >
+                                            {tag}
+                                            <button
+                                                type="button"
+                                                onClick={() => removeTag(tag)}
+                                                className="text-blue-400 hover:text-blue-700 leading-none"
+                                            >×</button>
+                                        </span>
+                                    ))}
+                                    <input
+                                        type="text"
+                                        value={tagInput}
+                                        onChange={(e) => setTagInput(e.target.value)}
+                                        onKeyDown={handleTagKeyDown}
+                                        placeholder={tags.length === 0 ? "Type a tag and press Enter…" : ""}
+                                        className="flex-1 min-w-[120px] outline-none text-sm bg-transparent"
+                                    />
+                                </div>
+                                <p className="text-xs text-gray-400 -mt-2 mb-3">Press Enter or comma to add a tag</p>
+                            </div>
+
                             {/* Year + Semester */}
                             <div className="flex flex-col lg:flex-row justify-between gap-4">
                                 <div className="flex-1">
@@ -866,7 +938,7 @@ const Repository = () => {
                                         onChange={(e) => setItemType(e.target.value)}
                                         className={optionCls}
                                     >
-                                        <option value="notes">Personal Note</option>
+                                        <option value="notes">Notes</option>
                                         <option value="question bank">Question Bank</option>
                                         <option value="solved questions">Answer</option>
                                         <option value="project_report">Project Report</option>
@@ -891,8 +963,11 @@ const Repository = () => {
                             setMaterial(null);
                             if (fileInputRef.current) {
                                 fileInputRef.current.value = "";
-                            }}
-                        }>close</button>
+                            }
+                            setTags([]);
+                            setTagInput('');
+                        }
+                    }>close</button>
                     </form>
                 </dialog>
 
