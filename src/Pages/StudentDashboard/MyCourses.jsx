@@ -11,7 +11,7 @@ import {
     FolderOpen,
     Eye,
     CheckCircle,
-    Plus, X, Loader2, LogIn
+    Plus, X, Loader2, LogIn, LoaderCircle, CircleCheckBig
 } from 'lucide-react';
 import { useNavigate} from 'react-router';
 import axiosSecure from "../../utils/axiosSecure.js";
@@ -21,52 +21,15 @@ import CourseFilesDrawer from "../../Components/Course/CourseFilesDrawer.jsx";
 import DefaultProfile from "../../assets/default-profile.png";
 import { Pagination } from '@mui/material';
 import {toast} from "sonner";
+import EmptyState from "../../Components/EmptyState/EmptyState.jsx";
+import StatCard from "../../Components/StatCard/StatCard.jsx";
+import SkeletonCard from "../../Components/SkeletonCard/SkeletonCard.jsx";
+import SectionHeader from "../../Components/SectionHeader/SectionHeader.jsx";
 
 const statusBadgeConfig = {
     active: 'bg-green-100 text-green-700',
     completed: 'bg-blue-100 text-blue-700',
 };
-
-// Stat card for simple analytics
-const StatCard = ({icon: Icon, value, label, iconBg, iconColor, valueColor = 'text-gray-900'}) => (
-    <div
-        className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200">
-        <div className="flex items-center gap-3 mb-3">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${iconBg}`}>
-                <Icon size={18} className={iconColor} strokeWidth={1.75}/>
-            </div>
-            <div className="text-sm font-medium text-gray-500">{label}</div>
-        </div>
-        <div className={`text-3xl font-bold ${valueColor}`}>{value ?? '—'}</div>
-    </div>
-);
-
-// Represents loading during data fetch
-const SkeletonCard = () => (
-    <div className="bg-white rounded-2xl border border-gray-100 p-6 animate-pulse">
-        <div className="flex justify-between mb-4">
-            <div className="space-y-2">
-                <div className="h-4 w-24 bg-gray-200 rounded"/>
-                <div className="h-3 w-36 bg-gray-100 rounded"/>
-            </div>
-            <div className="h-6 w-16 bg-gray-100 rounded-full"/>
-        </div>
-        <div className="space-y-2.5 mb-5">
-            <div className="h-3 w-32 bg-gray-100 rounded"/>
-            <div className="h-3 w-28 bg-gray-100 rounded"/>
-            <div className="h-3 w-40 bg-gray-100 rounded"/>
-        </div>
-        <div className="h-10 w-full bg-gray-100 rounded-xl"/>
-    </div>
-);
-
-// Represents section when data is empty
-const EmptyState = ({message}) => (
-    <div className="col-span-full flex flex-col items-center py-12 text-gray-400 text-sm">
-        <AlertCircle size={32} className="text-gray-200 mb-3"/>
-        {message}
-    </div>
-);
 
 // Contains basic course information
 const CourseCard = ({course, onFilesClick, navigate}) => (
@@ -396,16 +359,16 @@ const MyCourses = () => {
             <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex flex-col gap-4">
                 {/* Active Courses */}
                 <div className="space-y-4 mb-4">
-                    <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-green-500"/>
-                        <h2 className="graphik text-sm font-semibold text-gray-800">Active Courses</h2>
-                        {!loading && (
-                            <span className="text-xs text-gray-400 font-medium bg-gray-100 px-2 py-0.5 rounded-full">
-                            {activeCourses.length}
-                        </span>
-                        )}
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                    <SectionHeader
+                        icon={LoaderCircle}
+                        title="Active Courses"
+                        iconBg="bg-green-50"
+                        iconColor="text-green-500"
+                        count={activeCourses?.length || 0}
+                        navigate={false}
+                    />
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mt-5">
                         {loading ? (
                             [1, 2, 3].map(i => <SkeletonCard key={i}/>)
                         ) : activeCourses.length === 0 ? (
@@ -428,10 +391,18 @@ const MyCourses = () => {
 
                 {/* Divider */}
                 <div className="border-t border-gray-200"></div>
-                <span className="graphik text-xl font-medium cursor-default">Recent Courses</span>
 
                 {/* Completed Courses */}
-                <div className="max-h-[800px] flex flex-col justify-between gap-6 overflow-y-auto">
+                <SectionHeader
+                    icon={CircleCheckBig}
+                    title="Completed Courses"
+                    iconBg="bg-blue-50"
+                    iconColor="text-blue-500"
+                    count={completedCourses?.length || 0}
+                    navigate={false}
+                />
+
+                <div className="max-h-[800px] flex flex-col justify-between gap-6 overflow-y-auto mt-1">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                         {loading ? (
                             [1, 2, 3].map(i => <SkeletonCard key={i}/>)

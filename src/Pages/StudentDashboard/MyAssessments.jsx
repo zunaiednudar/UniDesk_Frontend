@@ -10,6 +10,8 @@ import formatName from "../../utils/formatName.js";
 import {AuthContext} from "../../Providers/AuthProvider/AuthProvider.jsx";
 import {toast} from "sonner";
 import {uploadFileToCloudinary} from "../../utils/uploadToCloudinary.js";
+import SectionHeader from "../../Components/SectionHeader/SectionHeader.jsx";
+import EmptyState from "../../Components/EmptyState/EmptyState.jsx";
 
 // Helper
 
@@ -978,12 +980,14 @@ const MyAssessments = () => {
             {/* Weekly Board */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
                 <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-lg bg-orange-50 flex items-center justify-center">
-                            <Calendar size={15} className="text-orange-500" strokeWidth={2}/>
-                        </div>
-                        <h2 className="text-sm font-bold text-gray-900">This Week</h2>
-                    </div>
+                    <SectionHeader
+                        icon={Calendar}
+                        title="This Week"
+                        iconBg="bg-orange-50"
+                        iconColor="text-orange-500"
+                        navigate={false}
+                    />
+
                     <span className="text-xs text-gray-400">
                         {weekDates[0].toLocaleDateString('en-US', {month: 'short', day: 'numeric'})}
                         {' – '}
@@ -1004,22 +1008,19 @@ const MyAssessments = () => {
             <div className="grid grid-cols-1 xl:grid-cols-5 gap-2 lg:h-[720px] mb-10">
                 {/* Assignment List */}
                 <div
-                    className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-x-hidden overflow-y-auto xl:col-span-3 h-full">
+                    className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-x-hidden overflow-y-auto xl:col-span-3 h-full px-5">
                     <div
-                        className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-5 py-5 border-b border-gray-100">
-                        <div className="flex items-center gap-2">
-                            <div className="w-7 h-7 rounded-lg bg-orange-50 flex items-center justify-center">
-                                <ClipboardCheck size={15} className="text-orange-500" strokeWidth={2}/>
-                            </div>
-                            <h2 className="text-sm font-bold text-gray-900">All Assignments</h2>
-                            {!loading && (
-                                <span
-                                    className="text-xs font-semibold text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">
-                                {filtered.length}
-                            </span>
-                            )}
-                        </div>
-                        <div className="flex gap-2 w-full sm:w-auto">
+                        className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-5 py-3 border-b border-gray-200">
+                        <SectionHeader
+                            icon={ClipboardCheck}
+                            title="Assignments"
+                            iconBg="bg-orange-50"
+                            iconColor="text-orange-500"
+                            count={filtered.length || 0}
+                            navigate={false}
+                        />
+
+                        <div className="flex gap-2 w-full h-full sm:w-auto">
                             <div className="relative flex-1 sm:flex-none">
                                 <Search size={13} className="text-gray-400 absolute left-2.5 top-1/2 -translate-y-1/2"/>
                                 <input
@@ -1047,10 +1048,7 @@ const MyAssessments = () => {
                         {loading ? (
                             <SkeletonRows/>
                         ) : filtered.length === 0 ? (
-                            <div className="flex flex-col items-center py-12 text-gray-400 text-sm">
-                                <AlertCircle size={28} className="text-gray-200 mb-2"/>
-                                No assignments found
-                            </div>
+                            <EmptyState message="No assignments found"/>
                         ) : (
                             filtered.map(a => (
                                 <AssignmentRow
@@ -1095,18 +1093,17 @@ const MyAssessments = () => {
 
                 {/* Projects & Supervision */}
                 <div
-                    className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-x-hidden overflow-y-auto xl:col-span-2 h-full">
-                    <div className="flex items-center gap-2 px-5 py-6 border-b border-gray-100">
-                        <div className="w-7 h-7 rounded-lg bg-purple-50 flex items-center justify-center">
-                            <GraduationCap size={15} className="text-purple-500" strokeWidth={2}/>
-                        </div>
-                        <h2 className="text-sm font-bold text-gray-900">Projects & Supervision</h2>
-                        {!loading && (
-                            <span className="text-xs font-semibold text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">
-                                {projects.length}
-                            </span>
-                        )}
-                    </div>
+                    className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-x-hidden overflow-y-auto xl:col-span-2 h-full p-6">
+                    <SectionHeader
+                        icon={GraduationCap}
+                        title="Projects & Supervision"
+                        iconBg="bg-purple-50"
+                        iconColor="text-purple-500"
+                        seeAllTo="../ask-mentor"
+                        count={projects?.length || 0}
+                        navigate={true}
+                    />
+
                     <div className="p-5">
                         {loading ? (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1115,10 +1112,7 @@ const MyAssessments = () => {
                                 ))}
                             </div>
                         ) : projects.length === 0 ? (
-                            <div className="flex flex-col items-center py-10 text-gray-400 text-sm">
-                                <GraduationCap size={28} className="text-gray-200 mb-2" strokeWidth={1.5}/>
-                                No supervision relationships found
-                            </div>
+                            <EmptyState message="No supervision relationships found"/>
                         ) : (
                             <>
                                 {selectedProject && (
