@@ -314,7 +314,7 @@ const Repository = () => {
         const fetchData = async () => {
             try {
                 const [repositoryRes, leaderboardRes] = await Promise.all([
-                    axiosSecure.get('/repository'),
+                    axiosSecure.get('/repository', { params: { limit: 1000 } }),
                     axiosSecure.get('/repository/leaderboard'),
                 ]);
 
@@ -473,8 +473,7 @@ const Repository = () => {
 
             const matchesStatus =
                 statusFilter === "all" ||
-                (statusFilter === "approved" && item.status === "approved" && item.uploader?._id === id) ||
-                (statusFilter === "pending" && item.status === "pending" && item.uploader?._id === id);
+                (statusFilter === "personal" && item.uploader?._id === id);
 
             return matchesSearch && matchesStatus;
         });
@@ -533,6 +532,11 @@ const Repository = () => {
 
         if (!data.itemType) {
             toast.error("Please select a valid type for the study material!");
+            return;
+        }
+
+        if (tags.length === 0) {
+            toast.error("Please add at least one tag!");
             return;
         }
 
@@ -749,8 +753,7 @@ const Repository = () => {
                             className={optionCls}
                         >
                             <option value="all">All</option>
-                            <option value="approved">Approved</option>
-                            <option value="pending">Pending</option>
+                            <option value="personal">My Uploads</option>
                         </select>
                     )}
 
