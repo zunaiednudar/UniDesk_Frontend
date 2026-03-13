@@ -10,7 +10,7 @@ import CardSkeleton from '../../Components/CardSkeleton/CardSkeleton.jsx';
 import { Link, NavLink } from 'react-router';
 import { toast } from 'sonner';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, ArcElement, PointElement, LineElement, Tooltip, Legend } from "chart.js";
-import { Bar, Doughnut, Line } from "react-chartjs-2";
+import { Bar, Pie, Line } from "react-chartjs-2";
 import ChartCard from '../../Components/ChartCard/ChartCard.jsx';
 import EmptyState from '../../Components/EmptyState/EmptyState.jsx';
 
@@ -350,7 +350,7 @@ const FacultyDashboard = () => {
                                     (activeCourses.length === 0 && completedCourses.length === 0) ? (
                                         <EmptyState message={"No course status data available"}></EmptyState>
                                     ) : (
-                                        <Doughnut data={courseStatusData} options={commonChartOptions} />
+                                        <Pie data={courseStatusData} options={commonChartOptions} />
                                     )
                                 }
                             </ChartCard>
@@ -370,6 +370,78 @@ const FacultyDashboard = () => {
                 }
             </div>
 
+            {/* Pending Grading course wise */}
+
+            <div className='w-full shadow-xl p-5 flex flex-col gap-5'>
+                <p className='font-semibold text-gray-800 graphik'>Pending Grading</p>
+                {
+                    dashboardLoading ? (
+                        Array.from({ length: 3 }).map((_, i) => (
+                            <CardSkeleton key={i} lines={3} variant="pendingAssignment" />
+                        ))
+                    ) : assignments.length === 0 ?
+                        (
+                            <EmptyState message={"No active courses with pending grading"}></EmptyState>
+                        ) :
+                        (
+                            assignments.map((assignment) => (
+                                <div
+                                    key={assignment._id}
+                                    className="w-full p-6 rounded-xl bg-white shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 flex flex-col gap-4"
+                                >
+
+                                    {/* Title */}
+                                    <div className="flex items-start justify-between">
+                                        <p className="graphik font-bold text-lg text-[#1E40AF]">
+                                            {assignment.title}
+                                        </p>
+
+                                        <span className="text-xs px-3 py-1 rounded-full bg-blue-100 text-blue-700 font-medium">
+                                            {assignment.courseCode}
+                                        </span>
+                                    </div>
+
+                                    {/* Course Name */}
+                                    <p className="text-sm text-gray-600">
+                                        {assignment.courseName}
+                                    </p>
+
+                                    {/* Info Section */}
+                                    <div className="flex items-center justify-between text-sm text-gray-500">
+
+                                        <div className="flex flex-col">
+                                            <span className="text-xs text-gray-400">Due Date</span>
+                                            <span>{new Date(assignment.dueDate).toLocaleDateString()}</span>
+                                        </div>
+
+                                        <div className="flex flex-col items-end">
+                                            <span className="text-xs text-gray-400">Total Marks</span>
+                                            <span>{assignment.totalMarks}</span>
+                                        </div>
+
+                                    </div>
+
+                                    {/* Pending grading */}
+                                    <div className="flex items-center justify-between mt-2">
+
+                                        <span className="text-sm text-gray-600">
+                                            Pending Grading
+                                        </span>
+
+                                        <span className={`px-3 py-1 rounded-full text-xs font-semibold 
+                                    ${assignment.pendingGrading > 0
+                                                ? "bg-orange-100 text-orange-700"
+                                                : "bg-green-100 text-green-700"}`}>
+                                            {assignment.pendingGrading}
+                                        </span>
+
+                                    </div>
+
+                                </div>
+                            ))
+                        )
+                }
+            </div>
 
             <div className='w-full max-w-full flex flex-col md:flex-row items-start gap-10'>
                 {/* Recent Courses */}
@@ -472,78 +544,7 @@ const FacultyDashboard = () => {
                 </div>
             </div>
 
-            {/* Pending Grading course wise */}
-
-            <div className='w-full shadow-xl p-5 flex flex-col gap-5'>
-                <p className='font-semibold text-gray-800 graphik'>Pending Grading</p>
-                {
-                    dashboardLoading ? (
-                        Array.from({ length: 3 }).map((_, i) => (
-                            <CardSkeleton key={i} lines={3} variant="pendingAssignment" />
-                        ))
-                    ) : assignments.length === 0 ?
-                        (
-                            <EmptyState message={"No active courses with pending grading"}></EmptyState>
-                        ) :
-                        (
-                            assignments.map((assignment) => (
-                                <div
-                                    key={assignment._id}
-                                    className="w-full p-6 rounded-xl bg-white shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 flex flex-col gap-4"
-                                >
-
-                                    {/* Title */}
-                                    <div className="flex items-start justify-between">
-                                        <p className="graphik font-bold text-lg text-[#1E40AF]">
-                                            {assignment.title}
-                                        </p>
-
-                                        <span className="text-xs px-3 py-1 rounded-full bg-blue-100 text-blue-700 font-medium">
-                                            {assignment.courseCode}
-                                        </span>
-                                    </div>
-
-                                    {/* Course Name */}
-                                    <p className="text-sm text-gray-600">
-                                        {assignment.courseName}
-                                    </p>
-
-                                    {/* Info Section */}
-                                    <div className="flex items-center justify-between text-sm text-gray-500">
-
-                                        <div className="flex flex-col">
-                                            <span className="text-xs text-gray-400">Due Date</span>
-                                            <span>{new Date(assignment.dueDate).toLocaleDateString()}</span>
-                                        </div>
-
-                                        <div className="flex flex-col items-end">
-                                            <span className="text-xs text-gray-400">Total Marks</span>
-                                            <span>{assignment.totalMarks}</span>
-                                        </div>
-
-                                    </div>
-
-                                    {/* Pending grading */}
-                                    <div className="flex items-center justify-between mt-2">
-
-                                        <span className="text-sm text-gray-600">
-                                            Pending Grading
-                                        </span>
-
-                                        <span className={`px-3 py-1 rounded-full text-xs font-semibold 
-                                    ${assignment.pendingGrading > 0
-                                                ? "bg-orange-100 text-orange-700"
-                                                : "bg-green-100 text-green-700"}`}>
-                                            {assignment.pendingGrading}
-                                        </span>
-
-                                    </div>
-
-                                </div>
-                            ))
-                        )
-                }
-            </div>
+            
         </div>
     );
 };

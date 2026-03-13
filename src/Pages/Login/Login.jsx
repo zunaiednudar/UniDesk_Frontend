@@ -32,7 +32,7 @@ const Login = () => {
                 navigate("/dashboard/faculty");
             else
                 navigate("/dashboard/admin");
-            toast.success("Logged In Successfully");
+            toast.success(`Welcome ${user?.displayName}`);
         }).catch((error) => {
             toast.error(formatErrorMessage(error));
             setLoading(false);
