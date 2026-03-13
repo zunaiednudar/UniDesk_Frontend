@@ -45,7 +45,7 @@ const FacultyMySchedule = () => {
 
             } catch (error) {
                 setSchedule(null);
-                setScheduleReminder("Your schedule is not set yet. Contact Admin to add your weekly schedule to show classes and available slots here.");
+                setScheduleReminder("Your schedule is not set yet. Set or contact Admin to add your weekly schedule to show classes and available slots here.");
             } finally {
                 setLoadingSchedule(false);
             }
@@ -281,6 +281,8 @@ const FacultyMySchedule = () => {
         }, 500);
     };
 
+    const hasSchedule = !!schedule?._id;
+
     // Schedule update function
 
     const handleUpdateSchedule = async (e) => {
@@ -299,17 +301,34 @@ const FacultyMySchedule = () => {
             )
         }));
 
+        const hasAnyEntry = cleanedWeeklySchedule.some(
+            (dayItem) => dayItem.classes.length > 0 || dayItem.freeSlots.length > 0
+        );
+
+        if (!hasAnyEntry) {
+            toast.error("Add at least one class or free slot");
+            return;
+        }
+
         try {
             setLoadingUpdateSchedule(true);
 
-            const res = await axiosSecure.patch("/schedule", {
-                facultyID: userData._id,
-                weeklySchedule: cleanedWeeklySchedule
-            });
+            let res;
+
+            if (hasSchedule)
+                res = await axiosSecure.patch("/schedule", {
+                    facultyID: userData._id,
+                    weeklySchedule: cleanedWeeklySchedule
+                });
+            else
+                res = await axiosSecure.post("/schedule", {
+                    facultyID: userData._id,
+                    weeklySchedule: cleanedWeeklySchedule
+                });
 
             if (!res?.data?.success) {
                 closeScheduleUpdateModal();
-                toast.error(res?.data?.message || "Schedule update failed");
+                toast.error(res?.data?.message || "Schedule save failed");
                 return;
             }
 
@@ -324,10 +343,10 @@ const FacultyMySchedule = () => {
             setScheduleReminder("");
 
             closeScheduleUpdateModal();
-            toast.success("Schedule updated successfully");
+            toast.success(hasSchedule ? "Schedule updated successfully" : "Schedule created successfully");
         } catch (error) {
             closeScheduleUpdateModal();
-            toast.error(error?.response?.data?.message || "Schedule update failed");
+            toast.error(error?.response?.data?.message || "Schedule save failed");
         } finally {
             setLoadingUpdateSchedule(false);
         }
@@ -389,7 +408,9 @@ const FacultyMySchedule = () => {
                             <span className="text-sm font-medium text-orange-700">Class</span>
                         </div>
                     </div>
-                    <button className="w-30 flex gap-2 items-center bg-[#1E40AF] text-white px-5 py-2 rounded-lg cursor-pointer text-center transition-colors hover:bg-blue-600 duration-500 text-xs md:text-sm lg:text-md" onClick={openScheduleUpdateModal}><IoMdCreate /> Update</button>
+                    <button className="w-30 flex gap-2 items-center bg-[#1E40AF] text-white px-5 py-2 rounded-lg cursor-pointer text-center transition-colors hover:bg-blue-600 duration-500 text-xs md:text-sm lg:text-md" onClick={openScheduleUpdateModal}><IoMdCreate />{
+                        hasSchedule ? "Update" : "Create"
+                    }</button>
                 </div>
                 {
                     !loading && scheduleReminder && (
@@ -488,7 +509,8 @@ const FacultyMySchedule = () => {
             <dialog ref={scheduleModalRef} className="modal modal-middle">
                 <form onSubmit={handleUpdateSchedule} className="modal-box max-w-5xl">
                     <div className="flex items-center justify-between mb-4">
-                        <p className="text-xl font-bold text-gray-900">Update Schedule</p>
+                        <p className="text-xl font-bold text-gray-900">{hasSchedule ? "Update Schedule" : "Create Schedule"}
+                        </p>
                         <button
                             type="button"
                             className="btn btn-sm btn-circle btn-ghost"
@@ -643,7 +665,7 @@ const FacultyMySchedule = () => {
                                 loadingUpdateSchedule ? (
                                     <span className="loading loading-dots loading-md"></span>
                                 ) : (
-                                    "Save Schedule"
+                                    hasSchedule ? "Update Schedule" : "Create Schedule"
                                 )
                             }
                         </button>
