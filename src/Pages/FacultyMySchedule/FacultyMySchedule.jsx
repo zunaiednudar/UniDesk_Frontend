@@ -24,6 +24,7 @@ const FacultyMySchedule = () => {
     const [appointments, setAppointments] = useState([]);
     const [loadingSchedule, setLoadingSchedule] = useState(true);
     const [loadingAppointments, setLoadingAppointments] = useState(true);
+    const [scheduleReminder, setScheduleReminder] = useState("");
 
     useEffect(() => {
         const fetchSchedule = async () => {
@@ -40,9 +41,11 @@ const FacultyMySchedule = () => {
                 }
 
                 setSchedule(res?.data?.schedule);
+                setScheduleReminder("");
 
             } catch (error) {
-                toast.error("Schedule fetch failed");
+                setSchedule(null);
+                setScheduleReminder("Your schedule is not set yet. Contact Admin to add your weekly schedule to show classes and available slots here.");
             } finally {
                 setLoadingSchedule(false);
             }
@@ -310,6 +313,7 @@ const FacultyMySchedule = () => {
                     weeklySchedule: cleanedWeeklySchedule
                 }));
 
+            setScheduleReminder("");
 
             closeScheduleUpdateModal();
             toast.success("Schedule updated successfully");
@@ -376,6 +380,13 @@ const FacultyMySchedule = () => {
                     </div>
                     <button className="w-30 flex gap-2 items-center bg-[#1E40AF] text-white px-5 py-2 rounded-lg cursor-pointer text-center transition-colors hover:bg-blue-600 duration-500 text-xs md:text-sm lg:text-md" onClick={openScheduleUpdateModal}><IoMdCreate /> Update</button>
                 </div>
+                {
+                    !loading && scheduleReminder && (
+                        <div className="mb-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                            <span className="font-semibold">Reminder:</span> {scheduleReminder}
+                        </div>
+                    )
+                }
                 {
                     loading
                         ?
