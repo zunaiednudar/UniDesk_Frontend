@@ -26,142 +26,112 @@ import UserDetails from "../Components/User/UserDetails.jsx";
 export const router = createBrowserRouter([
     {
         path: "/",
-        element: <PublicRoute>
-            <RootLayout></RootLayout>
-        </PublicRoute>,
+        element: (
+            <PublicRoute>
+                <RootLayout />
+            </PublicRoute>
+        ),
         children: [
             {
                 index: true,
-                element: <PublicRoute>
-                    <Home></Home>
-                </PublicRoute>
+                element: <Home />
             },
             {
-                path: "/home",
-                element: <PublicRoute>
-                    <Home></Home>
-                </PublicRoute>
+                path: "home",
+                element: <Home />
             },
             {
-                path: "/login",
-                element: <PublicRoute>
-                    <Login></Login>
-                </PublicRoute>
+                path: "login",
+                element: <Login />
             },
             {
-                path: "/signup",
-                element: <PublicRoute>
-                    <SignUp></SignUp>
-                </PublicRoute>
+                path: "signup",
+                element: <SignUp />
             },
             {
-                path: "/repository",
-                element: <PublicRoute>
-                    <Repository></Repository>
-                </PublicRoute>
+                path: "repository",
+                element: <Repository />
             },
         ]
     },
     {
         path: "/dashboard/student",
-        element: <StudentRoute>
-            <StudentDashboard></StudentDashboard>
-        </StudentRoute>,
+        element: (
+            <StudentRoute>
+                <StudentDashboard />
+            </StudentRoute>
+        ),
         children: [
             {
                 index: true,
-                element: <Navigate to="activity" replace/>
+                element: <Navigate to="activity" replace />
             },
             {
                 path: "activity",
-                element: <StudentRoute>
-                    <MyActivity></MyActivity>
-                </StudentRoute>
+                element: <MyActivity />
             },
             {
                 path: "courses",
-                element: <StudentRoute>
-                    <MyCourses></MyCourses>
-                </StudentRoute>
+                element: <MyCourses />
             },
             {
                 path: "assessments",
-                element: <StudentRoute>
-                    <MyAssessments></MyAssessments>
-                </StudentRoute>
+                element: <MyAssessments />
             },
             {
                 path: "ask-mentor",
-                element: <StudentRoute>
-                    <AskMentor></AskMentor>
-                </StudentRoute>
+                element: <AskMentor />
             },
             {
                 path: "profile",
-                element: <StudentRoute>
-                    <StudentProfile></StudentProfile>
-                </StudentRoute>
+                element: <StudentProfile />
             },
             {
                 path: "notifications",
-                element: <StudentRoute>
-                    <Notification></Notification>
-                </StudentRoute>
+                element: <Notification />
             },
             {
                 path: "courses/:id/details",
-                element: <StudentRoute>
-                    <CourseDetails></CourseDetails>
-                </StudentRoute>
+                element: <CourseDetails />
             },
             {
                 path: ":id/repository",
-                element: <StudentRoute>
-                    <Repository></Repository>
-                </StudentRoute>
+                element: <Repository />
             }
         ]
     },
     {
         path: "/dashboard/admin",
-        element: <AdminRoute>
-            <AdminDashboard></AdminDashboard>
-        </AdminRoute>,
+        element: (
+            <AdminRoute>
+                <AdminDashboard />
+            </AdminRoute>
+        ),
         children: [
             {
                 index: true,
-                element: <Navigate to="overview" replace/>
+                element: <Navigate to="overview" replace />
             },
             {
                 path: "overview",
-                element: <AdminRoute>
-                    <Overview></Overview>
-                </AdminRoute>
+                element: <Overview />
             },
             {
                 path: "users",
-                element: <AdminRoute>
-                    <ManageUsers></ManageUsers>
-                </AdminRoute>
+                element: <ManageUsers />
             },
             {
                 path: "users/:email/details",
-                element: <AdminRoute>
-                    <UserDetails></UserDetails>
-                </AdminRoute>
+                element: <UserDetails />
             },
             {
                 path: ":id/repository",
-                element: <AdminRoute>
-                    <Repository></Repository>
-                </AdminRoute>
+                element: <Repository />
             }
         ]
     },
     {
         path: "*",
-        element: <PublicRoute>
-            <NotFound></NotFound>
-        </PublicRoute>
+        element: <NotFound />
     }
 ]);
