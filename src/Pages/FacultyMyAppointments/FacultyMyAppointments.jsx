@@ -145,11 +145,40 @@ const FacultyMyAppointments = () => {
     const updateAppointmentInList = (updatedAppointment) => {
         setAppointments((prev) =>
             prev.map((appointment) =>
-                appointment?._id === updatedAppointment?._id ? updatedAppointment : appointment
+                appointment?._id === updatedAppointment?._id
+                    ? {
+                        ...appointment,
+                        ...updatedAppointment,
+                        student: appointment.student
+                    }
+                    : appointment
             )
         );
+    };
 
-        setSelectedAppointment(updatedAppointment);
+    // Stats update function
+
+    const updateStatsAfterStatusChange = (previousStatus, nextStatus) => {
+        if (previousStatus === nextStatus)
+            return;
+
+        if (previousStatus === 'pending')
+            setPendingAppointments((prev) => Math.max(prev - 1, 0));
+
+        if (previousStatus === 'approved')
+            setUpcomingAppointments((prev) => Math.max(prev - 1, 0));
+
+        if (previousStatus === 'completed')
+            setCompletedAppointments((prev) => Math.max(prev - 1, 0));
+
+        if (nextStatus === 'pending')
+            setPendingAppointments((prev) => prev + 1);
+
+        if (nextStatus === 'approved')
+            setUpcomingAppointments((prev) => prev + 1);
+
+        if (nextStatus === 'completed')
+            setCompletedAppointments((prev) => prev + 1);
     };
 
     // Appointment approval function
@@ -170,8 +199,11 @@ const FacultyMyAppointments = () => {
                 return;
             }
 
-            updateAppointmentInList(res?.data?.appointment);
+            const previousStatus = selectedAppointment.status;
+            const nextStatus = res?.data?.appointment?.status;
 
+            updateAppointmentInList(res?.data?.appointment);
+            updateStatsAfterStatusChange(previousStatus, nextStatus);
             handleCloseDetailsModal();
 
             toast.success('Appointment approved successfully');
@@ -214,6 +246,10 @@ const FacultyMyAppointments = () => {
             };
 
             updateAppointmentInList(updatedAppointment);
+            const previousStatus = selectedAppointment.status;
+            const nextStatus = 'cancelled';
+
+            updateStatsAfterStatusChange(previousStatus, nextStatus);
 
             handleCloseDetailsModal();
 
@@ -259,6 +295,11 @@ const FacultyMyAppointments = () => {
             };
 
             updateAppointmentInList(updatedAppointment);
+            const previousStatus = selectedAppointment.status;
+            const nextStatus = 'cancelled';
+
+            updateStatsAfterStatusChange(previousStatus, nextStatus);
+
 
             handleCloseDetailsModal();
 
@@ -289,6 +330,10 @@ const FacultyMyAppointments = () => {
             }
 
             updateAppointmentInList(res?.data?.appointment);
+            const previousStatus = selectedAppointment.status;
+            const nextStatus = res?.data?.appointment?.status;
+
+            updateStatsAfterStatusChange(previousStatus, nextStatus);
 
             handleCloseDetailsModal();
 
