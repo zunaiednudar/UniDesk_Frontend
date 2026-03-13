@@ -35,8 +35,9 @@ const FacultyDashboard = () => {
     const [loadingCourses, setLoadingCourses] = useState(true);
     const [loadingAppointments, setLoadingAppointments] = useState(true);
     const [loadingAssignments, setLoadingAssignments] = useState(true);
+    const [loadingSchedule, setLoadingSchedule] = useState(true);
 
-    const dashboardLoading = loadingCourses || loadingAppointments || loadingAssignments;
+    const dashboardLoading = loadingCourses || loadingAppointments || loadingAssignments || loadingSchedule;
 
     // Data collection
 
@@ -45,6 +46,7 @@ const FacultyDashboard = () => {
     const [totalStudents, setTotalStudents] = useState(0);
     const [appointments, setAppointments] = useState([]);
     const [assignments, setAssignments] = useState([]);
+    const [schedule, setSchedule] = useState(null);
 
     // Courses fetch
 
@@ -136,6 +138,35 @@ const FacultyDashboard = () => {
         fetchAssignments();
     }, []);
 
+    // Schedule fetch
+
+    useEffect(() => {
+        const fetchSchedule = async () => {
+            try {
+                setLoadingSchedule(true);
+
+                const res = await axiosSecure.get(`/schedule/${userData?._id}`);
+
+                // console.log(res);
+
+                if (!res?.data?.success) {
+                    toast.error(res?.data?.message);
+                    return;
+                }
+
+                setSchedule(res?.data?.schedule);
+
+            } catch (error) {
+                setSchedule(null);
+            } finally {
+                setLoadingSchedule(false);
+            }
+        };
+
+        if (userData?._id)
+            fetchSchedule()
+    }, [userData?._id]);
+
     // Stats card info
 
     const stats = [
@@ -190,27 +221,23 @@ const FacultyDashboard = () => {
         ],
     };
 
-    const appointmentsByDayMap = appointments.reduce((acc, appointment) => {
-        const day = new Date(appointment.startTime).toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-        });
+    const dayOrder = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday"];
 
-        acc[day] = (acc[day] || 0) + 1;
-        return acc;
-    }, {});
+    const classesThisWeek = schedule?.weeklySchedule || [];
 
-    const appointmentsChartData = {
-        labels: Object.keys(appointmentsByDayMap),
+    const hasClassesThisWeek = classesThisWeek.length > 0;
+
+    const classesThisWeekData = {
+        labels: dayOrder,
         datasets: [
             {
-                label: "Appointments",
-                data: Object.values(appointmentsByDayMap),
-                borderColor: "#F59E0B",
-                backgroundColor: "rgba(245, 158, 11, 0.2)",
+                label: "Classes",
+                data: classesThisWeek.map((item) => item.classes?.length || 0),
+                borderColor: "#F97316",
+                backgroundColor: "rgba(249, 115, 22, 0.2)",
                 fill: true,
                 tension: 0.35,
-                pointBackgroundColor: "#F59E0B",
+                pointBackgroundColor: "#F97316",
             },
         ],
     };
@@ -274,7 +301,7 @@ const FacultyDashboard = () => {
 
     // Chart loading
 
-    const chartsLoading = loadingCourses || loadingAppointments || loadingAssignments;
+    const chartsLoading = loadingCourses || loadingAppointments || loadingAssignments || loadingSchedule;
 
 
     return (
@@ -355,12 +382,12 @@ const FacultyDashboard = () => {
                                 }
                             </ChartCard>
 
-                            <ChartCard title="Upcoming Appointments Overview">
+                            <ChartCard title="Classes this week">
                                 {
-                                    appointments.length === 0 ? (
-                                        <EmptyState message={"No upcoming appointments"}></EmptyState>
+                                    !hasClassesThisWeek ? (
+                                        <EmptyState message={"No classes this week"}></EmptyState>
                                     ) : (
-                                        <Line data={appointmentsChartData} options={lineChartOptions} />
+                                        <Line data={classesThisWeekData} options={lineChartOptions} />
                                     )
                                 }
                             </ChartCard>
@@ -543,8 +570,6 @@ const FacultyDashboard = () => {
                     <NavLink to="/dashboard/faculty/appointments" className="bg-[#1E40AF] text-white px-5 py-2 rounded-lg cursor-pointer text-center transition-colors hover:bg-blue-600 duration-500">View All Appointments</NavLink>
                 </div>
             </div>
-
-            
         </div>
     );
 };

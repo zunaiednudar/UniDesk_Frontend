@@ -7,6 +7,7 @@ import TextType from '../../Components/TextType/TextType.jsx';
 import { handleGoogleLogin } from '../../utils/handleGoogleLogin.js';
 import { formatErrorMessage } from '../../utils/formatErrorMessages.js';
 import axiosSecure from '../../utils/axiosSecure.js';
+import formatName from '../../utils/formatName.js';
 
 const Login = () => {
     const { login, signInWithGoogle, setLoading, passwordReset, removeUser, logout, userData,setUserData } = useContext(AuthContext);
@@ -32,7 +33,7 @@ const Login = () => {
                 navigate("/dashboard/faculty");
             else
                 navigate("/dashboard/admin");
-            toast.success(`Welcome ${user?.displayName}`);
+            toast.success(`Welcome ${formatName(dbData?.data?.user?.name) || "back"}`);
         }).catch((error) => {
             toast.error(formatErrorMessage(error));
             setLoading(false);
