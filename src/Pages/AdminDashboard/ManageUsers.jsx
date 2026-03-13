@@ -304,7 +304,7 @@ const ManageUsers = () => {
 
             try {
                 // Fetch all users
-                const usersRes = await axiosSecure.get(`/admin/users`);
+                const usersRes = await axiosSecure.get(`/admin/users`, { params: { limit: 50 } });
 
                 const users = usersRes.data.users.map((user) => {
                     return {
