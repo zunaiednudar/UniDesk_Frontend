@@ -6,7 +6,6 @@ import SignUp from "../Pages/SignUp/SignUp.jsx";
 import Repository from "../Pages/Repository/Repository.jsx";
 import NotFound from "../Pages/NotFound.jsx/NotFound.jsx";
 
-import DashboardLayout from "../Layouts/DashboardLayout/DashboardLayout.jsx";
 import FacultyDashboardLayout from "../Layouts/FacultyDashboardLayout/FacultyDashboardLayout.jsx"
 import StudentDashboard from "../Pages/StudentDashboard/StudentDashboard.jsx";
 import MyActivity from "../Pages/StudentDashboard/MyActivity.jsx";
@@ -33,6 +32,7 @@ import Users from "../Pages/AdminDashboard/Users.jsx";
 import AdminRoute from "../Providers/RoleWiseRoutes/AdminRoute/AdminRoute.jsx";
 import AdminProfile from "../Pages/Profile/AdminProfile.jsx";
 import ChatPage from "../Pages/ChatPage.jsx/ChatPage.jsx";
+import ConversationPage from "../Pages/ConversationPage/ConversationPage.jsx";
 
 export const router = createBrowserRouter([
     {
@@ -218,6 +218,10 @@ export const router = createBrowserRouter([
             {
                 path:"chat",
                 Component:ChatPage
+            },
+            {
+                path:"chat/:conversaationID",
+                Component:ConversationPage
             }
         ]
     },
