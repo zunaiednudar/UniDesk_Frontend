@@ -22,42 +22,20 @@ const ConversationPage = () => {
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState("");
     const [chatTarget, setChatTarget] = useState(location.state?.receiver || null);
+    const [isOnline, setIsOnline] = useState(false);
 
     const dashboardPath = location.pathname.includes("student") ? "student" : "faculty";
+
+    // Smooth scroll
 
     useEffect(() => {
         scrollRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
 
-    // Socket join
+    // For new message
 
     useEffect(() => {
-        if (!userData?._id) return;
-
-        const joinRoom = () => {
-            socket.emit("join", userData._id.toString());
-            console.log("Joined room:", userData._id.toString());
-        };
-
-
-        if (!socket.connected)
-            socket.connect();
-
-        socket.on("connect", joinRoom);
-
-
-        if (socket.connected)
-            joinRoom();
-
-        return () => socket.off("connect", joinRoom);
-
-    }, [userData?._id]);
-
-    // Socket listener
-
-    useEffect(() => {
-        if (!id)
-            return;
+        if (!id) return;
 
         const handleNewMessage = (msg) => {
             if (msg.conversation?.toString() === id)
@@ -65,15 +43,51 @@ const ConversationPage = () => {
         };
 
         socket.on("newMessage", handleNewMessage);
-
         return () => socket.off("newMessage", handleNewMessage);
     }, [id]);
 
-    // Data loading
+    // For online status
+
+    useEffect(() => {
+        if (!chatTarget?._id) 
+            return;
+
+        const checkStatus = () => {
+            socket.emit("checkOnline", chatTarget._id.toString());
+        };
+
+        if (socket.connected) 
+            checkStatus();
+        socket.on("connect", checkStatus);
+
+        socket.on("onlineStatus", ({ userID, isOnline }) => {
+            if (userID === chatTarget._id.toString())
+                setIsOnline(isOnline);
+        });
+
+        socket.on("userOnline", (userID) => {
+            if (userID === chatTarget._id.toString()) 
+                setIsOnline(true);
+        });
+
+        socket.on("userOffline", (userID) => {
+            if (userID === chatTarget._id.toString()) 
+                setIsOnline(false);
+        });
+
+        return () => {
+            socket.off("connect", checkStatus);
+            socket.off("onlineStatus");
+            socket.off("userOnline");
+            socket.off("userOffline");
+        };
+    }, [chatTarget?._id]);
+
+    // For loading chat content
 
     useEffect(() => {
         const loadChatContent = async () => {
-            if (!userData?._id)
+            if (!userData?._id) 
                 return;
             try {
                 if (id && id !== "new") {
@@ -87,7 +101,7 @@ const ConversationPage = () => {
                         );
                         setChatTarget(other);
                     }
-                }
+                } 
                 else if (receiverID) {
                     if (!chatTarget) {
                         const userRes = await axiosSecure.get(`/users/id/${receiverID}`);
@@ -102,39 +116,6 @@ const ConversationPage = () => {
         };
         loadChatContent();
     }, [id, receiverID, userData?._id]);
-
-    // Online status
-
-    const [isOnline, setIsOnline] = useState(false);
-
-    useEffect(() => {
-        if (!chatTarget?._id) return;
-
-        // ✅ Page load এ initial status check
-        socket.emit("checkOnline", chatTarget._id.toString());
-
-        socket.on("onlineStatus", ({ userID, isOnline }) => {
-            if (userID === chatTarget._id.toString())
-                setIsOnline(isOnline);
-        });
-
-        socket.on("userOnline", (userID) => {
-            if (userID === chatTarget._id.toString())
-                setIsOnline(true);
-        });
-
-        socket.on("userOffline", (userID) => {
-            if (userID === chatTarget._id.toString())
-                setIsOnline(false);
-        });
-
-        return () => {
-            socket.off("onlineStatus");
-            socket.off("userOnline");
-            socket.off("userOffline");
-        };
-
-    }, [chatTarget?._id]);
 
     // Message sending function
 
@@ -158,17 +139,18 @@ const ConversationPage = () => {
             });
 
             setNewMessage("");
+
         } catch (error) {
             toast.error("Message send failed");
         }
     };
 
     return (
-        <div className="flex flex-col h-[85vh] bg-white rounded-3xl shadow-xl overflow-hidden" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+        <div className="flex flex-col h-[85vh] bg-white rounded-3xl gilroy shadow-xl overflow-hidden">
 
-            {/* Header */}
+            {/* Receiver info */}
+
             <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-3 bg-white/80 backdrop-blur-sm">
-
                 <button
                     onClick={() => navigate(`/dashboard/${dashboardPath}/chat`)}
                     className="p-2 hover:bg-gray-100 rounded-xl text-gray-500 hover:text-gray-800 transition-all"
@@ -180,7 +162,7 @@ const ConversationPage = () => {
 
                 <div className="relative">
                     <img
-                        src={chatTarget?.photoURL || "/default-avatar.png"}
+                        src={chatTarget?.photoURL}
                         alt="avatar"
                         className="w-10 h-10 rounded-2xl object-cover ring-2 ring-gray-100"
                     />
@@ -188,20 +170,21 @@ const ConversationPage = () => {
                 </div>
 
                 <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-gray-900 text-sm truncate leading-tight">
+                    <h3 className="font-semibold text-gray-900 graphik text-sm truncate leading-tight">
                         {chatTarget?.name ? formatName(chatTarget.name) : "Loading..."}
                     </h3>
                     <p className={`text-[11px] font-medium ${isOnline ? "text-green-500" : "text-gray-400"}`}>
                         {isOnline ? "Online" : "Offline"}
                     </p>
                 </div>
-
             </div>
 
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3"
-                style={{ background: "linear-gradient(180deg, #f8faff 0%, #f3f4f6 100%)" }}>
+            {/* Conversation body */}
 
+            <div
+                className="flex-1 overflow-y-auto px-5 py-4 space-y-3"
+                style={{ background: "linear-gradient(180deg, #f8faff 0%, #f3f4f6 100%)" }}
+            >
                 {
                     messages.length === 0 ? (
                         <div className="h-full flex flex-col items-center justify-center text-center p-10">
@@ -213,50 +196,42 @@ const ConversationPage = () => {
                             </div>
                             <h4 className="font-semibold text-gray-400 text-base mb-1">No messages yet</h4>
                             <p className="text-xs text-gray-400">
-                                Say hi to {chatTarget?.name ? formatName(chatTarget.name).split(" ")[0] : "them"} 👋
+                                Message {chatTarget?.name ? formatName(chatTarget.name).split(" ")[0] : "them"}
                             </p>
                         </div>
                     ) : (
                         messages.map((m, i) => {
                             const isSender = (m.sender?._id || m.sender)?.toString() === userData?._id?.toString();
-
                             return (
                                 <div key={i} className={`flex items-end gap-2 ${isSender ? "flex-row-reverse" : "flex-row"}`}>
-
-                                    {!isSender && (
-                                        <img
-                                            src={chatTarget?.photoURL || "/default-avatar.png"}
-                                            className="w-7 h-7 rounded-xl object-cover shrink-0 mb-1"
-                                        />
-                                    )}
-
+                                    {
+                                        !isSender && (
+                                            <img
+                                                src={chatTarget?.photoURL || "/default-avatar.png"}
+                                                className="w-7 h-7 rounded-xl object-cover shrink-0 mb-1"
+                                            />
+                                        )
+                                    }
                                     <div className={`flex flex-col gap-1 max-w-[70%] ${isSender ? "items-end" : "items-start"}`}>
-                                        <div
-                                            className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed shadow-sm ${isSender
-                                                ? "bg-blue-600 text-white rounded-br-md"
-                                                : "bg-white text-gray-800 rounded-bl-md border border-gray-100"
-                                                }`}
-                                        >
+                                        <div className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed shadow-sm ${isSender ? "bg-blue-600 text-white rounded-br-md" : "bg-white text-gray-800 rounded-bl-md border border-gray-100"}`}>
                                             {m.content}
                                         </div>
                                         <span className="text-[10px] text-gray-400 px-1">
                                             {new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                                         </span>
                                     </div>
-
                                 </div>
                             );
                         })
                     )
                 }
-
                 <div ref={scrollRef}></div>
             </div>
 
-            {/* Input */}
+            {/* Message sending block */}
+
             <div className="px-4 py-3 bg-white border-t border-gray-100">
                 <form onSubmit={handleSendMessage} className="flex items-center gap-2">
-
                     <input
                         type="text"
                         placeholder="Type a message..."
@@ -264,21 +239,15 @@ const ConversationPage = () => {
                         onChange={(e) => setNewMessage(e.target.value)}
                         className="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-2xl outline-none text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-gray-400"
                     />
-
                     <button
                         type="submit"
                         disabled={!newMessage.trim()}
-                        className={`p-2.5 rounded-2xl transition-all duration-200 ${newMessage.trim()
-                            ? "bg-blue-600 text-white hover:bg-blue-700 shadow-md shadow-blue-200 active:scale-95"
-                            : "bg-gray-100 text-gray-300 cursor-not-allowed"
-                            }`}
+                        className={`p-2.5 rounded-2xl transition-all duration-200 ${newMessage.trim() ? "bg-blue-600 text-white hover:bg-blue-700 shadow-md shadow-blue-200 active:scale-95" : "bg-gray-100 text-gray-300 cursor-not-allowed"}`}
                     >
                         <Send className="w-4 h-4" />
                     </button>
-
                 </form>
             </div>
-
         </div>
     );
 };
