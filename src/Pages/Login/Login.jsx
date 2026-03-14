@@ -7,6 +7,7 @@ import TextType from '../../Components/TextType/TextType.jsx';
 import { handleGoogleLogin } from '../../utils/handleGoogleLogin.js';
 import { formatErrorMessage } from '../../utils/formatErrorMessages.js';
 import axiosSecure from '../../utils/axiosSecure.js';
+import formatName from '../../utils/formatName.js';
 
 const Login = () => {
     const { login, signInWithGoogle, setLoading, passwordReset, removeUser, logout, userData,setUserData } = useContext(AuthContext);
@@ -23,16 +24,16 @@ const Login = () => {
 
         login(email, password).then(async (res) => {
             const user = res.user;
-            console.log(user);
-            toast.success("Logged In Successfully");
+            // console.log(user);
             const dbData=await axiosSecure.get(`/users/${user.email}`);
-            console.log(dbData);
+            // console.log(dbData);
             if (dbData.data.user.role === "student")
                 navigate("/dashboard/student");
             else if (dbData.data.user.role === "faculty")
                 navigate("/dashboard/faculty");
             else
                 navigate("/dashboard/admin");
+            toast.success(`Welcome ${formatName(dbData?.data?.user?.name) || "back"}`);
         }).catch((error) => {
             toast.error(formatErrorMessage(error));
             setLoading(false);

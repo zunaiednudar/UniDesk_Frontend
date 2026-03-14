@@ -1,8 +1,9 @@
-import {AlertCircle} from "lucide-react";
+import { AlertCircle } from 'lucide-react';
+import React from 'react';
 
 const EmptyState = ({ message }) => (
-    <div className="flex flex-col items-center py-8 text-gray-400 text-sm">
-        <AlertCircle size={28} className="text-gray-200 mb-2" />
+    <div className="col-span-full flex flex-col items-center py-12 text-gray-400 text-sm">
+        <AlertCircle size={32} className="text-gray-200 mb-3" />
         {message}
     </div>
 );

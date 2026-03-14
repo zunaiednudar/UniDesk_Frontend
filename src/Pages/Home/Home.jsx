@@ -76,7 +76,7 @@ const Home = () => {
 
                 <div className="relative z-10 max-w-7xl mx-auto px-6 py-20 flex flex-col justify-center">
                     <div className="text-center">
-                        <h1 className="graphik text-5xl md:text-6xl font-semibold mb-6">
+                        <h1 className="graphik text-5xl md:text-6xl font-extrabold mb-6">
                             <TextType
                                 text="Welcome to UniDesk"
                                 typingSpeed={100}
