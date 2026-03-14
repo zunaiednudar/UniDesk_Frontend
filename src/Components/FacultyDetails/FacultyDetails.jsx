@@ -12,6 +12,7 @@ import {
 import SectionHeader from "../../Components/SectionHeader/SectionHeader.jsx";
 import SkeletonBlock from "../../Components/SkeletonBlock/SkeletonBlock.jsx";
 import EmptyState from "../../Components/EmptyState/EmptyState.jsx";
+import ScheduleSection from "../../Components/ScheduleSection/ScheduleSection.jsx";
 
 const readOnly =
     "w-full px-3 py-2 text-sm border border-gray-100 rounded-lg bg-gray-50 text-gray-500 select-all";
@@ -874,13 +875,13 @@ const FacultyDetails = () => {
             </div>
 
             {/* Profile */}
-            <ProfileCard faculty={faculty} loading={loading} />
+            <ProfileCard faculty={faculty} loading={loading}/>
+
+            {/* Schedule */}
+            <ScheduleSection faculty={faculty} facultyLoading={loading}/>
 
             {/* Supervises */}
-            <SupervisesSection
-                faculty={faculty}
-                facultyLoading={loading}
-            />
+            <SupervisesSection faculty={faculty} facultyLoading={loading}/>
         </div>
     );
 };
