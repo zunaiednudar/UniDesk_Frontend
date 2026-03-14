@@ -26,12 +26,6 @@ const ConversationPage = () => {
 
     const dashboardPath = location.pathname.includes("student") ? "student" : "faculty";
 
-    // Smooth scroll
-
-    useEffect(() => {
-        scrollRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, [messages]);
-
     // For new message
 
     useEffect(() => {
@@ -49,14 +43,14 @@ const ConversationPage = () => {
     // For online status
 
     useEffect(() => {
-        if (!chatTarget?._id) 
+        if (!chatTarget?._id)
             return;
 
         const checkStatus = () => {
             socket.emit("checkOnline", chatTarget._id.toString());
         };
 
-        if (socket.connected) 
+        if (socket.connected)
             checkStatus();
         socket.on("connect", checkStatus);
 
@@ -66,12 +60,12 @@ const ConversationPage = () => {
         });
 
         socket.on("userOnline", (userID) => {
-            if (userID === chatTarget._id.toString()) 
+            if (userID === chatTarget._id.toString())
                 setIsOnline(true);
         });
 
         socket.on("userOffline", (userID) => {
-            if (userID === chatTarget._id.toString()) 
+            if (userID === chatTarget._id.toString())
                 setIsOnline(false);
         });
 
@@ -87,7 +81,7 @@ const ConversationPage = () => {
 
     useEffect(() => {
         const loadChatContent = async () => {
-            if (!userData?._id) 
+            if (!userData?._id)
                 return;
             try {
                 if (id && id !== "new") {
@@ -101,7 +95,7 @@ const ConversationPage = () => {
                         );
                         setChatTarget(other);
                     }
-                } 
+                }
                 else if (receiverID) {
                     if (!chatTarget) {
                         const userRes = await axiosSecure.get(`/users/id/${receiverID}`);
@@ -144,6 +138,58 @@ const ConversationPage = () => {
             toast.error("Message send failed");
         }
     };
+
+    // For typing indicator
+
+    const [isTyping, setIsTyping] = useState(false);
+    const typingTimeoutRef = useRef(null);
+
+    useEffect(() => {
+        if (!id)
+            return;
+
+        socket.on("typing", ({ conversationID }) => {
+            if (conversationID === id) setIsTyping(true);
+        });
+
+        socket.on("stopTyping", ({ conversationID }) => {
+            if (conversationID === id) setIsTyping(false);
+        });
+
+        return () => {
+            socket.off("typing");
+            socket.off("stopTyping");
+        };
+    }, [id]);
+
+    // Typing indicator function
+
+    const handleTyping = (e) => {
+        setNewMessage(e.target.value);
+
+        if (!chatTarget?._id)
+            return;
+
+        socket.emit("typing", {
+            conversationID: id,
+            receiverID: chatTarget._id.toString()
+        });
+
+        clearTimeout(typingTimeoutRef.current);
+
+        typingTimeoutRef.current = setTimeout(() => {
+            socket.emit("stopTyping", {
+                conversationID: id,
+                receiverID: chatTarget._id.toString()
+            });
+        }, 1000);
+    };
+
+    // Smooth scroll
+
+    useEffect(() => {
+        scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, [messages,isTyping]);
 
     return (
         <div className="flex flex-col h-[85vh] bg-white rounded-3xl gilroy shadow-xl overflow-hidden">
@@ -225,6 +271,27 @@ const ConversationPage = () => {
                         })
                     )
                 }
+
+                {/* Typing indicator */}
+
+                {
+                    isTyping && (
+                        <div className="flex items-end gap-2">
+                            <img
+                                src={chatTarget?.photoURL}
+                                className="w-7 h-7 rounded-xl object-cover shrink-0"
+                            />
+                            <div className="bg-white border border-gray-100 rounded-2xl rounded-bl-md px-4 py-3 shadow-sm flex gap-1 items-center">
+                                <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></span>
+                                <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></span>
+                                <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></span>
+                            </div>
+                        </div>
+                    )
+                }
+
+                {/* Smooth scroll */}
+
                 <div ref={scrollRef}></div>
             </div>
 
@@ -236,7 +303,7 @@ const ConversationPage = () => {
                         type="text"
                         placeholder="Type a message..."
                         value={newMessage}
-                        onChange={(e) => setNewMessage(e.target.value)}
+                        onChange={handleTyping}
                         className="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-2xl outline-none text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder-gray-400"
                     />
                     <button
