@@ -29,7 +29,7 @@ const SectionHeader = ({icon: Icon, title, iconBg, iconColor, count, seeAllTo, n
             )}
         </div>
 
-        <div className="border-t border-gray-200 my-5 lg:my-0"></div>
+        <div className="border-t border-gray-200 my-2.5 lg:my-0"></div>
     </>
 );
 

@@ -33,6 +33,7 @@ import ManageUsers from "../Pages/AdminDashboard/ManageUsers.jsx";
 import AdminRoute from "../Providers/RoleWiseRoutes/AdminRoute/AdminRoute.jsx";
 import UserDetails from "../Components/User/UserDetails.jsx";
 import ManageMentorship from "../Pages/AdminDashboard/ManageMentorship.jsx";
+import FacultyDetails from "../Components/FacultyDetails/FacultyDetails.jsx";
 
 export const router = createBrowserRouter([
     {
@@ -142,6 +143,10 @@ export const router = createBrowserRouter([
             {
                 path: "users/:email/details",
                 element: <UserDetails />
+            },
+            {
+                path: "mentorship/faculties/:email/details",
+                element: <FacultyDetails />
             },
             {
                 path: ":id/repository",

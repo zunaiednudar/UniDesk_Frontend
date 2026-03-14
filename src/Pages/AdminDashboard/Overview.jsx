@@ -5,6 +5,8 @@ import {AuthContext} from "../../Providers/AuthProvider/AuthProvider.jsx";
 import {AlertCircle, BookOpen, TrendingUp, Award, Search, ChevronUp, ChevronDown, Building2, Users} from "lucide-react";
 import {Pagination} from '@mui/material';
 import DefaultProfile from "../../assets/default-profile.png";
+import StatCard from "../../Components/StatCard/StatCard.jsx";
+import EmptyState from "../../Components/EmptyState/EmptyState.jsx";
 
 // Design helpers representing status
 
@@ -18,19 +20,6 @@ const statusBgConfig = {
     completed: 'bg-blue-50',
 };
 
-// Design template for showing stats
-const StatCard = ({ icon: Icon, value, label, iconBg, iconColor, valueColor = 'text-gray-900' }) => (
-    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200">
-        <div className="flex items-center gap-3 mb-3">
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${iconBg}`}>
-                <Icon size={18} className={iconColor} strokeWidth={1.75} />
-            </div>
-            <div className="text-sm font-medium text-gray-500">{label}</div>
-        </div>
-        <div className={`text-3xl font-bold ${valueColor}`}>{value ?? '—'}</div>
-    </div>
-);
-
 // Shown during loading until data is fetched successfully
 const SkeletonRow = () => (
     <tr className="animate-pulse border-b border-gray-50">
@@ -39,18 +28,6 @@ const SkeletonRow = () => (
                 <div className={`h-3 bg-gray-100 rounded`} style={{ width: w }} />
             </td>
         ))}
-    </tr>
-);
-
-// Shown when there is no data
-const EmptyState = ({ message }) => (
-    <tr>
-        <td colSpan={7}>
-            <div className="flex flex-col items-center py-14 text-gray-400 text-sm gap-2">
-                <AlertCircle size={32} className="text-gray-200" />
-                {message}
-            </div>
-        </td>
     </tr>
 );
 
@@ -207,9 +184,9 @@ const Overview = () => {
 
                 {/* Stats */}
                 <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-4">
-                    <StatCard icon={BookOpen} value={loading ? '—' : totalCourses} label="Total Courses" iconBg="bg-blue-50" iconColor="text-blue-500" />
-                    <StatCard icon={TrendingUp} value={loading ? '—' : activeCount} label="Active" iconBg="bg-green-50" iconColor="text-green-500" valueColor="text-green-600" />
-                    <StatCard icon={Award} value={loading ? '—' : completedCount} label="Completed" iconBg="bg-blue-50" iconColor="text-blue-500" valueColor="text-blue-600" />
+                    <StatCard icon={BookOpen} value={loading ? '—' : totalCourses} label="Total Courses" iconBg="bg-blue-50" iconColor="text-blue-500"/>
+                    <StatCard icon={TrendingUp} value={loading ? '—' : activeCount} label="Active" iconBg="bg-green-50" iconColor="text-green-500"/>
+                    <StatCard icon={Award} value={loading ? '—' : completedCount} label="Completed" iconBg="bg-blue-50" iconColor="text-blue-500"/>
                 </div>
 
                 {/* Filters */}
@@ -334,22 +311,14 @@ const Overview = () => {
                     </div>
 
                     {/* Pagination + count footer */}
-                    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-5 py-4 border-t border-gray-100">
-                        <p className="text-xs text-gray-400">
-                            {!loading && (
-                                filtered.length > 0
-                                    ? `Showing ${Math.min((currentPage - 1) * ITEMS_PER_PAGE + 1, filtered.length)}–${Math.min(currentPage * ITEMS_PER_PAGE, filtered.length)} of ${filtered.length} course${filtered.length !== 1 ? 's' : ''}`
-                                    : 'No results'
-                            )}
-                        </p>
+                    <div className="flex justify-center items-end my-5">
                         <Pagination
                             count={totalPages}
                             page={currentPage}
-                            onChange={(_, value) => setCurrentPage(value)}
+                            onChange={(event, value) => setCurrentPage(value)}
                             color="primary"
                             siblingCount={1}
                             boundaryCount={1}
-                            size="small"
                         />
                     </div>
                 </div>

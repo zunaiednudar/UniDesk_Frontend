@@ -94,11 +94,16 @@ const UserDetails = () => {
             const payload = {
                 name: user.name,
                 status: user.status,
-                department: user.department,
                 photoURL: imageData.url,
                 photoId: imageData.public_id,
                 ...(user.role === "student" && {studentID: user.studentID, batch: user.batch}),
-                ...(user.role === "faculty" && {designation: user.designation, room: user.room}),
+                ...(user.role === "faculty" && {
+                    designation: user.designation,
+                    room: user.room,
+                    biography: user.biography,
+                    researchInterests: user.researchInterests,
+                    phone: user.phone,
+                }),
             };
 
             const updateRes = await axiosSecure.patch(`/admin/users/${email}`, payload);
@@ -248,13 +253,7 @@ const UserDetails = () => {
                                 </div>
                                 <div>
                                     <label className="text-xs font-medium text-gray-500 mb-1.5 block">Department</label>
-                                    <input
-                                        type="text"
-                                        value={user.department || ""}
-                                        onChange={(e) => setUser(prev => ({...prev, department: e.target.value}))}
-                                        className={`${inputClass} uppercase`}
-                                        placeholder="CSE"
-                                    />
+                                    <div className={`${readOnlyClass} uppercase`}>{user.department || "—"}</div>
                                 </div>
                             </div>
 
@@ -303,6 +302,36 @@ const UserDetails = () => {
                                             onChange={(e) => setUser(prev => ({...prev, room: e.target.value}))}
                                             className={inputClass}
                                             placeholder="CSE 201, B-Block"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-medium text-gray-500 mb-1.5 block">Phone</label>
+                                        <input
+                                            type="text"
+                                            value={user.phone || ""}
+                                            onChange={(e) => setUser(prev => ({...prev, phone: e.target.value}))}
+                                            className={inputClass}
+                                            placeholder="+880..."
+                                        />
+                                    </div>
+                                    <div className="col-span-2">
+                                        <label className="text-xs font-medium text-gray-500 mb-1.5 block">Biography</label>
+                                        <textarea
+                                            value={user.biography || ""}
+                                            onChange={(e) => setUser(prev => ({...prev, biography: e.target.value}))}
+                                            className={inputClass}
+                                            rows={3}
+                                            placeholder="Short bio..."
+                                        />
+                                    </div>
+                                    <div className="col-span-2">
+                                        <label className="text-xs font-medium text-gray-500 mb-1.5 block">Research Interests</label>
+                                        <input
+                                            type="text"
+                                            value={user.researchInterests?.join(", ") || ""}
+                                            onChange={(e) => setUser(prev => ({...prev, researchInterests: e.target.value.split(",").map(s => s.trim())}))}
+                                            className={inputClass}
+                                            placeholder="AI, Machine Learning, NLP"
                                         />
                                     </div>
                                 </div>

@@ -3,10 +3,14 @@ import axiosSecure from "../../utils/axiosSecure.js";
 import React, {useContext, useEffect, useState} from "react";
 import {AuthContext} from "../../Providers/AuthProvider/AuthProvider.jsx";
 import {
-    AlertCircle, CalendarCheck, GraduationCap, School, SquarePen,
+    CalendarCheck, GraduationCap, School, SquarePen,
     UsersRound, Trash2, ShieldCheck, TrendingUp, ShieldUser
 } from "lucide-react";
 import {useNavigate} from "react-router";
+import SkeletonBlock from "../../Components/SkeletonBlock/SkeletonBlock.jsx";
+import StatCard from "../../Components/StatCard/StatCard.jsx";
+import SectionHeader from "../../Components/SectionHeader/SectionHeader.jsx";
+import EmptyState from "../../Components/EmptyState/EmptyState.jsx";
 
 import {
     PieChart,
@@ -24,49 +28,6 @@ const months = [
     "Jan", "Feb", "Mar", "Apr", "May", "Jun",
     "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
 ];
-
-// Design helper that represents loading
-const SkeletonBlock = ({className}) => (
-    <div className={`rounded-xl bg-gray-100 animate-pulse ${className}`}/>
-);
-
-// General stat template
-const StatCard = ({icon: Icon, value, label, iconBg, iconColor}) => (
-    <div
-        className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center gap-5 hover:shadow-md transition-shadow duration-200">
-        <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${iconBg}`}>
-            <Icon size={22} className={iconColor} strokeWidth={1.75}/>
-        </div>
-        <div>
-            <div className="text-3xl font-bold text-gray-900 leading-tight">{value ?? '—'}</div>
-            <div className="text-sm text-gray-400 mt-0.5 font-medium">{label}</div>
-        </div>
-    </div>
-);
-
-// General section header template
-const SectionHeader = ({icon: Icon, title, iconBg, iconColor, count}) => (
-    <div className="flex items-center gap-2.5 mb-5">
-        <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${iconBg}`}>
-            <Icon size={16} className={iconColor} strokeWidth={2}/>
-        </div>
-        <h2 className="text-base font-bold text-gray-900">{title}</h2>
-        {count !== undefined && (
-            <span className="ml-1 text-xs font-semibold text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">
-                {count}
-            </span>)
-        }
-    </div>
-);
-
-// General section body template
-// Invoke if there is no item to show
-const EmptyState = ({message}) => (
-    <div className="flex flex-col items-center py-8 text-gray-400 text-sm">
-        <AlertCircle size={28} className="text-gray-200 mb-2"/>
-        {message}
-    </div>
-);
 
 const roleConfig = {
     student: {
@@ -144,6 +105,7 @@ const UserGrowthChart = ({data, loading}) => (
             title="Growth Overview"
             iconBg="bg-purple-50"
             iconColor="text-purple-500"
+            navigate={false}
         />
 
         {loading ? <SkeletonBlock className="h-72"/> : (
@@ -482,6 +444,7 @@ const ManageUsers = () => {
                     iconBg="bg-blue-50"
                     iconColor="text-blue-500"
                     count={loading ? undefined : userList.length}
+                    navigate={false}
                 />
 
                 {loading ? (
