@@ -1,0 +1,588 @@
+import React, { useContext, useEffect, useState } from 'react';
+import { AuthContext } from '../../Providers/AuthProvider/AuthProvider';
+import axiosSecure from '../../utils/axiosSecure.js';
+import { GraduationCap } from 'lucide-react';
+import { MdOutlineCalendarToday, MdOutlineUpcoming, MdPeopleOutline } from 'react-icons/md';
+import { VscLayersActive } from 'react-icons/vsc';
+import { SiGoogleclassroom } from 'react-icons/si';
+import { formatAppointmentDate } from '../../utils/formatAppointmentDate.js';
+import CardSkeleton from '../../Components/CardSkeleton/CardSkeleton.jsx';
+import { Link, NavLink } from 'react-router';
+import { toast } from 'sonner';
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, ArcElement, PointElement, LineElement, Tooltip, Legend } from "chart.js";
+import { Bar, Pie, Line } from "react-chartjs-2";
+import ChartCard from '../../Components/ChartCard/ChartCard.jsx';
+import EmptyState from '../../Components/EmptyState/EmptyState.jsx';
+
+// Chartjs register
+
+ChartJS.register(
+    CategoryScale,
+    LinearScale,
+    BarElement,
+    ArcElement,
+    PointElement,
+    LineElement,
+    Tooltip,
+    Legend
+);
+
+const FacultyDashboard = () => {
+    const { userData } = useContext(AuthContext);
+
+    // Loading states
+
+    const [loadingCourses, setLoadingCourses] = useState(true);
+    const [loadingAppointments, setLoadingAppointments] = useState(true);
+    const [loadingAssignments, setLoadingAssignments] = useState(true);
+    const [loadingSchedule, setLoadingSchedule] = useState(true);
+
+    const dashboardLoading = loadingCourses || loadingAppointments || loadingAssignments || loadingSchedule;
+
+    // Data collection
+
+    const [activeCourses, setActiveCourses] = useState([]);
+    const [completedCourses, setCompletedCourses] = useState([]);
+    const [totalStudents, setTotalStudents] = useState(0);
+    const [appointments, setAppointments] = useState([]);
+    const [assignments, setAssignments] = useState([]);
+    const [schedule, setSchedule] = useState(null);
+
+    // Courses fetch
+
+    useEffect(() => {
+        const fetchCourses = async () => {
+            try {
+                setLoadingCourses(true);
+                const res = await axiosSecure.get("/courses/my-courses");
+                // console.log(data);
+                setActiveCourses(res.data.activeCourses);
+                setCompletedCourses(res.data.completedCourses);
+
+            } catch (error) {
+                // console.log(error);
+            } finally {
+                setLoadingCourses(false);
+            }
+        };
+        fetchCourses();
+    }, []);
+
+    // Students fetch
+
+    useEffect(() => {
+        const fetchStudents = () => {
+            if (!activeCourses.length && !completedCourses.length)
+                return;
+            const total = new Set();
+            activeCourses.map(course => {
+                course.students?.map(student => {
+                    total.add(student._id);
+                });
+            });
+            completedCourses.map(course => {
+                course.students?.map(student => {
+                    total.add(student._id);
+                });
+            });
+            setTotalStudents(total.size);
+        }
+        fetchStudents();
+    }, [activeCourses, completedCourses]);
+
+    // Appointments fetch
+
+    useEffect(() => {
+        const fetchAppointments = async () => {
+            try {
+                setLoadingAppointments(true);
+                const res = await axiosSecure.get(`/appointment/faculty/${userData._id}`);
+                const appointments = res.data.appointments;
+
+                const now = new Date();
+
+                const upcomingAppointments = appointments.filter(appointment => new Date(appointment.startTime) > now);
+
+                setAppointments(upcomingAppointments);
+            } catch (error) {
+                // console.log(error);
+            } finally {
+                setLoadingAppointments(false);
+            }
+
+        }
+        if (userData?._id)
+            fetchAppointments();
+    }, [userData?._id]);
+
+    // Assignments fetch
+
+    useEffect(() => {
+        const fetchAssignments = async () => {
+            try {
+                setLoadingAssignments(true);
+
+                const res = await axiosSecure.get("/submission/faculty/pending");
+
+                console.log(res.data.assignments);
+
+                setAssignments(res.data.assignments);
+            } catch (error) {
+                console.log(error);
+                toast.error("Assignments fetch failed")
+            } finally {
+                setLoadingAssignments(false);
+            }
+        };
+
+        fetchAssignments();
+    }, []);
+
+    // Schedule fetch
+
+    useEffect(() => {
+        const fetchSchedule = async () => {
+            try {
+                setLoadingSchedule(true);
+
+                const res = await axiosSecure.get(`/schedule/${userData?._id}`);
+
+                // console.log(res);
+
+                if (!res?.data?.success) {
+                    toast.error(res?.data?.message);
+                    return;
+                }
+
+                setSchedule(res?.data?.schedule);
+
+            } catch (error) {
+                setSchedule(null);
+            } finally {
+                setLoadingSchedule(false);
+            }
+        };
+
+        if (userData?._id)
+            fetchSchedule()
+    }, [userData?._id]);
+
+    // Stats card info
+
+    const stats = [
+        {
+            title: "Total Courses",
+            info: (activeCourses.length + completedCourses.length >= 0) ? activeCourses.length + completedCourses.length : "0",
+            logo: GraduationCap,
+            iconBg:"bg-orange-100",
+            icon:"text-orange-700"
+        },
+        {
+            title: "Total Students",
+            info: totalStudents,
+            logo: MdPeopleOutline,
+            iconBg:"bg-blue-100",
+            icon:"text-blue-700"
+        },
+        {
+            title: "Active Courses",
+            info: activeCourses.length,
+            logo: VscLayersActive,
+            iconBg:"bg-green-100",
+            icon:"text-green-700"
+        },
+        {
+            title: "Upcoming Appts",
+            info: appointments.length,
+            logo: MdOutlineUpcoming,
+            iconBg:"bg-purple-100",
+            icon:"text-purple-700"
+        },
+    ];
+
+    // console.log(activeCourses.length+completedCourses.length);
+    // console.log(assignments);
+
+    // Data for charts
+
+    const courseTeachingData = {
+        labels: activeCourses.map(course => course.courseCode),
+        datasets: [
+            {
+                label: "Students",
+                data: activeCourses.map(course => course.students?.length || 0),
+                backgroundColor: "#2563EB",
+                borderRadius: 4,
+                barThickness: 18,
+            },
+        ],
+    };
+
+    const courseStatusData = {
+        labels: ["Active Courses", "Completed Courses"],
+        datasets: [
+            {
+                data: [activeCourses.length, completedCourses.length],
+                backgroundColor: ["#2563EB", "#10B981"],
+                borderWidth: 0,
+            },
+        ],
+    };
+
+    const dayOrder = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday"];
+
+    const classesThisWeek = schedule?.weeklySchedule || [];
+
+    const hasClassesThisWeek = classesThisWeek.length > 0;
+
+    const classesThisWeekData = {
+        labels: dayOrder,
+        datasets: [
+            {
+                label: "Classes",
+                data: classesThisWeek.map((item) => item.classes?.length || 0),
+                borderColor: "#F97316",
+                backgroundColor: "rgba(249, 115, 22, 0.2)",
+                fill: true,
+                tension: 0.35,
+                pointBackgroundColor: "#F97316",
+            },
+        ],
+    };
+
+    const pendingGradingChartData = {
+        labels: assignments.map(assignment => assignment.courseCode),
+        datasets: [
+            {
+                label: "Pending Grading",
+                data: assignments.map(assignment => assignment.pendingGrading || 0),
+                backgroundColor: "#EF4444",
+                borderRadius: 4,
+                barThickness: 18,
+            },
+        ],
+    };
+
+    // Chart configuration objects
+
+    const commonChartOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                labels: {
+                    color: "#374151",
+                },
+            },
+        },
+    };
+
+    const barChartOptions = {
+        ...commonChartOptions,
+        scales: {
+            x: {
+                ticks: { color: "#6B7280" },
+                grid: { display: false },
+            },
+            y: {
+                beginAtZero: true,
+                ticks: { color: "#6B7280", precision: 0 },
+                grid: { color: "#E5E7EB" },
+            },
+        },
+    };
+
+    const lineChartOptions = {
+        ...commonChartOptions,
+        scales: {
+            x: {
+                ticks: { color: "#6B7280" },
+                grid: { display: false },
+            },
+            y: {
+                beginAtZero: true,
+                ticks: { color: "#6B7280", precision: 0 },
+                grid: { color: "#E5E7EB" },
+            },
+        },
+    };
+
+    // Chart loading
+
+    const chartsLoading = loadingCourses || loadingAppointments || loadingAssignments || loadingSchedule;
+
+
+    return (
+        <div className='w-full max-w-full p-5 flex flex-col gap-10 gilroy'>
+
+            {/* Welcome texts */}
+
+            <div className='w-full max-w-full'>
+                <p className='text-3xl graphik font-semibold text-gray-900'>My Activity</p>
+                <p className='text-gray-500'>Streamline teaching, monitor academic activities and make informed decisions with real time insights.</p>
+            </div>
+
+            {/* Stats Card */}
+
+            <div className='w-full max-w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 justify-items-center gap-3'>
+                {
+                    dashboardLoading ? (
+                        Array.from({ length: 4 }).map((_, i) => (
+                            <CardSkeleton key={i} variant="stat" />
+                        )
+                        )
+                    ) :
+                        (
+                            stats.map(stat =>
+                                <div key={stat.title} className='w-full min-w-0 p-5 rounded-lg shadow-lg flex flex-col gap-2 box-border border border-gray-100 hover:-translate-y-1 transition-all duration-300'>
+                                    <div className='flex gap-3 items-center'>
+                                        <div className={`w-10 h-10 rounded-xl flex justify-center items-center ${stat.iconBg}`}>
+                                            <stat.logo className={`w-5 h-5 ${stat.icon} shrink-0`} />
+                                        </div>
+                                        
+                                        <p className='text-gray-500 text-sm font-medium min-w-0 break-words'>{stat.title}</p>
+
+                                    </div>
+                                    <p className='text-3xl font-bold'>{stat.info}</p>
+                                </div>
+                            )
+                        )
+                }
+            </div>
+
+            {/* Charts */}
+
+            <div className="w-full grid grid-cols-1 xl:grid-cols-2 gap-6">
+                {
+                    chartsLoading ? (
+                        <>
+                            <CardSkeleton variant="chart" />
+                            <CardSkeleton variant="chart" />
+                            <CardSkeleton variant="chart" />
+                            <CardSkeleton variant="chart" />
+                        </>
+                    ) : (
+                        <>
+                            <ChartCard title="Course Teaching">
+                                {
+                                    activeCourses.length === 0 ? (
+                                        <EmptyState message={"No active course data available"}></EmptyState>
+                                    ) : (
+                                        <Bar data={courseTeachingData} options={barChartOptions} />
+                                    )
+                                }
+                            </ChartCard>
+
+                            <ChartCard title="Pending Grading by Course">
+                                {
+                                    assignments.length === 0 ? (
+                                        <EmptyState message={"No pending grading data"}></EmptyState>
+                                    ) : (
+                                        <Bar data={pendingGradingChartData} options={barChartOptions} />
+                                    )
+                                }
+                            </ChartCard>
+
+                            <ChartCard title="Active vs Completed Courses">
+                                {
+                                    (activeCourses.length === 0 && completedCourses.length === 0) ? (
+                                        <EmptyState message={"No course status data available"}></EmptyState>
+                                    ) : (
+                                        <Pie data={courseStatusData} options={commonChartOptions} />
+                                    )
+                                }
+                            </ChartCard>
+
+                            <ChartCard title="Classes this week">
+                                {
+                                    !hasClassesThisWeek ? (
+                                        <EmptyState message={"No classes this week"}></EmptyState>
+                                    ) : (
+                                        <Line data={classesThisWeekData} options={lineChartOptions} />
+                                    )
+                                }
+                            </ChartCard>
+
+                        </>
+                    )
+                }
+            </div>
+
+            {/* Pending Grading course wise */}
+
+            <div className='w-full shadow-xl p-5 flex flex-col gap-5'>
+                <p className='font-semibold text-gray-800 graphik'>Pending Grading</p>
+                {
+                    dashboardLoading ? (
+                        Array.from({ length: 3 }).map((_, i) => (
+                            <CardSkeleton key={i} lines={3} variant="pendingAssignment" />
+                        ))
+                    ) : assignments.length === 0 ?
+                        (
+                            <EmptyState message={"No active courses with pending grading"}></EmptyState>
+                        ) :
+                        (
+                            assignments.map((assignment) => (
+                                <div
+                                    key={assignment._id}
+                                    className="w-full p-6 rounded-xl bg-white shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 flex flex-col gap-4"
+                                >
+
+                                    {/* Title */}
+                                    <div className="flex items-start justify-between">
+                                        <p className="graphik font-bold text-lg text-[#1E40AF]">
+                                            {assignment.title}
+                                        </p>
+
+                                        <span className="text-xs px-3 py-1 rounded-full bg-blue-100 text-blue-700 font-medium">
+                                            {assignment.courseCode}
+                                        </span>
+                                    </div>
+
+                                    {/* Course Name */}
+                                    <p className="text-sm text-gray-600">
+                                        {assignment.courseName}
+                                    </p>
+
+                                    {/* Info Section */}
+                                    <div className="flex items-center justify-between text-sm text-gray-500">
+
+                                        <div className="flex flex-col">
+                                            <span className="text-xs text-gray-400">Due Date</span>
+                                            <span>{new Date(assignment.dueDate).toLocaleDateString()}</span>
+                                        </div>
+
+                                        <div className="flex flex-col items-end">
+                                            <span className="text-xs text-gray-400">Total Marks</span>
+                                            <span>{assignment.totalMarks}</span>
+                                        </div>
+
+                                    </div>
+
+                                    {/* Pending grading */}
+                                    <div className="flex items-center justify-between mt-2">
+
+                                        <span className="text-sm text-gray-600">
+                                            Pending Grading
+                                        </span>
+
+                                        <span className={`px-3 py-1 rounded-full text-xs font-semibold 
+                                    ${assignment.pendingGrading > 0
+                                                ? "bg-orange-100 text-orange-700"
+                                                : "bg-green-100 text-green-700"}`}>
+                                            {assignment.pendingGrading}
+                                        </span>
+
+                                    </div>
+
+                                </div>
+                            ))
+                        )
+                }
+            </div>
+
+            <div className='w-full max-w-full flex flex-col md:flex-row items-start gap-10'>
+                {/* Recent Courses */}
+                <div className='w-full md:flex-2 shadow-xl p-5 flex flex-col gap-5'>
+                    <p className='font-semibold text-gray-800 graphik'>Recent Courses</p>
+                    <div className='flex flex-col gap-3'>
+                        {
+                            dashboardLoading ? (
+                                Array.from({ length: 3 }).map((_, i) => (
+                                    <CardSkeleton key={i} lines={3} />
+                                ))
+                            ) : activeCourses.length === 0 ?
+                                (
+                                    <EmptyState message={"No active courses"}></EmptyState>
+                                ) :
+                                (
+                                    activeCourses.map((course) => (
+                                        <Link to={`/dashboard/faculty/courses/${course._id}`}
+                                            key={course._id}
+                                            className="w-full p-6 rounded-xl bg-white shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 flex flex-col gap-4"
+                                        >
+                                            {/* Course Code */}
+                                            <p className="text-lg graphik font-bold text-[#1E40AF] tracking-wide">
+                                                {course.courseCode}
+                                            </p>
+
+                                            {/* Course Name */}
+                                            <p className="text-gray-700 text-base font-medium">
+                                                {course.courseName}
+                                            </p>
+
+                                            {/* Students */}
+                                            <div className="flex items-center justify-between text-sm text-gray-600">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="p-2 bg-blue-100 rounded-lg">
+                                                        <MdPeopleOutline className="text-blue-600" />
+                                                    </div>
+                                                    <span>
+                                                        {course.students.length}{" "}
+                                                        {course.students.length > 1 ? "Students" : "Student"}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            {/* Session */}
+                                            <div className="flex items-center gap-2 text-sm text-gray-600">
+                                                <div className="p-2 bg-purple-100 rounded-lg">
+                                                    <SiGoogleclassroom className="text-purple-600" />
+                                                </div>
+                                                <span>{course.session}</span>
+                                            </div>
+                                        </Link>
+                                    )
+                                    )
+                                )
+                        }
+                    </div>
+                </div>
+
+                {/* Upcoming Appointments */}
+                <div className='w-full md:flex-1 shadow-xl p-5 flex flex-col gap-5'>
+                    <p className='font-semibold text-gray-800 graphik'>Upcoming Appointments</p>
+                    <div className='flex flex-col gap-3'>
+                        {
+                            dashboardLoading ? (
+                                Array.from({ length: 2 }).map((_, i) => (
+                                    <CardSkeleton key={i} lines={3} />
+                                ))
+                            ) : appointments.length === 0 ? (
+                                <EmptyState message={"No upcoming appointments"}></EmptyState>
+                            ) : (
+                                appointments.map((appointment) => (
+                                    <div
+                                        key={appointment._id}
+                                        className="w-full p-6 rounded-xl bg-white shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col gap-3"
+                                    >
+                                        {/* Student Name */}
+                                        <p className="graphik font-bold text-[#1E40AF]">
+                                            {appointment.student.name
+                                                .split(" ")
+                                                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                                                .join(" ")}
+                                        </p>
+
+                                        {/* Appointment Time */}
+                                        <p className="text-gray-600 text-sm">
+                                            {formatAppointmentDate(appointment.startTime)}
+                                        </p>
+
+                                        {/* Purpose */}
+                                        <p className="text-gray-500 text-sm leading-relaxed">
+                                            {appointment.purpose}
+                                        </p>
+                                    </div>
+                                ))
+                            )
+                        }
+                    </div>
+                    <NavLink to="/dashboard/faculty/appointments" className="bg-[#1E40AF] text-white px-5 py-2 rounded-lg cursor-pointer text-center transition-colors hover:bg-blue-600 duration-500">View All Appointments</NavLink>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default FacultyDashboard;

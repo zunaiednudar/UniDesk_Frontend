@@ -1,4 +1,4 @@
-import {createBrowserRouter, Navigate} from "react-router";
+import { createBrowserRouter, Navigate } from "react-router";
 import RootLayout from "../Layouts/RootLayout/RootLayout.jsx";
 import Home from "../Pages/Home/Home.jsx";
 import Login from "../Pages/Login/Login.jsx";
@@ -6,6 +6,8 @@ import SignUp from "../Pages/SignUp/SignUp.jsx";
 import Repository from "../Pages/Repository/Repository.jsx";
 import NotFound from "../Pages/NotFound.jsx/NotFound.jsx";
 
+import DashboardLayout from "../Layouts/DashboardLayout/DashboardLayout.jsx";
+import FacultyDashboardLayout from "../Layouts/FacultyDashboardLayout/FacultyDashboardLayout.jsx"
 import StudentDashboard from "../Pages/StudentDashboard/StudentDashboard.jsx";
 import MyActivity from "../Pages/StudentDashboard/MyActivity.jsx";
 import MyCourses from "../Pages/StudentDashboard/MyCourses.jsx";
@@ -13,9 +15,17 @@ import MyAssessments from "../Pages/StudentDashboard/MyAssessments.jsx";
 import AskMentor from "../Pages/StudentDashboard/AskMentor.jsx";
 import PublicRoute from "../Providers/PublicRoute/PublicRoute.jsx";
 import StudentRoute from "../Providers/RoleWiseRoutes/StudentRoute/StudentRoute.jsx";
-import StudentProfile from "../Pages/Profile/StudentProfile.jsx";
+import FacultyRoute from "../Providers/RoleWiseRoutes/FacultyRoute/FacultyRoute.jsx";
+import FacultyDashboard from "../Pages/FacultyDashboard/FacultyDashboard.jsx";
+import FacultyMyProfile from "../Pages/FacultyMyProfile/FacultyMyProfile.jsx";
+import FacultyMyCourses from "../Pages/FacultyMyCourses/FacultyMyCourses.jsx";
+import FacultyMySupervises from "../Pages/FacultyMySupervises/FacultyMySupervises.jsx";
+import FacultyMyAppointments from "../Pages/FacultyMyAppointments/FacultyMyAppointments.jsx";
+import FacultyMySchedule from "../Pages/FacultyMySchedule/FacultyMySchedule.jsx";
 import Notification from "../Pages/Notification/Notification.jsx";
 import CourseDetails from "../Components/Course/CourseDetails.jsx";
+import FacultyCourseDetails from "../Pages/FacultyCourseDetails/FacultyCourseDetails.jsx";
+import StudentProfile from "../Pages/Profile/StudentProfile.jsx";
 
 import AdminDashboard from "../Pages/AdminDashboard/AdminDashboard.jsx";
 import Overview from "../Pages/AdminDashboard/Overview.jsx";
@@ -155,6 +165,50 @@ export const router = createBrowserRouter([
                 element: <AdminRoute>
                     <Repository></Repository>
                 </AdminRoute>
+            }
+        ]
+    },
+    {
+        path:"/dashboard/faculty",
+        element:<FacultyRoute>
+            <FacultyDashboardLayout></FacultyDashboardLayout>
+        </FacultyRoute>,
+        children:[
+            {
+                index:true,
+                element:<Navigate to="activity"/>
+            },
+            {
+                path:"activity",
+                Component:FacultyDashboard
+            },
+            {
+                path:"profile",
+                Component:FacultyMyProfile
+            },
+            {
+                path:"courses",
+                Component:FacultyMyCourses
+            },
+            {
+                path:"supervises",
+                Component:FacultyMySupervises
+            },
+            {
+                path:"appointments",
+                Component:FacultyMyAppointments
+            },
+            {
+                path:"schedule",
+                Component:FacultyMySchedule
+            },
+            {
+                path:"courses/:id",
+                Component:FacultyCourseDetails
+            },
+            {
+                path: ":id/repository",
+                Component: Repository
             }
         ]
     },

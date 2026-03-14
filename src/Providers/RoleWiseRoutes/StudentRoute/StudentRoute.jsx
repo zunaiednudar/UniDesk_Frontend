@@ -4,10 +4,13 @@ import Loading from '../../../Components/Loading/Loading';
 import NotFound from '../../../Pages/NotFound.jsx/NotFound';
 
 const StudentRoute = ({ children }) => {
-    const { loading, userData } = useContext(AuthContext);
+    const { loading, user, userData } = useContext(AuthContext);
 
-    if (loading)
+    if (loading || (user && !userData))
         return <Loading></Loading>;
+
+    if (!user)
+        return <Navigate to="/login" replace></Navigate>
 
     if (userData?.role !== "student")
         return <NotFound></NotFound>;

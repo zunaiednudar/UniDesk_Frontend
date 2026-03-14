@@ -136,7 +136,7 @@ const SignUp = () => {
                 />
 
                 <div className="absolute h-auto inset-0 z-50 flex flex-col mt-50 items-center gap-5">
-                    <div className="w-[70%] text-5xl font-semibold graphik text-white min-h-15">
+                    <div className="w-[70%] text-5xl font-extrabold graphik text-white min-h-15">
                         <TextType
                             text={"Join the Digital Campus"}
                             typingSpeed={100}
