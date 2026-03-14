@@ -31,7 +31,8 @@ const ConversationPage = () => {
     // For new message
 
     useEffect(() => {
-        if (!id) return;
+        if (!id) 
+            return;
 
         const handleNewMessage = (msg) => {
             if (msg.conversation?.toString() === id) {
@@ -233,7 +234,7 @@ const ConversationPage = () => {
             <div className="px-5 py-4 border-b border-gray-100 flex items-center gap-3 bg-white/80 backdrop-blur-sm">
                 <button
                     onClick={() => navigate(`/dashboard/${dashboardPath}/chat`)}
-                    className="p-2 hover:bg-gray-100 rounded-xl text-gray-500 hover:text-gray-800 transition-all"
+                    className="p-2 hover:bg-gray-100 rounded-xl text-gray-500 hover:text-gray-800 transition-all cursor-pointer"
                 >
                     <ArrowLeft className="w-5 h-5" />
                 </button>
@@ -356,7 +357,7 @@ const ConversationPage = () => {
                     <button
                         type="submit"
                         disabled={!newMessage.trim()}
-                        className={`p-2.5 rounded-2xl transition-all duration-200 ${newMessage.trim() ? "bg-blue-600 text-white hover:bg-blue-700 shadow-md shadow-blue-200 active:scale-95" : "bg-gray-100 text-gray-300 cursor-not-allowed"}`}
+                        className={`p-2.5 rounded-2xl transition-all duration-200 ${newMessage.trim() ? "bg-blue-600 text-white hover:bg-blue-700 shadow-md shadow-blue-200 active:scale-95 cursor-pointer" : "bg-gray-100 text-gray-300 cursor-not-allowed"}`}
                     >
                         <Send className="w-4 h-4" />
                     </button>

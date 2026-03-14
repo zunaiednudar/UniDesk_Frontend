@@ -69,30 +69,57 @@ const ChatPage = () => {
             });
         });
 
-        socket.on("newMessage", (msg) => {
-            setListItems(prev => prev.map(item => {
-                if (item.conversationID?.toString() === msg.conversation?.toString()) {
-                    const isCurrentConversation = window.location.pathname.includes(item.conversationID);
-                    return {
-                        ...item,
-                        lastMessage: msg.content,
-                        lastMessageSenderID: msg.sender?._id?.toString(),
-                        updatedAt: msg.createdAt,
-                        unreadCount: (msg.sender?._id?.toString() !== userData?._id?.toString() && !isCurrentConversation)
-                            ? (item.unreadCount || 0) + 1
-                            : item.unreadCount
-                    };
-                }
-                return item;
-            }));
-        });
-
         return () => {
             socket.off("userOnline");
             socket.off("userOffline");
-            socket.off("newMessage");
         };
     }, []);
+
+    useEffect(() => {
+        if (!userData?._id) 
+            return;
+
+        const handleNewMessage = (msg) => {
+            setListItems(prev => {
+                const exists = prev.some(
+                    item => item.conversationID?.toString() === msg.conversation?.toString()
+                );
+
+                const isCurrentConversation = window.location.pathname.includes(msg.conversation?.toString());
+                const isReceiver = msg.sender?._id?.toString() !== userData?._id?.toString();
+
+                if (exists)
+                    return prev.map(item => {
+                        if (item.conversationID?.toString() === msg.conversation?.toString()) {
+                            return {
+                                ...item,
+                                lastMessage: msg.content,
+                                lastMessageSenderID: msg.sender?._id?.toString(),
+                                updatedAt: msg.createdAt,
+                                unreadCount: (isReceiver && !isCurrentConversation)
+                                    ? (item.unreadCount || 0) + 1
+                                    : item.unreadCount
+                            };
+                        }
+                        return item;
+                    });
+                
+
+                return [{
+                    user: isReceiver ? msg.sender : null,
+                    conversationID: msg.conversation,
+                    lastMessage: msg.content,
+                    lastMessageSenderID: msg.sender?._id?.toString(),
+                    updatedAt: msg.createdAt,
+                    unreadCount: (isReceiver && !isCurrentConversation) ? 1 : 0
+                }, ...prev];
+            });
+        };
+
+        socket.on("newMessage", handleNewMessage);
+        return () => socket.off("newMessage", handleNewMessage);
+
+    }, [userData?._id]);
 
     // Initial online status check when list loads
 
@@ -120,7 +147,7 @@ const ChatPage = () => {
 
     const handleItemClick = (item) => {
         setListItems(prev => prev.map(i =>
-            i.conversationID === item.conversationID
+            i.conversationID?.toString() === item.conversationID?.toString()
                 ? { ...i, unreadCount: 0 }
                 : i
         ));
@@ -152,6 +179,8 @@ const ChatPage = () => {
                     className="w-full outline-none text-sm text-gray-700 placeholder-gray-400"
                 />
             </div>
+
+            {/* Conversation cards */}
 
             <div className="grid grid-cols-1 gap-6">
                 <div className="flex flex-col gap-3 h-full overflow-y-auto max-h-[75vh]">
