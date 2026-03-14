@@ -72,11 +72,15 @@ const ChatPage = () => {
         socket.on("newMessage", (msg) => {
             setListItems(prev => prev.map(item => {
                 if (item.conversationID?.toString() === msg.conversation?.toString()) {
+                    const isCurrentConversation = window.location.pathname.includes(item.conversationID);
                     return {
                         ...item,
                         lastMessage: msg.content,
                         lastMessageSenderID: msg.sender?._id?.toString(),
-                        updatedAt: msg.createdAt
+                        updatedAt: msg.createdAt,
+                        unreadCount: (msg.sender?._id?.toString() !== userData?._id?.toString() && !isCurrentConversation)
+                            ? (item.unreadCount || 0) + 1
+                            : item.unreadCount
                     };
                 }
                 return item;
@@ -115,6 +119,11 @@ const ChatPage = () => {
     // New conversation or existing conversation check
 
     const handleItemClick = (item) => {
+        setListItems(prev => prev.map(i =>
+            i.conversationID === item.conversationID
+                ? { ...i, unreadCount: 0 }
+                : i
+        ));
         const dashboardPath = location.pathname.includes("student") ? "student" : "faculty";
         const commonState = { state: { receiver: item.user } };
 
@@ -212,6 +221,16 @@ const ChatPage = () => {
                                         </div>
 
                                         <div className="flex flex-col items-end shrink-0">
+                                            {/* Unread count */}
+
+                                            {
+                                                item.unreadCount > 0 && (
+                                                    <span className="w-5 h-5 bg-blue-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                                                        {item.unreadCount > 99 ? "99+" : item.unreadCount}
+                                                    </span>
+                                                )
+                                            }
+
                                             {
                                                 mode === "search" && !item.conversationID && (
                                                     <button
