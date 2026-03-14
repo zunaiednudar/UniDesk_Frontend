@@ -1,6 +1,7 @@
 import React from 'react';
 import DashboardLayout from '../../Layouts/DashboardLayout/DashboardLayout.jsx';
 import {
+    BookSearch,
     ChartPie,
     UserCog
 } from "lucide-react";
@@ -18,6 +19,12 @@ const AdminDashboard = () => {
             icon: <UserCog className="w-5 h-5" />,
             label: 'Manage Users',
             path: '/dashboard/admin/users'
+        },
+        {
+            id: 'mentorship',
+            icon: <BookSearch className="w-5 h-5" />,
+            label: 'Manage Mentorship',
+            path: '/dashboard/admin/mentorship'
         },
     ];
 
