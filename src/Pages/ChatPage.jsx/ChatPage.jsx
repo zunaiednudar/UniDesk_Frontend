@@ -17,7 +17,7 @@ const ChatPage = () => {
     const [listItems, setListItems] = useState([]);
     const [mode, setMode] = useState("chat");
     const { conversationID } = useParams();
-    const [loading,setLoading]=useState(true);
+    const [loading, setLoading] = useState(true);
 
     const navigate = useNavigate();
     const location = useLocation();
@@ -41,7 +41,7 @@ const ChatPage = () => {
                 }
             } catch (error) {
                 toast.info("No conversation found");
-            }finally{
+            } finally {
                 setLoading(false);
             }
         };
@@ -55,11 +55,13 @@ const ChatPage = () => {
 
     const handleItemClick = (item) => {
         const dashboardPath = location.pathname.includes("student") ? "student" : "faculty";
+        const commonState = { state: { receiver: item.user } };
 
         if (item.conversationID)
-            navigate(`/dashboard/${dashboardPath}/chat/${item.conversationID}`);
-        else
-            navigate(`/dashboard/${dashboardPath}/chat/new?receiverID=${item.user._id}`);
+            navigate(`/dashboard/${dashboardPath}/chat/${item.conversationID}`, commonState);
+        else 
+            navigate(`/dashboard/${dashboardPath}/chat/new?receiverID=${item.user._id}`, commonState);
+        
     };
 
     return (
@@ -92,77 +94,77 @@ const ChatPage = () => {
                         loading ? (
                             [...Array(3)].map((_, i) => <CardSkeleton key={i} variant="inboxCard" />)
                         )
-                        :
-                        listItems.length === 0 ? (
-                            <EmptyState message={"No conversation found"}></EmptyState>
-                        ) : (
-                            listItems.map((item, idx) => (
-                                <div
-                                    key={idx}
-                                    onClick={() => item.conversationID && handleItemClick(item)}
-                                    className={`flex items-center gap-4 p-4 rounded-2xl bg-white border border-gray-100 hover:border-blue-200 hover:bg-blue-50/30 transition-all duration-500 ${item.conversationID ? 'cursor-pointer' : 'cursor-default'} ${conversationID === item.conversationID ? 'ring-2 ring-blue-500' : ''}`}
-                                >
-                                    <img src={item.user?.photoURL || "/default-avatar.png"} className="w-12 h-12 rounded-full border border-gray-200" alt="user" />
-                                    <div className="flex-1 min-w-0 flex items-center justify-between gap-4">
-                                        <div className="min-w-0 flex-1">
-                                            <div className="flex justify-between items-center gap-2 mb-1">
-                                                <h4 className="font-bold text-gray-800 truncate">{formatName(item.user?.name)}</h4>
+                            :
+                            listItems.length === 0 ? (
+                                <EmptyState message={"No conversation found"}></EmptyState>
+                            ) : (
+                                listItems.map((item, idx) => (
+                                    <div
+                                        key={idx}
+                                        onClick={() => handleItemClick(item)}
+                                        className={`flex items-center gap-4 p-4 rounded-2xl bg-white border border-gray-100 hover:border-blue-200 hover:bg-blue-50/30 transition-all duration-500 cursor-pointer ${conversationID === item.conversationID ? 'ring-2 ring-blue-500' : ''}`}
+                                    >
+                                        <img src={item.user?.photoURL || "/default-avatar.png"} className="w-12 h-12 rounded-full border border-gray-200" alt="user" />
+                                        <div className="flex-1 min-w-0 flex items-center justify-between gap-4">
+                                            <div className="min-w-0 flex-1">
+                                                <div className="flex justify-between items-center gap-2 mb-1">
+                                                    <h4 className="font-bold text-gray-800 truncate">{formatName(item.user?.name)}</h4>
+                                                    {
+                                                        item.updatedAt && (
+                                                            <span className="text-[10px] text-gray-400 whitespace-nowrap">
+                                                                {timeAgo(item.updatedAt)}
+                                                            </span>
+                                                        )
+                                                    }
+                                                </div>
                                                 {
-                                                    item.updatedAt && (
-                                                        <span className="text-[10px] text-gray-400 whitespace-nowrap">
-                                                            {timeAgo(item.updatedAt)}
-                                                        </span>
+                                                    mode === "search" && !item.conversationID ? (
+                                                        <p className="text-[10px] md:text-xs text-gray-600 truncate -mt-0.5 lowercase font-medium">
+                                                            {item.user?.email}
+                                                        </p>
+                                                    ) : (
+                                                        <p className="text-xs md:text-sm text-gray-500 truncate">
+                                                            {
+                                                                item.lastMessage ? (
+                                                                    <>
+                                                                        <span className="font-medium text-gray-600">
+                                                                            {
+                                                                                item.lastMessageSenderID === userData?._id?.toString()
+                                                                                    ? "You: "
+                                                                                    : `${formatName(item.user?.name).split(' ')[0]}: `
+                                                                            }
+                                                                        </span>
+                                                                        {item.lastMessage}
+                                                                    </>
+                                                                ) : (
+                                                                    "No messages yet"
+                                                                )
+                                                            }
+                                                        </p>
                                                     )
                                                 }
                                             </div>
-                                            {
-                                                mode === "search" && !item.conversationID ? (
-                                                    <p className="text-[10px] md:text-xs text-gray-600 truncate -mt-0.5 lowercase font-medium">
-                                                        {item.user?.email}
-                                                    </p>
-                                                ) : (
-                                                    <p className="text-xs md:text-sm text-gray-500 truncate">
-                                                        {
-                                                            item.lastMessage ? (
-                                                                <>
-                                                                    <span className="font-medium text-gray-600">
-                                                                        {
-                                                                            item.lastMessage.sender === userData?._id
-                                                                                ? "You: "
-                                                                                : `${formatName(item.user?.name).split(' ')[0]}: `
-                                                                        }
-                                                                    </span>
-                                                                    {item.lastMessage}
-                                                                </>
-                                                            ) : (
-                                                                "No messages yet"
-                                                            )
-                                                        }
-                                                    </p>
-                                                )
-                                            }
-                                        </div>
 
-                                        <div className="flex flex-col items-end shrink-0">
-                                            {
-                                                mode === "search" && !item.conversationID && (
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation(); // Card-er click off korar jonno
-                                                            handleItemClick(item);
-                                                        }}
-                                                        className="px-5 py-2 bg-blue-600 text-white rounded-lg cursor-pointer text-xs font-bold hover:bg-blue-700 transition-all duration-500 hover:shadow-lg flex items-center gap-1.5 active:scale-95"
-                                                    >
-                                                        <UserPlus className="w-4 h-4" />
-                                                        Chat
-                                                    </button>
-                                                )
-                                            }
+                                            <div className="flex flex-col items-end shrink-0">
+                                                {
+                                                    mode === "search" && !item.conversationID && (
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation(); // Card-er click off korar jonno
+                                                                handleItemClick(item);
+                                                            }}
+                                                            className="px-5 py-2 bg-blue-600 text-white rounded-lg cursor-pointer text-xs font-bold hover:bg-blue-700 transition-all duration-500 hover:shadow-lg flex items-center gap-1.5 active:scale-95"
+                                                        >
+                                                            <UserPlus className="w-4 h-4" />
+                                                            Chat
+                                                        </button>
+                                                    )
+                                                }
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            ))
-                        )
+                                ))
+                            )
                     }
                 </div>
             </div>

@@ -220,7 +220,7 @@ export const router = createBrowserRouter([
                 Component:ChatPage
             },
             {
-                path:"chat/:conversaationID",
+                path:"chat/:id",
                 Component:ConversationPage
             }
         ]
