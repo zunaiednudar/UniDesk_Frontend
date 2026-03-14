@@ -99,8 +99,8 @@ const ChatPage = () => {
                             listItems.map((item, idx) => (
                                 <div
                                     key={idx}
-                                    onClick={() => handleItemClick(item)}
-                                    className={`flex items-center gap-4 p-4 rounded-2xl bg-white border border-gray-100 hover:border-blue-200 hover:bg-blue-50/30 transition-all duration-500 cursor-pointer ${conversationID === item.conversationID ? 'ring-2 ring-blue-500' : ''}`}
+                                    onClick={() => item.conversationID && handleItemClick(item)}
+                                    className={`flex items-center gap-4 p-4 rounded-2xl bg-white border border-gray-100 hover:border-blue-200 hover:bg-blue-50/30 transition-all duration-500 ${item.conversationID ? 'cursor-pointer' : 'cursor-default'} ${conversationID === item.conversationID ? 'ring-2 ring-blue-500' : ''}`}
                                 >
                                     <img src={item.user?.photoURL || "/default-avatar.png"} className="w-12 h-12 rounded-full border border-gray-200" alt="user" />
                                     <div className="flex-1 min-w-0 flex items-center justify-between gap-4">
@@ -146,7 +146,13 @@ const ChatPage = () => {
                                         <div className="flex flex-col items-end shrink-0">
                                             {
                                                 mode === "search" && !item.conversationID && (
-                                                    <button className="px-5 py-2 bg-blue-600 text-white rounded-lg cursor-pointer text-xs font-bold hover:bg-blue-600 transition-all duration-500 hover:shadow-lg flex items-center gap-1.5 active:scale-95">
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation(); // Card-er click off korar jonno
+                                                            handleItemClick(item);
+                                                        }}
+                                                        className="px-5 py-2 bg-blue-600 text-white rounded-lg cursor-pointer text-xs font-bold hover:bg-blue-700 transition-all duration-500 hover:shadow-lg flex items-center gap-1.5 active:scale-95"
+                                                    >
                                                         <UserPlus className="w-4 h-4" />
                                                         Chat
                                                     </button>
