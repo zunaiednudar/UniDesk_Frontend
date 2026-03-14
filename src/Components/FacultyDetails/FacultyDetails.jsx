@@ -7,7 +7,7 @@ import {
     ArrowLeft, Mail, Phone, MapPin,
     Users, UserPlus, ChevronRight, X,
     Clock, Search, Loader2, UserCheck,
-    AlertCircle, Calendar, Trash2
+    AlertCircle, Calendar, Trash2, CheckCircle2
 } from "lucide-react";
 import SectionHeader from "../../Components/SectionHeader/SectionHeader.jsx";
 import SkeletonBlock from "../../Components/SkeletonBlock/SkeletonBlock.jsx";
@@ -149,8 +149,9 @@ const ProfileCard = ({ faculty, loading }) => {
     );
 };
 
-const SuperviseeCard = ({ supervisee, facultyId, onDeleted }) => {
+const SuperviseeCard = ({ supervisee, facultyId, onDeleted, onStatusChanged }) => {
     const [deleting, setDeleting] = useState(false);
+    const [updatingStatus, setUpdatingStatus] = useState(false);
 
     const statusCfg = superviseeStatusConfig[supervisee.status] ?? superviseeStatusConfig.active;
     const relCfg = relTypeConfig[supervisee.relationshipType] ?? relTypeConfig.project;
@@ -173,7 +174,24 @@ const SuperviseeCard = ({ supervisee, facultyId, onDeleted }) => {
         } finally {
             setDeleting(false);
         }
-    }
+    };
+
+    const handleStatusChange = async (newStatus) => {
+        setUpdatingStatus(true);
+        try {
+            await axiosSecure.patch(`/supervisor/${facultyId}`, {
+                studentID: supervisee.student._id,
+                relationshipType: supervisee.relationshipType,
+                status: newStatus,
+            });
+            toast.success("Status updated successfully");
+            onStatusChanged(supervisee.student._id, supervisee.relationshipType, newStatus);
+        } catch {
+            toast.error("Failed to update status");
+        } finally {
+            setUpdatingStatus(false);
+        }
+    };
 
     return (
         <div className="flex flex-col sm:flex-row items-start gap-3 p-4 rounded-xl border border-gray-100 bg-white hover:border-orange-200 hover:shadow-sm transition-all duration-200">
@@ -230,17 +248,30 @@ const SuperviseeCard = ({ supervisee, facultyId, onDeleted }) => {
             </div>
 
             {/* Actions */}
-            {deleting ? (
+            {deleting || updatingStatus ? (
                 <svg className="animate-spin w-4 h-4 text-red-400" viewBox="0 0 24 24" fill="none">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
                 </svg>
             ) : (
-                <button
-                    onClick={() => document.getElementById(`delete_modal_${supervisee.student._id}_${supervisee.relationshipType}`).showModal()}
-                    className="cursor-pointer p-1.5 rounded-lg text-gray-400 hover:text-red-500 transition">
-                    <Trash2 size={18}/>
-                </button>
+                <div className="flex items-center gap-1">
+                    {/* Status changer — only show if not already completed */}
+                    {supervisee.status !== "completed" && (
+                        <button
+                            onClick={() => handleStatusChange("completed")}
+                            title="Mark as completed"
+                            className="cursor-pointer p-1.5 rounded-lg text-gray-400 hover:text-blue-500 transition"
+                        >
+                            <CheckCircle2 size={18}/>
+                        </button>
+                    )}
+                    <button
+                        onClick={() => document.getElementById(`delete_modal_${supervisee.student._id}_${supervisee.relationshipType}`).showModal()}
+                        className="cursor-pointer p-1.5 rounded-lg text-gray-400 hover:text-red-500 transition"
+                    >
+                        <Trash2 size={18}/>
+                    </button>
+                </div>
             )}
 
             {/* Deletion confirmation modal */}
@@ -597,6 +628,37 @@ const SupervisesSection = ({ faculty, facultyLoading }) => {
 
     const totalCount = activeSupervises.length + completedSupervises.length;
 
+    const handleDeleted = (studentId, relType) => {
+        setActiveSupervises(prev =>
+            prev.filter(x => !(x.student._id === studentId && x.relationshipType === relType))
+        );
+        setCompletedSupervises(prev =>
+            prev.filter(x => !(x.student._id === studentId && x.relationshipType === relType))
+        );
+    };
+
+    const handleStatusChanged = (studentId, relType, newStatus) => {
+        if (newStatus === "completed") {
+            const item = activeSupervises.find(
+                x => x.student._id === studentId && x.relationshipType === relType
+            );
+            if (item) {
+                setActiveSupervises(prev =>
+                    prev.filter(x => !(x.student._id === studentId && x.relationshipType === relType))
+                );
+                setCompletedSupervises(prev => [...prev, { ...item, status: "completed" }]);
+            }
+        } else {
+            const update = (list) => list.map(x =>
+                x.student._id === studentId && x.relationshipType === relType
+                    ? { ...x, status: newStatus }
+                    : x
+            );
+            setActiveSupervises(update);
+            setCompletedSupervises(update);
+        }
+    };
+
     return (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
             <div className="flex flex-col lg:flex-row items-center justify-between mb-5">
@@ -693,14 +755,8 @@ const SupervisesSection = ({ faculty, facultyLoading }) => {
                                                 key={i}
                                                 supervisee={s}
                                                 facultyId = {faculty.id}
-                                                onDeleted={(studentId, relType) => {
-                                                    setActiveSupervises(prev =>
-                                                        prev.filter(x => !(x.student._id === studentId && x.relationshipType === relType))
-                                                    );
-                                                    setCompletedSupervises(prev =>
-                                                        prev.filter(x => !(x.student._id === studentId && x.relationshipType === relType))
-                                                    );
-                                                }}
+                                                onDeleted={handleDeleted}
+                                                onStatusChanged={handleStatusChanged}
                                             />
                                         ))}
                                     </div>
@@ -727,14 +783,8 @@ const SupervisesSection = ({ faculty, facultyLoading }) => {
                                                 key={i}
                                                 supervisee={s}
                                                 facultyId = {faculty.id}
-                                                onDeleted={(studentId, relType) => {
-                                                    setActiveSupervises(prev =>
-                                                        prev.filter(x => !(x.student._id === studentId && x.relationshipType === relType))
-                                                    );
-                                                    setCompletedSupervises(prev =>
-                                                        prev.filter(x => !(x.student._id === studentId && x.relationshipType === relType))
-                                                    );
-                                                }}
+                                                onDeleted={handleDeleted}
+                                                onStatusChanged={handleStatusChanged}
                                             />
                                         ))}
                                     </div>
@@ -807,7 +857,7 @@ const FacultyDetails = () => {
 
                 {!loading && faculty && (
                     <button
-                        onClick={() => navigate(`/dashboard/admin/users/${faculty.email}`)}
+                        onClick={() => navigate(`/dashboard/admin/users/${faculty.email}/details`)}
                         className="flex items-center gap-1.5 text-xs font-semibold text-blue-500 hover:text-blue-700 transition"
                     >
                         Manage User <ChevronRight size={13} />
@@ -827,7 +877,10 @@ const FacultyDetails = () => {
             <ProfileCard faculty={faculty} loading={loading} />
 
             {/* Supervises */}
-            <SupervisesSection faculty={faculty} facultyLoading={loading} />
+            <SupervisesSection
+                faculty={faculty}
+                facultyLoading={loading}
+            />
         </div>
     );
 };
