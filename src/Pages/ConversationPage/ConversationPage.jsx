@@ -6,6 +6,8 @@ import socket from '../../utils/socket.js';
 import { Send, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import formatName from '../../utils/formatName.js';
+import { SiTicktick } from "react-icons/si";
+import { TiTickOutline } from "react-icons/ti";
 
 const ConversationPage = () => {
 
@@ -32,8 +34,12 @@ const ConversationPage = () => {
         if (!id) return;
 
         const handleNewMessage = (msg) => {
-            if (msg.conversation?.toString() === id)
+            if (msg.conversation?.toString() === id) {
                 setMessages(prev => [...prev, msg]);
+                const isReceiver = msg.sender?._id?.toString() !== userData?._id?.toString();
+                if (isReceiver)
+                    axiosSecure.patch(`/messages/read/${id}`).catch(() => { });
+            }
         };
 
         socket.on("newMessage", handleNewMessage);
@@ -189,7 +195,35 @@ const ConversationPage = () => {
 
     useEffect(() => {
         scrollRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, [messages,isTyping]);
+    }, [messages, isTyping]);
+
+    // For message seen status
+
+    useEffect(() => {
+        if (!id || id === "new" || !userData?._id)
+            return;
+
+        const markSeen = async () => {
+            try {
+                await axiosSecure.patch(`/messages/read/${id}`);
+            } catch (error) {
+                console.log("Seen error", error);
+            }
+        };
+
+        markSeen();
+
+        socket.on("messageSeen", ({ conversationID }) => {
+            if (conversationID === id) {
+                setMessages(prev => prev.map(m => ({
+                    ...m,
+                    read: true
+                })));
+            }
+        });
+
+        return () => socket.off("messageSeen");
+    }, [id, userData?._id]);
 
     return (
         <div className="flex flex-col h-[85vh] bg-white rounded-3xl gilroy shadow-xl overflow-hidden">
@@ -262,9 +296,22 @@ const ConversationPage = () => {
                                         <div className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed shadow-sm ${isSender ? "bg-blue-600 text-white rounded-br-md" : "bg-white text-gray-800 rounded-bl-md border border-gray-100"}`}>
                                             {m.content}
                                         </div>
-                                        <span className="text-[10px] text-gray-400 px-1">
-                                            {new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                                        </span>
+                                        <div className="flex items-center gap-1 px-1">
+                                            <span className="text-[10px] text-gray-400">
+                                                {new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                                            </span>
+                                            {
+                                                isSender && (
+                                                    <span className="text-[10px]">
+                                                        {m.read ? (
+                                                            <span className="text-blue-500"><SiTicktick /></span>
+                                                        ) : (
+                                                            <span className="text-gray-400"><TiTickOutline /></span>
+                                                        )}
+                                                    </span>
+                                                )
+                                            }
+                                        </div>
                                     </div>
                                 </div>
                             );
