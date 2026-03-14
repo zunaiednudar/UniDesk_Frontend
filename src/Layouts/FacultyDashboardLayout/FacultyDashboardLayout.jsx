@@ -93,7 +93,7 @@ const FacultyDashboardLayout = () => {
         </div>
 
         <div className="w-full flex-1 p-2.5">
-          <div className="w-full px-12">
+          <div className="w-full px-8">
             <Outlet />
           </div>
         </div>
