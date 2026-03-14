@@ -1,5 +1,5 @@
 import {useNavigate, useParams} from "react-router";
-import { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { AuthContext } from "../../Providers/AuthProvider/AuthProvider.jsx";
 import axiosSecure from "../../utils/axiosSecure.js";
 import { toast } from "sonner";
@@ -7,7 +7,7 @@ import {
     ArrowLeft, Mail, Phone, MapPin,
     Users, UserPlus, ChevronRight, X,
     Clock, Search, Loader2, UserCheck,
-    AlertCircle, Calendar, Tag
+    AlertCircle, Calendar, Trash2
 } from "lucide-react";
 import SectionHeader from "../../Components/SectionHeader/SectionHeader.jsx";
 import SkeletonBlock from "../../Components/SkeletonBlock/SkeletonBlock.jsx";
@@ -149,9 +149,31 @@ const ProfileCard = ({ faculty, loading }) => {
     );
 };
 
-const SuperviseeCard = ({ supervisee }) => {
+const SuperviseeCard = ({ supervisee, facultyId, onDeleted }) => {
+    const [deleting, setDeleting] = useState(false);
+
     const statusCfg = superviseeStatusConfig[supervisee.status] ?? superviseeStatusConfig.active;
     const relCfg = relTypeConfig[supervisee.relationshipType] ?? relTypeConfig.project;
+
+    const handleDelete = async () => {
+        setDeleting(true);
+
+        const data = {
+            studentID: supervisee.student._id,
+            relationshipType: supervisee.relationshipType
+        }
+
+        try {
+            await axiosSecure.delete(`/supervisor/${facultyId}`, {data});
+            toast.success("Supervisee deleted permanently");
+            document.getElementById(`delete_modal_${supervisee.student._id}_${supervisee.relationshipType}`).close();
+            onDeleted(supervisee.student._id, supervisee.relationshipType);
+        } catch {
+            toast.error("Error deleting supervisee!");
+        } finally {
+            setDeleting(false);
+        }
+    }
 
     return (
         <div className="flex flex-col sm:flex-row items-start gap-3 p-4 rounded-xl border border-gray-100 bg-white hover:border-orange-200 hover:shadow-sm transition-all duration-200">
@@ -206,6 +228,36 @@ const SuperviseeCard = ({ supervisee }) => {
                     </div>
                 )}
             </div>
+
+            {/* Actions */}
+            {deleting ? (
+                <svg className="animate-spin w-4 h-4 text-red-400" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+                </svg>
+            ) : (
+                <button
+                    onClick={() => document.getElementById(`delete_modal_${supervisee.student._id}_${supervisee.relationshipType}`).showModal()}
+                    className="cursor-pointer p-1.5 rounded-lg text-gray-400 hover:text-red-500 transition">
+                    <Trash2 size={18}/>
+                </button>
+            )}
+
+            {/* Deletion confirmation modal */}
+            <dialog id={`delete_modal_${supervisee.student._id}_${supervisee.relationshipType}`} className="modal modal-bottom sm:modal-middle">
+                <div className="modal-box">
+                    <p className="text-sm text-gray-500">Are you sure you want to remove this supervisee permanently?</p>
+
+                    <div className="modal-action">
+                        <button className="btn btn-ghost btn-sm" onClick={() => document.getElementById(`delete_modal_${supervisee.student._id}_${supervisee.relationshipType}`).close()}>Keep Supervisee</button>
+                        <button className="btn btn-error btn-sm text-white" onClick={handleDelete}>Remove Supervisee</button>
+                    </div>
+                </div>
+
+                <form method="dialog" className="modal-backdrop">
+                    <button>close</button>
+                </form>
+            </dialog>
         </div>
     );
 };
@@ -637,7 +689,19 @@ const SupervisesSection = ({ faculty, facultyLoading }) => {
                                     </div>
                                     <div className="space-y-2">
                                         {activeSupervises.map((s, i) => (
-                                            <SuperviseeCard key={i} supervisee={s} />
+                                            <SuperviseeCard
+                                                key={i}
+                                                supervisee={s}
+                                                facultyId = {faculty.id}
+                                                onDeleted={(studentId, relType) => {
+                                                    setActiveSupervises(prev =>
+                                                        prev.filter(x => !(x.student._id === studentId && x.relationshipType === relType))
+                                                    );
+                                                    setCompletedSupervises(prev =>
+                                                        prev.filter(x => !(x.student._id === studentId && x.relationshipType === relType))
+                                                    );
+                                                }}
+                                            />
                                         ))}
                                     </div>
                                 </div>
@@ -659,7 +723,19 @@ const SupervisesSection = ({ faculty, facultyLoading }) => {
                                     </div>
                                     <div className="space-y-2">
                                         {completedSupervises.map((s, i) => (
-                                            <SuperviseeCard key={i} supervisee={s} />
+                                            <SuperviseeCard
+                                                key={i}
+                                                supervisee={s}
+                                                facultyId = {faculty.id}
+                                                onDeleted={(studentId, relType) => {
+                                                    setActiveSupervises(prev =>
+                                                        prev.filter(x => !(x.student._id === studentId && x.relationshipType === relType))
+                                                    );
+                                                    setCompletedSupervises(prev =>
+                                                        prev.filter(x => !(x.student._id === studentId && x.relationshipType === relType))
+                                                    );
+                                                }}
+                                            />
                                         ))}
                                     </div>
                                 </div>

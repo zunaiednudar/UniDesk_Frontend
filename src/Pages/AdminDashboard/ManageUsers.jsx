@@ -225,7 +225,7 @@ const UserItem = ({user, navigate, setUserList}) => {
                 )}
             </div>
 
-            {/* Logout confirmation modal */}
+            {/* Deletion confirmation modal */}
             <dialog id={`delete_modal_${user.id}`} className="modal modal-bottom sm:modal-middle">
                 <div className="modal-box">
                     <p className="text-sm text-gray-500">Are you sure you want to delete this user permanently?</p>
