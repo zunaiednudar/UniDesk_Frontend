@@ -1,6 +1,6 @@
 import React from 'react';
 
-const CardSkeleton = ({ variant = "list", lines = 3 }) => {
+const CardSkeleton = ({ variant = "list", lines = 3,i=0 }) => {
 
     // For statistics card
 
@@ -187,6 +187,14 @@ const CardSkeleton = ({ variant = "list", lines = 3 }) => {
                         <div className="h-3 w-3/4 bg-gray-100 rounded-md"></div>
                     </div>
                 </div>
+            </div>
+        );
+
+    if (variant === "chat")
+        return (
+            <div className={`flex items-end gap-2 ${i % 2 === 0 ? "flex-row-reverse" : "flex-row"}`}>
+                {i % 2 !== 0 && <div className="w-7 h-7 rounded-xl bg-gray-200 animate-pulse shrink-0" />}
+                <div className={`h-9 rounded-2xl bg-gray-200 animate-pulse ${i % 2 === 0 ? "w-48 rounded-br-md" : "w-36 rounded-bl-md"}`} />
             </div>
         );
 

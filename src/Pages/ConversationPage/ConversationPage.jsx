@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import formatName from '../../utils/formatName.js';
 import { SiTicktick } from "react-icons/si";
 import { TiTickOutline } from "react-icons/ti";
+import CardSkeleton from '../../Components/CardSkeleton/CardSkeleton.jsx';
 
 const ConversationPage = () => {
 
@@ -25,13 +26,14 @@ const ConversationPage = () => {
     const [newMessage, setNewMessage] = useState("");
     const [chatTarget, setChatTarget] = useState(location.state?.receiver || null);
     const [isOnline, setIsOnline] = useState(false);
+    const [loadingMessages, setLoadingMessages] = useState(true);
 
     const dashboardPath = location.pathname.includes("student") ? "student" : "faculty";
 
     // For new message
 
     useEffect(() => {
-        if (!id) 
+        if (!id)
             return;
 
         const handleNewMessage = (msg) => {
@@ -92,6 +94,7 @@ const ConversationPage = () => {
                 return;
             try {
                 if (id && id !== "new") {
+                    setLoadingMessages(true);
                     const msgRes = await axiosSecure.get(`/conversation/messages/${id}`);
                     setMessages(msgRes.data.messages.reverse());
 
@@ -113,6 +116,8 @@ const ConversationPage = () => {
                 }
             } catch (error) {
                 console.log("Chat load error", error);
+            } finally {
+                setLoadingMessages(false);
             }
         };
         loadChatContent();
@@ -124,6 +129,8 @@ const ConversationPage = () => {
         e.preventDefault();
         if (!newMessage.trim())
             return;
+        
+        setNewMessage("");
 
         try {
             let workingID = id;
@@ -191,6 +198,13 @@ const ConversationPage = () => {
             });
         }, 1000);
     };
+
+    // First load
+
+    useEffect(() => {
+        if (!loadingMessages)
+            scrollRef.current?.scrollIntoView({ behavior: "instant" });
+    }, [loadingMessages]);
 
     // Smooth scroll
 
@@ -267,57 +281,65 @@ const ConversationPage = () => {
                 style={{ background: "linear-gradient(180deg, #f8faff 0%, #f3f4f6 100%)" }}
             >
                 {
-                    messages.length === 0 ? (
-                        <div className="h-full flex flex-col items-center justify-center text-center p-10">
-                            <div className="w-20 h-20 rounded-3xl overflow-hidden mb-4 shadow-md ring-4 ring-white">
-                                <img
-                                    src={chatTarget?.photoURL || "/default-avatar.png"}
-                                    className="w-full h-full object-cover grayscale opacity-60"
-                                />
-                            </div>
-                            <h4 className="font-semibold text-gray-400 text-base mb-1">No messages yet</h4>
-                            <p className="text-xs text-gray-400">
-                                Message {chatTarget?.name ? formatName(chatTarget.name).split(" ")[0] : "them"}
-                            </p>
+                    loadingMessages ? (
+                        <div className="h-full flex flex-col gap-3 pt-2">
+                            {[...Array(4)].map((_, i) => (
+                                <CardSkeleton i={i} variant="chat"></CardSkeleton>
+                            ))}
                         </div>
-                    ) : (
-                        messages.map((m, i) => {
-                            const isSender = (m.sender?._id || m.sender)?.toString() === userData?._id?.toString();
-                            return (
-                                <div key={i} className={`flex items-end gap-2 ${isSender ? "flex-row-reverse" : "flex-row"}`}>
-                                    {
-                                        !isSender && (
-                                            <img
-                                                src={chatTarget?.photoURL || "/default-avatar.png"}
-                                                className="w-7 h-7 rounded-xl object-cover shrink-0 mb-1"
-                                            />
-                                        )
-                                    }
-                                    <div className={`flex flex-col gap-1 max-w-[70%] ${isSender ? "items-end" : "items-start"}`}>
-                                        <div className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed shadow-sm ${isSender ? "bg-blue-600 text-white rounded-br-md" : "bg-white text-gray-800 rounded-bl-md border border-gray-100"}`}>
-                                            {m.content}
-                                        </div>
-                                        <div className="flex items-center gap-1 px-1">
-                                            <span className="text-[10px] text-gray-400">
-                                                {new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                                            </span>
-                                            {
-                                                isSender && (
-                                                    <span className="text-[10px]">
-                                                        {m.read ? (
-                                                            <span className="text-blue-500"><SiTicktick /></span>
-                                                        ) : (
-                                                            <span className="text-gray-400"><TiTickOutline /></span>
-                                                        )}
-                                                    </span>
-                                                )
-                                            }
+                    )
+                        :
+                        messages.length === 0 ? (
+                            <div className="h-full flex flex-col items-center justify-center text-center p-10">
+                                <div className="w-20 h-20 rounded-3xl overflow-hidden mb-4 shadow-md ring-4 ring-white">
+                                    <img
+                                        src={chatTarget?.photoURL || "/default-avatar.png"}
+                                        className="w-full h-full object-cover grayscale opacity-60"
+                                    />
+                                </div>
+                                <h4 className="font-semibold text-gray-400 text-base mb-1">No messages yet</h4>
+                                <p className="text-xs text-gray-400">
+                                    Message {chatTarget?.name ? formatName(chatTarget.name).split(" ")[0] : "them"}
+                                </p>
+                            </div>
+                        ) : (
+                            messages.map((m, i) => {
+                                const isSender = (m.sender?._id || m.sender)?.toString() === userData?._id?.toString();
+                                return (
+                                    <div key={i} className={`flex items-end gap-2 ${isSender ? "flex-row-reverse" : "flex-row"}`}>
+                                        {
+                                            !isSender && (
+                                                <img
+                                                    src={chatTarget?.photoURL || "/default-avatar.png"}
+                                                    className="w-7 h-7 rounded-xl object-cover shrink-0 mb-1"
+                                                />
+                                            )
+                                        }
+                                        <div className={`flex flex-col gap-1 max-w-[70%] ${isSender ? "items-end" : "items-start"}`}>
+                                            <div className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed shadow-sm ${isSender ? "bg-blue-600 text-white rounded-br-md" : "bg-white text-gray-800 rounded-bl-md border border-gray-100"}`}>
+                                                {m.content}
+                                            </div>
+                                            <div className="flex items-center gap-1 px-1">
+                                                <span className="text-[10px] text-gray-400">
+                                                    {new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                                                </span>
+                                                {
+                                                    isSender && (
+                                                        <span className="text-[10px]">
+                                                            {m.read ? (
+                                                                <span className="text-blue-500"><SiTicktick /></span>
+                                                            ) : (
+                                                                <span className="text-gray-400"><TiTickOutline /></span>
+                                                            )}
+                                                        </span>
+                                                    )
+                                                }
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            );
-                        })
-                    )
+                                );
+                            })
+                        )
                 }
 
                 {/* Typing indicator */}
