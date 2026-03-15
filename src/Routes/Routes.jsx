@@ -226,6 +226,10 @@ export const router = createBrowserRouter([
             {
                 path:"chat/:id",
                 Component:ConversationPage
+            },
+            {
+                path: "notifications",
+                Component:Notification
             }
         ]
     },

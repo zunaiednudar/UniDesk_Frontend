@@ -81,7 +81,7 @@ const DashboardLayout = ({ menuItems, role }) => {
                                 <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
                                     <span className="text-sm font-semibold text-gray-800">Notifications</span>
                                     {unreadCount > 0 && (
-                                        <button onClick={markAllRead} className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 transition font-medium">
+                                        <button onClick={markAllRead} className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 transition font-medium cursor-pointer">
                                             <Check className="w-3 h-3" />
                                             Mark all read
                                         </button>
@@ -99,7 +99,7 @@ const DashboardLayout = ({ menuItems, role }) => {
                                                 <div
                                                     key={n.id}
                                                     onClick={() => handleNotificationClick(n)}
-                                                    className={`flex items-start gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 transition border-b border-gray-50 ${!n.read ? 'bg-blue-50/50' : ''}`}>
+                                                    className={`flex items-start gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 transition border-b border-gray-50 ${!n.read ? 'bg-blue-50/50' : ''} cursor-pointer`}>
                                                     <div className={`mt-1 w-2 h-2 rounded-full shrink-0 ${!n.read ? 'bg-blue-500' : 'bg-transparent'}`} />
                                                     <div className="flex-1 min-w-0">
                                                         <p className={`text-xs font-semibold truncate ${!n.read ? 'text-gray-900' : 'text-gray-600'}`}>{n.title}</p>
