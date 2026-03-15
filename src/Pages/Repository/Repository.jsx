@@ -379,7 +379,8 @@ const Repository = () => {
                 const repositoryItems = repositoryRes.data.items;
 
                 const totalContributionPoints = repositoryItems.reduce((sum, item) => {
-                    if (item.uploader?._id === id) return sum + item.contributionPoints;
+                    if (item.uploader?._id === id && item.status === "approved")
+                        return sum + (item.contributionPoints || 10);
                     return sum;
                 }, 0);
 
@@ -402,22 +403,23 @@ const Repository = () => {
 
                 const allPersonalNotes = repositoryItems
                     .filter(item => {
-                        return (item.uploader?._id === id) && (item.itemType.toLowerCase() === "notes");
+                        return (item.uploader?._id === id) && (item.status === "approved") && (item.itemType.toLowerCase() === "notes");
                     });
 
                 const allQuestionBanksAnswers = repositoryItems
                     .filter(item => {
-                        return (item.uploader?._id === id) && ((item.itemType.toLowerCase() === "question bank") || (item.itemType.toLowerCase() === "solved questions"));
+                        return (item.uploader?._id === id) && (item.status === "approved") && ((item.itemType.toLowerCase() === "question bank") || (item.itemType.toLowerCase() === "solved questions"));
                     });
 
                 const allAssessments = repositoryItems
                     .filter(item => {
-                        return (item.uploader?._id === id) && ((item.itemType.toLowerCase() === "project_report") || (item.itemType.toLowerCase() === "lab_report") || (item.itemType.toLowerCase() === "assignment"));
+                        return (item.uploader?._id === id) && (item.status === "approved") && ((item.itemType.toLowerCase() === "project_report") || (item.itemType.toLowerCase() === "lab_report") || (item.itemType.toLowerCase() === "assignment"));
                     });
 
                 const otherMaterials = repositoryItems
                     .filter(item => {
                         return (item.uploader?._id === id)
+                            && (item.status === "approved")
                             && (item.itemType.toLowerCase() !== "notes")
                             && (item.itemType.toLowerCase() !== "question bank")
                             && (item.itemType.toLowerCase() !== "solved questions")
@@ -432,7 +434,7 @@ const Repository = () => {
                     .reduce((acc, item) => {
                         const month = new Date(item.approvedAt).getMonth();
                         if (new Date(item.approvedAt).getFullYear() === new Date().getFullYear())
-                            acc[month] = (acc[month] || 0) + item.contributionPoints;
+                            acc[month] = (acc[month] || 0) + (item.contributionPoints || 10);
                         return acc;
                     }, Array(12).fill(0));
 
@@ -440,7 +442,7 @@ const Repository = () => {
                     .reduce((acc, item) => {
                         const month = new Date(item.approvedAt).getMonth();
                         if (new Date(item.approvedAt).getFullYear() === new Date().getFullYear())
-                            acc[month] = (acc[month] || 0) + item.contributionPoints;
+                            acc[month] = (acc[month] || 0) + (item.contributionPoints || 10);
                         return acc;
                     }, Array(12).fill(0));
 
@@ -448,7 +450,7 @@ const Repository = () => {
                     .reduce((acc, item) => {
                         const month = new Date(item.approvedAt).getMonth();
                         if (new Date(item.approvedAt).getFullYear() === new Date().getFullYear())
-                            acc[month] = (acc[month] || 0) + item.contributionPoints;
+                            acc[month] = (acc[month] || 0) + (item.contributionPoints || 10);
                         return acc;
                     }, Array(12).fill(0));
 
@@ -456,7 +458,7 @@ const Repository = () => {
                     .reduce((acc, item) => {
                         const month = new Date(item.approvedAt).getMonth();
                         if (new Date(item.approvedAt).getFullYear() === new Date().getFullYear())
-                            acc[month] = (acc[month] || 0) + item.contributionPoints;
+                            acc[month] = (acc[month] || 0) + (item.contributionPoints || 10);
                         return acc;
                     }, Array(12).fill(0));
 
@@ -714,7 +716,7 @@ const Repository = () => {
 
                         {/* Contribution graph */}
                         {graphData && (
-                            <div className="flex-1">
+                            <div className="flex-1 min-h-[400px]">
                                 <Line data={graphData} options={options}/>
                             </div>
                         )}
