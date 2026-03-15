@@ -1,6 +1,6 @@
 import React from 'react';
 
-const CardSkeleton = ({ variant = "list", lines = 3,i=0 }) => {
+const CardSkeleton = ({ variant = "list", lines = 3, i = 0 }) => {
 
     // For statistics card
 
@@ -195,6 +195,27 @@ const CardSkeleton = ({ variant = "list", lines = 3,i=0 }) => {
             <div className={`flex items-end gap-2 ${i % 2 === 0 ? "flex-row-reverse" : "flex-row"}`}>
                 {i % 2 !== 0 && <div className="w-7 h-7 rounded-xl bg-gray-200 animate-pulse shrink-0" />}
                 <div className={`h-9 rounded-2xl bg-gray-200 animate-pulse ${i % 2 === 0 ? "w-48 rounded-br-md" : "w-36 rounded-bl-md"}`} />
+            </div>
+        );
+
+    if (variant === "notification")
+        return (
+            <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+                <div className="px-4 py-3 border-b border-gray-100 bg-gray-50">
+                    <div className="h-3 w-12 bg-gray-200 rounded animate-pulse" />
+                </div>
+                <div className="p-3 space-y-2">
+                    {[...Array(4)].map((_, i) => (
+                        <div key={i} className="flex items-start gap-4 p-4 rounded-xl border border-gray-100">
+                            <div className="mt-1.5 w-2 h-2 rounded-full bg-gray-200 shrink-0" />
+                            <div className="flex-1 space-y-2">
+                                <div className="h-3 bg-gray-200 rounded animate-pulse w-1/3" />
+                                <div className="h-3 bg-gray-100 rounded animate-pulse w-2/3" />
+                            </div>
+                            <div className="h-3 w-12 bg-gray-100 rounded animate-pulse" />
+                        </div>
+                    ))}
+                </div>
             </div>
         );
 

@@ -2,9 +2,10 @@ import React, {useEffect, useState} from 'react';
 import {NavLink, Outlet, useLocation} from 'react-router';
 import SidebarDashboard from "../../Components/SidebarDashboard/SidebarDashboard.jsx";
 import {Bell, PanelLeft, Check } from "lucide-react";
-import axiosSecure from "../../utils/axiosSecure.js";
+import { useNotifications } from '../../utils/hooks/useNotifications.js';
 
 const DashboardLayout = ({ menuItems, role }) => {
+    const { notifications, unreadCount, todayNotifs, historyNotifs, markAllRead, markRead } = useNotifications();
     const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
 
     const [isSidebarOpen, setIsSidebarOpen] = useState(
@@ -29,97 +30,6 @@ const DashboardLayout = ({ menuItems, role }) => {
     const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
     const iconBtnClass = "hover:bg-gray-200 p-2 rounded-lg transition cursor-pointer";
-
-    const [notifications, setNotifications] = useState([]);
-
-    const timeAgo = (dateString) => {
-        const now = new Date();
-        const past = new Date(dateString);
-
-        const diffInSeconds = Math.floor((now - past) / 1000);
-
-        if (diffInSeconds < 60) return "Just now";
-
-        const diffInMinutes = Math.floor(diffInSeconds / 60);
-        if (diffInMinutes < 60)
-            return `${diffInMinutes} min${diffInMinutes > 1 ? "s" : ""} ago`;
-
-        const diffInHours = Math.floor(diffInMinutes / 60);
-        if (diffInHours < 24)
-            return `${diffInHours} hr${diffInHours > 1 ? "s" : ""} ago`;
-
-        const diffInDays = Math.floor(diffInHours / 24);
-        if (diffInDays < 7)
-            return `${diffInDays} day${diffInDays > 1 ? "s" : ""} ago`;
-
-        const diffInWeeks = Math.floor(diffInDays / 7);
-        if (diffInWeeks < 4)
-            return `${diffInWeeks} week${diffInWeeks > 1 ? "s" : ""} ago`;
-
-        const diffInMonths = Math.floor(diffInDays / 30);
-        if (diffInMonths < 12)
-            return `${diffInMonths} month${diffInMonths > 1 ? "s" : ""} ago`;
-
-        const diffInYears = Math.floor(diffInDays / 365);
-        return `${diffInYears} year${diffInYears > 1 ? "s" : ""} ago`;
-    };
-
-    useEffect(() => {
-        const fetchNotifications = async () => {
-            try {
-                const res = await axiosSecure.get("/notifications");
-                console.log("Notifications: ", res);
-
-                const isToday = (dateString) => {
-                    const created = new Date(dateString);
-                    const today = new Date();
-
-                    return (
-                        created.getFullYear() === today.getFullYear() &&
-                        created.getMonth() === today.getMonth() &&
-                        created.getDate() === today.getDate()
-                    );
-                };
-
-                const formattedNotifications = (res.data.notifications || []).map((notification, index) => ({
-                    id: index + 1,
-                    _id: notification._id,
-                    title: notification.type,
-                    message: notification.message,
-                    time: timeAgo(notification.createdAt),
-                    read: notification.isRead,
-                    today: isToday(notification.createdAt)
-                }));
-                setNotifications(formattedNotifications);
-            } catch (error) {
-                console.log(error);
-            }
-        }
-
-        fetchNotifications();
-    }, []);
-
-    const unreadCount = notifications.filter(n => !n.read).length;
-    const todayNotifs = notifications.filter(n => n.today).slice(0, 10);
-    const historyNotifs = notifications.filter(n => !n.today).slice(0, 10);
-
-    const markAllRead = async () => {
-        try {
-            await axiosSecure.patch("/notifications/all");
-            setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-        } catch (error) {
-            console.log(error);
-        }
-    }
-
-    const markRead = async (id, _id) => {
-        try {
-            await axiosSecure.patch(`/notifications/${_id}`);
-            setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
-        } catch (error) {
-            console.log(error);
-        }
-    }
 
     const location = useLocation();
     const isNotificationsPage = location.pathname.includes("notifications");
