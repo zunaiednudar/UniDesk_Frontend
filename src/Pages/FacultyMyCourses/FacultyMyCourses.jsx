@@ -321,7 +321,7 @@ const FacultyMyCourses = () => {
 
                                             <div className='flex flex-col py-4 mt-auto gap-4'>
                                                 <hr className='border-gray-200' />
-                                                <Link to={`/dashboard/faculty/courses/${course._id}`}
+                                                <Link to={`/dashboard/faculty/courses/${course._id}/details`}
                                                     className=' flex gap-2 items-center bg-[#1E40AF] text-white px-5 py-2 rounded-lg text-center transition-colors hover:bg-blue-600 duration-500 justify-center'><Eye /> View
                                                 </Link>
                                             </div>
@@ -395,7 +395,7 @@ const FacultyMyCourses = () => {
 
                                             <div className='flex flex-col py-4 mt-auto gap-4'>
                                                 <hr className='border-gray-200' />
-                                                <Link to={`/dashboard/faculty/courses/${course._id}`}
+                                                <Link to={`/dashboard/faculty/courses/${course._id}/details`}
                                                     className=' flex gap-2 items-center bg-[#1E40AF] text-white px-5 py-2 rounded-lg text-center transition-colors hover:bg-blue-600 duration-500 justify-center'><Eye /> View
                                                 </Link>
                                             </div>

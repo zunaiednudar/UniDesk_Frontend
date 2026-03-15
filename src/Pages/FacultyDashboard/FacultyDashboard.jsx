@@ -497,7 +497,7 @@ const FacultyDashboard = () => {
                                 ) :
                                 (
                                     activeCourses.map((course) => (
-                                        <Link to={`/dashboard/faculty/courses/${course._id}`}
+                                        <Link to={`/dashboard/faculty/courses/${course._id}/details`}
                                             key={course._id}
                                             className="w-full p-6 rounded-xl bg-white shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 flex flex-col gap-4"
                                         >
