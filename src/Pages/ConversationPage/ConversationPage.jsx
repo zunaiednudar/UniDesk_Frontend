@@ -59,30 +59,31 @@ const ConversationPage = () => {
             socket.emit("checkOnline", chatTarget._id.toString());
         };
 
+        const handleOnlineStatus = ({ userID, isOnline }) => {
+            if (userID === chatTarget._id.toString())
+                setIsOnline(isOnline);
+        };
+        const handleUserOnline = (userID) => {
+            if (userID === chatTarget._id.toString())
+                setIsOnline(true);
+        };
+        const handleUserOffline = (userID) => {
+            if (userID === chatTarget._id.toString())
+                setIsOnline(false);
+        };
+
         if (socket.connected)
             checkStatus();
         socket.on("connect", checkStatus);
-
-        socket.on("onlineStatus", ({ userID, isOnline }) => {
-            if (userID === chatTarget._id.toString())
-                setIsOnline(isOnline);
-        });
-
-        socket.on("userOnline", (userID) => {
-            if (userID === chatTarget._id.toString())
-                setIsOnline(true);
-        });
-
-        socket.on("userOffline", (userID) => {
-            if (userID === chatTarget._id.toString())
-                setIsOnline(false);
-        });
+        socket.on("onlineStatus", handleOnlineStatus);
+        socket.on("userOnline", handleUserOnline);
+        socket.on("userOffline", handleUserOffline);
 
         return () => {
             socket.off("connect", checkStatus);
-            socket.off("onlineStatus");
-            socket.off("userOnline");
-            socket.off("userOffline");
+            socket.off("onlineStatus", handleOnlineStatus);
+            socket.off("userOnline", handleUserOnline);
+            socket.off("userOffline", handleUserOffline);
         };
     }, [chatTarget?._id]);
 
@@ -129,7 +130,8 @@ const ConversationPage = () => {
         e.preventDefault();
         if (!newMessage.trim())
             return;
-        
+
+        const messageToSend=newMessage;
         setNewMessage("");
 
         try {
@@ -143,10 +145,8 @@ const ConversationPage = () => {
 
             await axiosSecure.post("/messages", {
                 conversationID: workingID,
-                content: newMessage
+                content: messageToSend
             });
-
-            setNewMessage("");
 
         } catch (error) {
             toast.error("Message send failed");

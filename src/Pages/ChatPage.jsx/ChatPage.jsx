@@ -141,7 +141,7 @@ const ChatPage = () => {
 
         return () => socket.off("onlineStatus", handleOnlineStatus);
 
-    }, [listItems]);
+    }, [listItems.length === 0 ? 0 : 1]);
 
     // New conversation or existing conversation check
 
