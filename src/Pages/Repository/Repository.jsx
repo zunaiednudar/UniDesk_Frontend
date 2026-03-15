@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo, useRef, useState} from 'react';
+import React, {useContext, useEffect, useMemo, useRef, useState} from 'react';
 import {
     ChartNoAxesCombined,
     Trophy,
@@ -8,7 +8,7 @@ import {
     Search,
     File,
     FileImage, FileText,
-    Calendar, Download, Eye, UsersRound, BookCheck, Trash2
+    Calendar, Download, UsersRound, BookCheck, Trash2
 } from 'lucide-react';
 import {
     Chart as ChartJS,
@@ -27,6 +27,7 @@ import formatName from "../../utils/formatName.js";
 import {toast} from "sonner";
 import {uploadFileToCloudinary} from "../../utils/uploadToCloudinary.js";
 import { Pagination } from '@mui/material';
+import {AuthContext} from "../../Providers/AuthProvider/AuthProvider.jsx";
 
 ChartJS.register(
     CategoryScale,
@@ -83,7 +84,7 @@ const fileTypeConfig = {
 
 const defaultFileType = {icon: File, bg: "bg-gray-100", text: "text-gray-500", label: "File"};
 
-const ItemCard = ({id, item, onDownload, onView, onDelete}) => {
+const ItemCard = ({id, item, onDownload, onView, onDelete, isAdmin = false}) => {
     const extension = item.url?.split(".").pop().split("?")[0].toLowerCase() ?? "";
     const fileConfig = fileTypeConfig[extension] ?? defaultFileType;
     const FileIcon = fileConfig.icon;
@@ -186,7 +187,7 @@ const ItemCard = ({id, item, onDownload, onView, onDelete}) => {
                         Download
                     </button>
 
-                    {(item.uploader?._id === id) && (
+                    {((id && item.uploader?._id === id) || isAdmin) && (
                         <button
                             onClick={() => {
                                 onDelete?.(item);
@@ -228,6 +229,8 @@ const months = [
 ];
 
 const Repository = () => {
+    const {userData} = useContext(AuthContext);
+
     const {id} = useParams();
     const [contributionPoints, setContributionPoints] = useState(0);
     const [repositoryItems, setRepositoryItems] = useState([]);
@@ -240,7 +243,7 @@ const Repository = () => {
     const [totalUploadCount, setTotalUploadCount] = useState(0);
     const [totalDownloadCount, setTotalDownloadCount] = useState(0);
 
-    const [statusFilter, setStatusFilter] = useState('all');
+    const [statusFilter, setStatusFilter] = useState(userData?.role === "admin" ? "pending" : "all");
     const [itemType, setItemType] = useState('notes');
 
     const [uploadStatus, setUploadStatus] = useState("idle");
@@ -291,8 +294,9 @@ const Repository = () => {
             const res = await axiosSecure.delete(`/repository/${itemId}`);
 
             if (res.status === 200) {
-                toast("Item permanently deleted");
-                window.location.reload();
+                toast.success("Item permanently deleted");
+                setRepositoryItems(prev => prev.filter(item => item._id !== itemId));
+                // window.location.reload();
             }
         } catch {
             toast.error("Item deletion failed");
@@ -319,7 +323,6 @@ const Repository = () => {
                 ]);
 
                 const repositoryItems = repositoryRes.data.items;
-                console.log(repositoryItems);
 
                 const totalContributionPoints = repositoryItems.reduce((sum, item) => {
                     if (item.uploader?._id === id) return sum + item.contributionPoints;
@@ -327,7 +330,7 @@ const Repository = () => {
                 }, 0);
 
                 const totalApproved = repositoryItems.reduce((sum, item) => {
-                    if (item.uploader?._id === id) return sum + 1;
+                    if (item.uploader?._id === id && item.status === "approved") return sum + 1;
                     return sum;
                 }, 0);
 
@@ -472,13 +475,15 @@ const Repository = () => {
                 item.uploader?.name?.toLowerCase().includes(q);
 
             const matchesStatus =
-                statusFilter === "all" ||
-                (statusFilter === "personal" && item.uploader?._id === id);
+                (statusFilter === "all" && item.status === "approved") ||
+                (statusFilter === "pending" && item.uploader?._id === id && item.status === "pending") ||
+                (statusFilter === "personal" && item.uploader?._id === id && item.status === "approved") ||
+                (statusFilter === item.status && userData.role === "admin");
 
             return matchesSearch && matchesStatus;
         });
 
-    }, [repositoryItems, searchQuery, statusFilter, id]);
+    }, [repositoryItems, searchQuery, statusFilter, id, userData]);
 
     // Pagination setup
 
@@ -569,6 +574,20 @@ const Repository = () => {
                 if (fileInputRef.current) {
                     fileInputRef.current.value = "";
                 }
+
+                setRepositoryItems(prev => [
+                    {
+                        ...submissionRes.data.item,
+                        uploader: {
+                            _id: userData._id,
+                            name: userData.name,
+                            email: userData.email,
+                            photoURL: userData.photoURL ?? null,
+                        }
+                    },
+                    ...prev
+                ]);
+                setStatusFilter("pending");
             }
         } catch {
             toast.error("Failed to submit material");
@@ -688,23 +707,15 @@ const Repository = () => {
                                         </div>
 
                                         {/* Stats */}
-                                        <div className="hidden sm:flex sm:flex-1 sm:justify-end items-center gap-5">
-                                            <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                                                <Upload className="w-3.5 h-3.5 text-blue-400"/>
-                                                <span
-                                                    className="font-medium text-gray-700">{person.itemsUploaded}</span>
-                                                <span>uploads</span>
-                                            </div>
-                                            <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                                                <CheckCircle className="w-3.5 h-3.5 text-emerald-400"/>
-                                                <span
-                                                    className="font-medium text-gray-700">{person.itemsApproved}</span>
-                                                <span>approved</span>
-                                            </div>
+                                        <div className="flex flex-1 justify-end items-center gap-1.5 text-xs text-gray-500">
+                                            <CheckCircle className="w-3.5 h-3.5 text-emerald-400"/>
+                                            <span
+                                                className="font-medium text-gray-700">{person.itemsApproved}</span>
+                                            <span>approved</span>
                                         </div>
 
                                         {/* Points */}
-                                        <div className="shrink-0 text-right sm:min-w-20">
+                                        <div className="shrink-0 text-right">
                                             <p className="text-base font-bold text-green-700">{person.totalPoints.toLocaleString()}</p>
                                             <p className="text-[10px] text-gray-400 uppercase tracking-wide">pts</p>
                                         </div>
@@ -752,7 +763,19 @@ const Repository = () => {
                             }}
                             className={optionCls}
                         >
-                            <option value="all">All</option>
+                            {userData.role !== "admin" && (
+                                <>
+                                    <option value="all">All</option>
+                                    <option value="pending">Pending</option>
+                                </>
+                            )}
+                            {userData.role === "admin" && (
+                                <>
+                                    <option value="pending">Pending</option>
+                                    <option value="approved">Approved</option>
+                                    <option value="rejected">Rejected</option>
+                                </>
+                            )}
                             <option value="personal">My Uploads</option>
                         </select>
                     )}
@@ -796,6 +819,7 @@ const Repository = () => {
                                 <ItemCard
                                     id={id}
                                     key={repoItem._id}
+                                    isAdmin={userData.role === "admin"}
                                     item={repoItem}
                                     onView={(item) => handleView(item.url)}
                                     onDownload={(item) => handleDownload(item.url, item.title)}
@@ -809,7 +833,7 @@ const Repository = () => {
                     </div>
                 ): (
                     <div
-                        className="h-[800px] bg-white border border-gray-200 rounded-2xl py-14 flex flex-col items-center justify-center text-center mb-5">
+                        className="max-h-[800px] bg-white border border-gray-200 rounded-2xl py-14 flex flex-col items-center justify-center text-center mb-5">
                         <File className="w-8 h-8 text-gray-200 mb-3"/>
                         <p className="text-sm font-medium text-gray-400">No study material found</p>
                     </div>

@@ -17,13 +17,13 @@ const AdminDashboard = () => {
         {
             id: 'users',
             icon: <UserCog className="w-5 h-5" />,
-            label: 'Manage Users',
+            label: 'Users',
             path: '/dashboard/admin/users'
         },
         {
             id: 'mentorship',
             icon: <BookSearch className="w-5 h-5" />,
-            label: 'Manage Mentorship',
+            label: 'Mentorship',
             path: '/dashboard/admin/mentorship'
         },
     ];
