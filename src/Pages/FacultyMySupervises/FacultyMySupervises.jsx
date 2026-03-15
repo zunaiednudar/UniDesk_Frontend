@@ -7,9 +7,12 @@ import PaginationTemplate from '../../Components/PaginationTemplate/PaginationTe
 import { BookOpen, Briefcase, Check, MessageCircle, Search, Settings } from 'lucide-react';
 import formatName from '../../utils/formatName.js';
 import EmptyState from '../../Components/EmptyState/EmptyState.jsx';
+import { useNavigate } from 'react-router';
 
 const FacultyMySupervises = () => {
     const { userData } = useContext(AuthContext);
+
+    const navigate = useNavigate();
 
     // Filtering
     const [search, setSearch] = useState("");
@@ -207,6 +210,28 @@ const FacultyMySupervises = () => {
         if (userData?._id)
             fetchSupervises();
     }, [userData?._id, page, search, relationshipType]);
+
+    // Supervisee inbox redirecting function
+
+    const handleRedirectChatbox=async()=>{
+        handleCloseDetailsModal();
+
+        try {
+            const res = await axiosSecure.post("/conversation", {
+                receiverID: selectedSupervisee?.student?._id
+            });
+
+            const conversationID = res.data.conversation._id;
+
+            navigate(`/dashboard/faculty/chat/${conversationID}`, {
+                state: { receiver: selectedSupervisee?.student }
+            });
+        } catch (error) {
+            navigate(`/dashboard/faculty/chat/new?receiverID=${selectedSupervisee?.student?._id}`, {
+                state: { receiver: selectedSupervisee?.student }
+            });
+        }
+    };
 
     // console.log(activeSupervises, completedSupervises);
 
@@ -559,6 +584,7 @@ const FacultyMySupervises = () => {
                                 <div className="flex gap-3">
                                     <button
                                         className="flex-1 btn bg-[#1E40AF] text-white hover:bg-blue-600 border-none"
+                                        onClick={handleRedirectChatbox}
                                     >
                                         <MessageCircle className="w-4 h-4" />
                                         Message
