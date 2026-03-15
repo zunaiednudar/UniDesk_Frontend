@@ -244,14 +244,15 @@ const UserDetails = () => {
                             </div>
 
                             <div className="flex flex-col lg:flex-row gap-4">
-                                <div>
+                                <div className="flex-1">
                                     <label className="text-xs font-medium text-gray-500 mb-1.5 block">Role</label>
                                     <div className="flex items-center gap-2">
                                         <RoleIcon size={14} className="text-gray-400 shrink-0"/>
                                         <div className={`${readOnlyClass} capitalize`}>{user.role || "—"}</div>
                                     </div>
                                 </div>
-                                <div>
+
+                                <div className="flex-1">
                                     <label className="text-xs font-medium text-gray-500 mb-1.5 block">Department</label>
                                     <div className={`${readOnlyClass} uppercase`}>{user.department || "—"}</div>
                                 </div>
@@ -259,7 +260,7 @@ const UserDetails = () => {
 
                             {user.role === "student" && (
                                 <div className="flex flex-col lg:flex-row gap-4 pt-2 border-t border-gray-100">
-                                    <div>
+                                    <div className="flex-1">
                                         <label className="text-xs font-medium text-gray-500 mb-1.5 block">Student ID</label>
                                         <input
                                             type="text"
@@ -269,7 +270,7 @@ const UserDetails = () => {
                                             placeholder="2001001"
                                         />
                                     </div>
-                                    <div>
+                                    <div className="flex-1">
                                         <label className="text-xs font-medium text-gray-500 mb-1.5 block">Batch</label>
                                         <input
                                             type="text"
@@ -283,37 +284,54 @@ const UserDetails = () => {
                             )}
 
                             {user.role === "faculty" && (
-                                <div className="flex flex-col lg:flex-row gap-4 pt-2 border-t border-gray-100">
-                                    <div>
-                                        <label className="text-xs font-medium text-gray-500 mb-1.5 block">Designation</label>
-                                        <input
-                                            type="text"
-                                            value={user.designation || ""}
-                                            onChange={(e) => setUser(prev => ({...prev, designation: e.target.value}))}
-                                            className={`${inputClass} capitalize`}
-                                            placeholder="Assistant Professor"
-                                        />
+                                <div className="flex flex-col gap-4 pt-2 border-t border-gray-100">
+                                    <div className="flex flex-col lg:flex-row gap-4">
+                                        <div className="flex-1">
+                                            <label className="text-xs font-medium text-gray-500 mb-1.5 block">Designation</label>
+                                            <input
+                                                type="text"
+                                                value={user.designation || ""}
+                                                onChange={(e) => setUser(prev => ({...prev, designation: e.target.value}))}
+                                                className={`${inputClass} capitalize`}
+                                                placeholder="Assistant Professor"
+                                            />
+                                        </div>
+                                        <div className="flex-1">
+                                            <label className="text-xs font-medium text-gray-500 mb-1.5 block">Room No</label>
+                                            <input
+                                                type="text"
+                                                value={user.room || ""}
+                                                onChange={(e) => setUser(prev => ({...prev, room: e.target.value}))}
+                                                className={inputClass}
+                                                placeholder="CSE 201, B-Block"
+                                            />
+                                        </div>
                                     </div>
-                                    <div>
-                                        <label className="text-xs font-medium text-gray-500 mb-1.5 block">Room No</label>
-                                        <input
-                                            type="text"
-                                            value={user.room || ""}
-                                            onChange={(e) => setUser(prev => ({...prev, room: e.target.value}))}
-                                            className={inputClass}
-                                            placeholder="CSE 201, B-Block"
-                                        />
+
+                                    <div className="flex flex-col lg:flex-row gap-4">
+                                        <div className="flex-1">
+                                            <label className="text-xs font-medium text-gray-500 mb-1.5 block">Phone</label>
+                                            <input
+                                                type="text"
+                                                value={user.phone || ""}
+                                                onChange={(e) => setUser(prev => ({...prev, phone: e.target.value}))}
+                                                className={inputClass}
+                                                placeholder="+880..."
+                                            />
+                                        </div>
+
+                                        <div className="flex-1">
+                                            <label className="text-xs font-medium text-gray-500 mb-1.5 block">Research Interests</label>
+                                            <input
+                                                type="text"
+                                                value={user.researchInterests?.join(", ") || ""}
+                                                onChange={(e) => setUser(prev => ({...prev, researchInterests: e.target.value.split(",").map(s => s.trim())}))}
+                                                className={inputClass}
+                                                placeholder="AI, Machine Learning, NLP"
+                                            />
+                                        </div>
                                     </div>
-                                    <div>
-                                        <label className="text-xs font-medium text-gray-500 mb-1.5 block">Phone</label>
-                                        <input
-                                            type="text"
-                                            value={user.phone || ""}
-                                            onChange={(e) => setUser(prev => ({...prev, phone: e.target.value}))}
-                                            className={inputClass}
-                                            placeholder="+880..."
-                                        />
-                                    </div>
+
                                     <div className="col-span-2">
                                         <label className="text-xs font-medium text-gray-500 mb-1.5 block">Biography</label>
                                         <textarea
@@ -324,16 +342,7 @@ const UserDetails = () => {
                                             placeholder="Short bio..."
                                         />
                                     </div>
-                                    <div className="col-span-2">
-                                        <label className="text-xs font-medium text-gray-500 mb-1.5 block">Research Interests</label>
-                                        <input
-                                            type="text"
-                                            value={user.researchInterests?.join(", ") || ""}
-                                            onChange={(e) => setUser(prev => ({...prev, researchInterests: e.target.value.split(",").map(s => s.trim())}))}
-                                            className={inputClass}
-                                            placeholder="AI, Machine Learning, NLP"
-                                        />
-                                    </div>
+
                                 </div>
                             )}
                         </div>
