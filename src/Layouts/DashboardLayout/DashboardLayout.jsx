@@ -1,8 +1,9 @@
-import React, {useEffect, useState} from 'react';
-import {NavLink, Outlet, useLocation} from 'react-router';
+import React, { useEffect, useState } from 'react';
+import { NavLink, Outlet, useLocation } from 'react-router';
 import SidebarDashboard from "../../Components/SidebarDashboard/SidebarDashboard.jsx";
-import {Bell, PanelLeft, Check } from "lucide-react";
+import { Bell, PanelLeft, Check } from "lucide-react";
 import { useNotifications } from '../../utils/hooks/useNotifications.js';
+import { useNotificationClick } from '../../utils/hooks/useNotificationClick.js'
 
 const DashboardLayout = ({ menuItems, role }) => {
     const { notifications, unreadCount, todayNotifs, historyNotifs, markAllRead, markRead } = useNotifications();
@@ -41,10 +42,12 @@ const DashboardLayout = ({ menuItems, role }) => {
     );
     const formattedPath = filteredSegments.map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1)).join(" / ");
 
+    const handleNotificationClick = useNotificationClick(markRead);
+
     return (
         <div className="gilroy flex h-dvh">
             {/* Sidebar */}
-             <SidebarDashboard menuItems={menuItems} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} toggleSidebar={toggleSidebar} isMobile={isMobile} role={role} />
+            <SidebarDashboard menuItems={menuItems} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} toggleSidebar={toggleSidebar} isMobile={isMobile} role={role} />
 
             {/* Main Content */}
             <main className="flex flex-col flex-1 gap-2 w-full overflow-y-auto">
@@ -58,7 +61,7 @@ const DashboardLayout = ({ menuItems, role }) => {
                                 </button>
                             )}
 
-                            <span className={`pb-0.5 pl-2 graphik text-gray-500 text-md capitalize ${isSidebarOpen? "ml-10" : ""}`}>{formattedPath}</span>
+                            <span className={`pb-0.5 pl-2 graphik text-gray-500 text-md capitalize ${isSidebarOpen ? "ml-10" : ""}`}>{formattedPath}</span>
                         </div>
 
                         {/* Notification icon */}
@@ -68,8 +71,8 @@ const DashboardLayout = ({ menuItems, role }) => {
 
                                 {unreadCount > 0 && (
                                     <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
-                                    {unreadCount > 9 ? "9+" : unreadCount}
-                            </span>
+                                        {unreadCount > 9 ? "9+" : unreadCount}
+                                    </span>
                                 )}
                             </button>
 
@@ -95,7 +98,7 @@ const DashboardLayout = ({ menuItems, role }) => {
                                             {todayNotifs.map(n => (
                                                 <div
                                                     key={n.id}
-                                                    onClick={() => markRead(n.id, n._id)}
+                                                    onClick={() => handleNotificationClick(n)}
                                                     className={`flex items-start gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 transition border-b border-gray-50 ${!n.read ? 'bg-blue-50/50' : ''}`}>
                                                     <div className={`mt-1 w-2 h-2 rounded-full shrink-0 ${!n.read ? 'bg-blue-500' : 'bg-transparent'}`} />
                                                     <div className="flex-1 min-w-0">
@@ -117,7 +120,7 @@ const DashboardLayout = ({ menuItems, role }) => {
                                             {historyNotifs.map(n => (
                                                 <div
                                                     key={n.id}
-                                                    onClick={() => markRead(n.id, n._id)}
+                                                    onClick={() => handleNotificationClick(n)}
                                                     className={`flex items-start gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 transition border-b border-gray-50 ${!n.read ? 'bg-blue-50/50' : ''}`}>
                                                     <div className={`mt-1 w-2 h-2 rounded-full shrink-0 ${!n.read ? 'bg-blue-500' : 'bg-transparent'}`} />
                                                     <div className="flex-1 min-w-0">

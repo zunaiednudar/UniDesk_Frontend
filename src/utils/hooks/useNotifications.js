@@ -38,7 +38,8 @@ export const useNotifications = () => {
                 message: notification.message,
                 time: timeAgo(notification.createdAt),
                 read: notification.isRead,
-                today: isToday(notification.createdAt)
+                today: isToday(notification.createdAt),
+                redirectURL: notification.redirectURL
             }));
 
             startTransition(() => {

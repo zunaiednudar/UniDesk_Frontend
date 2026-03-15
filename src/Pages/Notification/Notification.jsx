@@ -2,13 +2,16 @@ import React from "react";
 import { Bell, Check } from "lucide-react";
 import { useNotifications } from "../../utils/hooks/useNotifications.js";
 import CardSkeleton from "../../Components/CardSkeleton/CardSkeleton.jsx";
+import useNotificationClick from "../../utils/hooks/useNotificationClick.js";
 
 const Notifications = () => {
     const { notifications, unreadCount, todayNotifs, historyNotifs, markAllRead, markRead, loading } = useNotifications();
 
+    const handleNotificationClick = useNotificationClick(markRead);
+
     const NotificationRow = ({ n }) => (
         <div
-            onClick={() => !n.read && markRead(n.id, n._id)}
+            onClick={() => handleNotificationClick(n)}
             className={`flex flex-col md:flex-row items-start gap-4 p-4 rounded-xl transition border cursor-pointer
                 ${!n.read
                 ? 'bg-blue-50/60 border-blue-100 hover:bg-blue-50'

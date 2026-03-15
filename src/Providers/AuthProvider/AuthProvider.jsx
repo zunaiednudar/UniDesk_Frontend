@@ -98,7 +98,8 @@ const AuthProvider = ({ children }) => {
     // Socket io
 
     useEffect(() => {
-        if (!userData?._id) return;
+        if (!userData?._id) 
+            return;
 
         const joinRoom = () => {
             socket.emit("join", userData._id.toString());
