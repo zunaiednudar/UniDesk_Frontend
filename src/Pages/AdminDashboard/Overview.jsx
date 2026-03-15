@@ -176,7 +176,7 @@ const Overview = () => {
             <div className="gilroy space-y-6">
                 {/* Page title */}
                 <div>
-                    <h1 className="graphik text-3xl font-semibold text-gray-900">Courses</h1>
+                    <h1 className="graphik text-3xl font-semibold text-gray-900">Courses Overview</h1>
                     <p className="text-sm text-gray-400 mt-1">
                         Browse and inspect all courses across departments
                     </p>

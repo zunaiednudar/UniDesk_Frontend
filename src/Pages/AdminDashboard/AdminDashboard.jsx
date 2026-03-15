@@ -11,7 +11,7 @@ const AdminDashboard = () => {
         {
             id: 'overview',
             icon: <ChartPie className="w-5 h-5" />,
-            label: 'Overview',
+            label: 'Courses',
             path: '/dashboard/admin/overview'
         },
         {
