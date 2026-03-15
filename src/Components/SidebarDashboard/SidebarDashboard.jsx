@@ -1,9 +1,10 @@
-import {NavLink, useLocation, useNavigate} from "react-router";
+import { NavLink, useLocation, useNavigate } from "react-router";
 import React, { useContext } from "react";
 import { Bell, GraduationCap, Moon, UserRound, PanelLeft, PanelRight, LayoutDashboard, LibraryBig } from "lucide-react";
-import {AuthContext} from "../../Providers/AuthProvider/AuthProvider.jsx";
+import { AuthContext } from "../../Providers/AuthProvider/AuthProvider.jsx";
 import DefaultProfile from "../../assets/default-profile.png";
-import {toast} from "sonner";
+import { toast } from "sonner";
+import { IoChatboxEllipsesOutline } from "react-icons/io5";
 
 const SidebarDashboard = ({ menuItems, isSidebarOpen, setIsSidebarOpen, toggleSidebar, isMobile, role }) => {
     const { userData, logout } = useContext(AuthContext);
@@ -81,6 +82,13 @@ const SidebarDashboard = ({ menuItems, isSidebarOpen, setIsSidebarOpen, toggleSi
                         <div className="flex flex-col items-center gap-2">
                             <NavLink to={`/dashboard/${role}`} className={({ isActive }) => isActive ? activeClass : normalClass} end>
                                 <LayoutDashboard className="w-5 h-5" />
+                            </NavLink>
+
+                            <NavLink
+                                to={`/dashboard/${role}/chat`}
+                                className={({ isActive }) => (isActive ? activeClass : normalClass)}
+                            >
+                                <IoChatboxEllipsesOutline className="w-5 h-5" />
                             </NavLink>
 
                             {userData && (
