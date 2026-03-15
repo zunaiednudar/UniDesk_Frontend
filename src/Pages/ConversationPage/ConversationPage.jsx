@@ -131,7 +131,7 @@ const ConversationPage = () => {
         if (!newMessage.trim())
             return;
 
-        const messageToSend=newMessage;
+        const messageToSend = newMessage;
         setNewMessage("");
 
         try {
@@ -240,6 +240,26 @@ const ConversationPage = () => {
         return () => socket.off("messageSeen");
     }, [id, userData?._id]);
 
+    // Message render for links
+
+    const renderMessage = (content) => {
+
+        const urlRegex = /(https?:\/\/[^\s]+)/g;
+        const parts = content.split(urlRegex);
+
+        return parts.map((part, i) =>
+            urlRegex.test(part) ? (
+                <a key={i} href={part} target="_blank" rel="noopener noreferrer"
+                    className="underline break-all hover:opacity-80"
+                >
+                    {part}
+                </a>
+            ) : (
+                <span key={i}>{part}</span>
+            )
+        );
+    };
+
     return (
         <div className="flex flex-col h-[85vh] bg-white rounded-3xl gilroy shadow-xl overflow-hidden">
 
@@ -317,7 +337,7 @@ const ConversationPage = () => {
                                         }
                                         <div className={`flex flex-col gap-1 max-w-[70%] ${isSender ? "items-end" : "items-start"}`}>
                                             <div className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed shadow-sm ${isSender ? "bg-blue-600 text-white rounded-br-md" : "bg-white text-gray-800 rounded-bl-md border border-gray-100"}`}>
-                                                {m.content}
+                                                {renderMessage(m.content)}
                                             </div>
                                             <div className="flex items-center gap-1 px-1">
                                                 <span className="text-[10px] text-gray-400">
