@@ -27,6 +27,7 @@ const AuthProvider = ({ children }) => {
     };
 
     const logout = () => {
+        socket.disconnect();
         return signOut(auth);
     };
 
