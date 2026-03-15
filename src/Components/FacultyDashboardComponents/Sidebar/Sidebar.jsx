@@ -1,6 +1,7 @@
 import { GraduationCap, LibraryBig, Moon, PanelLeft, PanelRight } from "lucide-react";
 import React, { useRef } from "react";
 import { HiOutlineBookOpen } from "react-icons/hi";
+import { IoChatboxEllipsesOutline } from "react-icons/io5";
 import { MdOutlineCalendarMonth, MdOutlineCalendarToday, MdOutlineDashboard, MdPeopleOutline } from "react-icons/md";
 import { FiActivity } from "react-icons/fi";
 import { NavLink, useLocation, useNavigate } from "react-router";
@@ -128,6 +129,13 @@ const Sidebar = ({ logout, userData, isSidebarOpen, setIsSidebarOpen, toggleSide
                                 end
                             >
                                 <MdOutlineDashboard className="w-5 h-5" />
+                            </NavLink>
+
+                            <NavLink
+                                to="/dashboard/faculty/chat"
+                                className={({ isActive }) => (isActive ? activeClass : normalClass)}
+                            >
+                                <IoChatboxEllipsesOutline  className="w-5 h-5" />
                             </NavLink>
 
                             <NavLink

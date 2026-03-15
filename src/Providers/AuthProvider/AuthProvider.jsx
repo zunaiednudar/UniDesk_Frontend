@@ -2,6 +2,7 @@ import React, { createContext, useEffect, useState } from 'react';
 import { auth } from "../../Firebase/firebase.init.js";
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup, updateProfile, onAuthStateChanged, sendPasswordResetEmail, deleteUser } from "firebase/auth";
 import { fetchUserData } from '../../utils/fetchUserData.js';
+import socket from '../../utils/socket.js';
 
 export const AuthContext = createContext();
 
@@ -26,6 +27,7 @@ const AuthProvider = ({ children }) => {
     };
 
     const logout = () => {
+        socket.disconnect();
         return signOut(auth);
     };
 
@@ -92,6 +94,26 @@ const AuthProvider = ({ children }) => {
         });
         return () => unsubscribe();
     }, []);
+
+    // Socket io
+
+    useEffect(() => {
+        if (!userData?._id) return;
+
+        const joinRoom = () => {
+            socket.emit("join", userData._id.toString());
+        };
+
+        if (!socket.connected) 
+            socket.connect();
+        if (socket.connected) 
+            joinRoom();
+
+        socket.on("connect", joinRoom);
+
+        return () => socket.off("connect", joinRoom);
+
+    }, [userData?._id]);
 
 
     // Authentication Data

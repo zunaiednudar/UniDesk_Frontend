@@ -124,7 +124,7 @@ const FacultyDashboard = () => {
 
                 const res = await axiosSecure.get("/submission/faculty/pending");
 
-                console.log(res.data.assignments);
+                // console.log(res.data.assignments);
 
                 setAssignments(res.data.assignments);
             } catch (error) {
