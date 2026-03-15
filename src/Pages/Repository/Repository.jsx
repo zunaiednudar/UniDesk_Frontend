@@ -8,7 +8,7 @@ import {
     Search,
     File,
     FileImage, FileText,
-    Calendar, Download, UsersRound, BookCheck, Trash2, Check
+    Calendar, Download, UsersRound, BookCheck, Trash2, Check, X
 } from 'lucide-react';
 import {
     Chart as ChartJS,
@@ -84,7 +84,7 @@ const fileTypeConfig = {
 
 const defaultFileType = {icon: File, bg: "bg-gray-100", text: "text-gray-500", label: "File"};
 
-const ItemCard = ({id, item, onDownload, onView, onDelete, onApprove, isAdmin = false}) => {
+const ItemCard = ({id, item, onDownload, onDelete, onApprove, onReject, isAdmin = false}) => {
     const extension = item.url?.split(".").pop().split("?")[0].toLowerCase() ?? "";
     const fileConfig = fileTypeConfig[extension] ?? defaultFileType;
     const FileIcon = fileConfig.icon;
@@ -168,46 +168,52 @@ const ItemCard = ({id, item, onDownload, onView, onDelete, onApprove, isAdmin = 
                     </div>
                 </div>
 
-                <div className="flex flex-col lg:flex-row items-center gap-1.5">
-                    {/*<button*/}
-                    {/*    onClick={() => {*/}
-                    {/*        onView?.(item);*/}
-                    {/*    }}*/}
-                    {/*    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition">*/}
-                    {/*    <Eye className="w-3.5 h-3.5" />*/}
-                    {/*    View*/}
-                    {/*</button>*/}
-
-                    <button
-                        onClick={() => {
-                            onDownload?.(item);
-                        }}
-                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-blue-700 rounded-lg hover:bg-blue-800 transition">
-                        <Download className="w-3.5 h-3.5" />
-                        Download
-                    </button>
-
-                    {((id && item.uploader?._id === id) || isAdmin) && (
+                <div className="flex flex-col items-center gap-1.5">
+                    <div className="flex flex-col lg:flex-row items-center gap-1">
                         <button
                             onClick={() => {
-                                onDelete?.(item);
+                                onDownload?.(item);
                             }}
-                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-orange-700 rounded-lg hover:bg-orange-800 transition">
-                            <Trash2 className="w-3.5 h-3.5" />
-                            Delete
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-blue-700 rounded-lg hover:bg-blue-800 transition">
+                            <Download className="w-3.5 h-3.5" />
+                            Download
                         </button>
-                    )}
 
-                    {isAdmin && item.status !== "approved" && (
-                        <button
-                            onClick={() => {
-                                onApprove?.(item);
-                            }}
-                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-emerald-400 rounded-lg hover:bg-emerald-500 transition">
-                            <Check className="w-3.5 h-3.5" />
-                            Approve
-                        </button>
-                    )}
+                        {((id && item.uploader?._id === id) || isAdmin) && (
+                            <button
+                                onClick={() => {
+                                    onDelete?.(item);
+                                }}
+                                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-orange-700 rounded-lg hover:bg-orange-800 transition">
+                                <Trash2 className="w-3.5 h-3.5" />
+                                Delete
+                            </button>
+                        )}
+                    </div>
+
+                    <div className="flex flex-col lg:flex-row items-center gap-1">
+                        {isAdmin && item.status !== "approved" && item.status !== "rejected" && (
+                            <button
+                                onClick={() => {
+                                    onApprove?.(item);
+                                }}
+                                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-emerald-400 rounded-lg hover:bg-emerald-500 transition">
+                                <Check className="w-3.5 h-3.5" />
+                                Approve
+                            </button>
+                        )}
+
+                        {isAdmin && item.status !== "rejected" && (
+                            <button
+                                onClick={() => {
+                                    onReject?.(item);
+                                }}
+                                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-red-400 rounded-lg hover:bg-red-500 transition">
+                                <X className="w-3.5 h-3.5" />
+                                Reject
+                            </button>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>
@@ -269,6 +275,9 @@ const Repository = () => {
     const [tags, setTags] = useState([]);
     const [tagInput, setTagInput] = useState('');
 
+    const [itemToRejectId, setItemToRejectId] = useState(null);
+    const [rejectionReason, setRejectionReason] = useState('');
+
     const handleTagKeyDown = (e) => {
         if (e.key === 'Enter' || e.key === ',') {
             e.preventDefault();
@@ -314,17 +323,6 @@ const Repository = () => {
         }
     }
 
-    const handleView = (url) => {
-        const ext = url.split('?')[0].split('.').pop().toLowerCase();
-        const imageTypes = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-
-        if (imageTypes.includes(ext)) {
-            window.open(url, '_blank', 'noopener,noreferrer');
-        } else {
-            window.open(`https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`, '_blank', 'noopener,noreferrer');
-        }
-    }
-
     const handleApprove = async (item) => {
          try {
              const data = {
@@ -345,6 +343,28 @@ const Repository = () => {
              toast.error("Item approval failed!");
          }
     }
+
+    const handleReject = async (reason) => {
+        try {
+            const res = await axiosSecure.patch(`/repository/${itemToRejectId}`, {
+                status: "rejected",
+                rejectedReason: reason
+            });
+
+            if (res.status === 200) {
+                toast.success("Item rejected");
+                setRepositoryItems(prev =>
+                    prev.map(i => i._id === itemToRejectId ? { ...i, status: "rejected" } : i)
+                );
+                setStatusFilter("rejected");
+                document.getElementById("reject_modal").close();
+                setItemToRejectId(null);
+                setRejectionReason('');
+            }
+        } catch {
+            toast.error("Rejection failed");
+        }
+    };
 
     useEffect(() => {
         const fetchData = async () => {
@@ -853,13 +873,16 @@ const Repository = () => {
                                     key={repoItem._id}
                                     isAdmin={userData.role === "admin"}
                                     item={repoItem}
-                                    onView={(item) => handleView(item.url)}
                                     onDownload={(item) => handleDownload(item.url, item.title)}
                                     onDelete={(item) => {
                                         setItemToDeleteId(item._id);
                                         document.getElementById('my_modal_2').showModal();
                                     }}
                                     onApprove={(item) => handleApprove(item)}
+                                    onReject={(item) => {
+                                        setItemToRejectId(item._id);
+                                        document.getElementById('reject_modal').showModal();
+                                    }}
                                 />
                             ))}
                         </div>
@@ -1048,6 +1071,44 @@ const Repository = () => {
 
                     <form method="dialog" className="modal-backdrop">
                         <button>close</button>
+                    </form>
+                </dialog>
+
+                {/* Rejection Modal */}
+                <dialog id="reject_modal" className="modal modal-bottom sm:modal-middle">
+                    <div className="modal-box">
+                        <h4 className="text-lg font-semibold text-gray-900 mb-4">Reject Item</h4>
+                        <div>
+                            <label className={labelCls}>Reason</label>
+                            <textarea
+                                rows={4}
+                                value={rejectionReason}
+                                onChange={(e) => setRejectionReason(e.target.value)}
+                                placeholder="Provide a reason for rejection..."
+                                className={inputCls}
+                            />
+                        </div>
+                        <div className="modal-action">
+                            <button
+                                className="btn btn-ghost btn-sm"
+                                onClick={() => {
+                                    document.getElementById("reject_modal").close();
+                                    setItemToRejectId(null);
+                                    setRejectionReason('');
+                                }}
+                            >Cancel</button>
+                            <button
+                                className="btn btn-error btn-sm text-white"
+                                disabled={!rejectionReason.trim()}
+                                onClick={() => handleReject(rejectionReason.trim())}
+                            >Reject</button>
+                        </div>
+                    </div>
+                    <form method="dialog" className="modal-backdrop">
+                        <button onClick={() => {
+                            setItemToRejectId(null);
+                            setRejectionReason('');
+                        }}>close</button>
                     </form>
                 </dialog>
             </div>
