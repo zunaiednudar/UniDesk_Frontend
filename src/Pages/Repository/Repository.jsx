@@ -8,7 +8,7 @@ import {
     Search,
     File,
     FileImage, FileText,
-    Calendar, Download, UsersRound, BookCheck, Trash2
+    Calendar, Download, UsersRound, BookCheck, Trash2, Check
 } from 'lucide-react';
 import {
     Chart as ChartJS,
@@ -84,7 +84,7 @@ const fileTypeConfig = {
 
 const defaultFileType = {icon: File, bg: "bg-gray-100", text: "text-gray-500", label: "File"};
 
-const ItemCard = ({id, item, onDownload, onView, onDelete, isAdmin = false}) => {
+const ItemCard = ({id, item, onDownload, onView, onDelete, onApprove, isAdmin = false}) => {
     const extension = item.url?.split(".").pop().split("?")[0].toLowerCase() ?? "";
     const fileConfig = fileTypeConfig[extension] ?? defaultFileType;
     const FileIcon = fileConfig.icon;
@@ -168,7 +168,7 @@ const ItemCard = ({id, item, onDownload, onView, onDelete, isAdmin = false}) => 
                     </div>
                 </div>
 
-                <div className="flex items-center gap-1.5">
+                <div className="flex flex-col lg:flex-row items-center gap-1.5">
                     {/*<button*/}
                     {/*    onClick={() => {*/}
                     {/*        onView?.(item);*/}
@@ -195,6 +195,17 @@ const ItemCard = ({id, item, onDownload, onView, onDelete, isAdmin = false}) => 
                             className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-orange-700 rounded-lg hover:bg-orange-800 transition">
                             <Trash2 className="w-3.5 h-3.5" />
                             Delete
+                        </button>
+                    )}
+
+                    {isAdmin && item.status !== "approved" && (
+                        <button
+                            onClick={() => {
+                                onApprove?.(item);
+                            }}
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-emerald-400 rounded-lg hover:bg-emerald-500 transition">
+                            <Check className="w-3.5 h-3.5" />
+                            Approve
                         </button>
                     )}
                 </div>
@@ -312,6 +323,27 @@ const Repository = () => {
         } else {
             window.open(`https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`, '_blank', 'noopener,noreferrer');
         }
+    }
+
+    const handleApprove = async (item) => {
+         try {
+             const data = {
+                 status: "approved",
+             };
+
+             const approveRes = await axiosSecure.patch(`/repository/${item._id}`, data);
+
+             if (approveRes.status === 200) {
+                toast.success("Item approved successfully");
+
+                 setRepositoryItems(prev =>
+                     prev.map(i => i._id === item._id ? { ...i, status: "approved" } : i)
+                 );
+                 setStatusFilter("approved");
+             }
+         } catch {
+             toast.error("Item approval failed!");
+         }
     }
 
     useEffect(() => {
@@ -827,6 +859,7 @@ const Repository = () => {
                                         setItemToDeleteId(item._id);
                                         document.getElementById('my_modal_2').showModal();
                                     }}
+                                    onApprove={(item) => handleApprove(item)}
                                 />
                             ))}
                         </div>
