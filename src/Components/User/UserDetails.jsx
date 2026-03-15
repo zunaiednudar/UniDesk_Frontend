@@ -127,7 +127,7 @@ const UserDetails = () => {
             <div className="max-w-2xl mx-auto space-y-6">
 
                 {/* Back + Delete header */}
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
                     <button
                         onClick={() => navigate("/dashboard/admin/users")}
                         className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition"
@@ -243,7 +243,7 @@ const UserDetails = () => {
                                 <p className="text-xs text-gray-400 mb-4">Core academic information</p>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="flex flex-col lg:flex-row gap-4">
                                 <div>
                                     <label className="text-xs font-medium text-gray-500 mb-1.5 block">Role</label>
                                     <div className="flex items-center gap-2">
@@ -258,7 +258,7 @@ const UserDetails = () => {
                             </div>
 
                             {user.role === "student" && (
-                                <div className="grid grid-cols-2 gap-4 pt-2 border-t border-gray-100">
+                                <div className="flex flex-col lg:flex-row gap-4 pt-2 border-t border-gray-100">
                                     <div>
                                         <label className="text-xs font-medium text-gray-500 mb-1.5 block">Student ID</label>
                                         <input
@@ -283,7 +283,7 @@ const UserDetails = () => {
                             )}
 
                             {user.role === "faculty" && (
-                                <div className="grid grid-cols-2 gap-4 pt-2 border-t border-gray-100">
+                                <div className="flex flex-col lg:flex-row gap-4 pt-2 border-t border-gray-100">
                                     <div>
                                         <label className="text-xs font-medium text-gray-500 mb-1.5 block">Designation</label>
                                         <input
