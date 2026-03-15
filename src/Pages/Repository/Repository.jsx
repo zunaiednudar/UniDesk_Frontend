@@ -163,7 +163,9 @@ const ItemCard = ({id, item, onDownload, onDelete, onApprove, onReject, isAdmin 
                     </div>
                     <div className="flex items-center gap-1 text-xs text-gray-400">
                         <ChartNoAxesCombined className="w-3.5 h-3.5" />
-                        <span className="font-medium text-blue-600">{item.contributionPoints ?? 0}</span>
+                        <span className="font-medium text-blue-600">
+                            {item.status === "approved" ? (item.contributionPoints || 10) : 0}
+                        </span>
                         <span>pts</span>
                     </div>
                 </div>
@@ -335,7 +337,7 @@ const Repository = () => {
                 toast.success("Item approved successfully");
 
                  setRepositoryItems(prev =>
-                     prev.map(i => i._id === item._id ? { ...i, status: "approved" } : i)
+                     prev.map(i => i._id === item._id ? { ...i, status: "approved", contributionPoints: 10 } : i)
                  );
                  setStatusFilter("approved");
              }
