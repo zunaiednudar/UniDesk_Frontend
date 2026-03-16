@@ -4,6 +4,7 @@ import timeAgo from "../timeAgo.js";
 import axiosSecure from "../axiosSecure.js";
 import socket from "../socket.js";
 import { formatNotificationType } from "../formatNotification.js";
+import { useLocation } from "react-router";
 
 // Notification from today or not
 
@@ -20,13 +21,14 @@ const isToday = (dateString) => {
 export const useNotifications = () => {
     const { userData } = useContext(AuthContext);
     const [notifications, setNotifications] = useState([]);
-    const [loading,setLoading]=useState(true);
+    const [loading, setLoading] = useState(true);
+    const location = useLocation()
 
     // Fetch notifications function by Zunaied Nudar
 
-    const fetchNotifications = useCallback(async (showLoading=true) => {
+    const fetchNotifications = useCallback(async (showLoading = true) => {
         try {
-            if(showLoading)
+            if (showLoading)
                 setLoading(true);
             const res = await axiosSecure.get("/notifications");
             // console.log("Notifications: ", res);
@@ -48,7 +50,7 @@ export const useNotifications = () => {
 
         } catch (error) {
             // console.log(error);
-        }finally{
+        } finally {
             setLoading(false);
         }
     }, []);
@@ -61,12 +63,18 @@ export const useNotifications = () => {
         if (!userData?._id)
             return;
 
-        const handleNewNotification=()=>fetchNotifications(false);
+        const handleNewNotification = () => fetchNotifications(false);
 
         socket.on("new_notification", handleNewNotification);
 
         return () => socket.off("new_notification", handleNewNotification);
     }, [userData?._id, fetchNotifications]);
+
+    useEffect(() => {
+        const handleUpdate = () => fetchNotifications(false);
+        window.addEventListener("notificationsUpdated", handleUpdate);
+        return () => window.removeEventListener("notificationsUpdated", handleUpdate);
+    }, [fetchNotifications]);
 
     // Mark all as read function by Zunaied Nudar
 
@@ -90,7 +98,13 @@ export const useNotifications = () => {
         }
     }
 
-    const unreadCount = notifications.filter(n => !n.read).length;
+    const unreadCount = notifications.filter(n => {
+        if (!n.read && n.title === "New Message") {
+            if (location.pathname.includes("/chat"))
+                return false;
+        }
+        return !n.read;
+    }).length;
     const todayNotifs = notifications.filter(n => n.today).slice(0, 10);
     const historyNotifs = notifications.filter(n => !n.today).slice(0, 10);
 

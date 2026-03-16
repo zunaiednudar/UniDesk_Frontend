@@ -218,6 +218,20 @@ const ConversationPage = () => {
         if (!id || id === "new" || !userData?._id)
             return;
 
+        const handleNewNotification = () => {
+            axiosSecure.patch(`/notifications/conversation/${id}`).then(() => window.dispatchEvent(new Event("notificationsUpdated"))).catch(() => { });
+        };
+
+        const handleMessageSeen = ({ conversationID }) => {
+            if (conversationID === id)
+                setMessages(prev => prev.map(m => ({ ...m, read: true })));
+        };
+
+        socket.on("new_notification", handleNewNotification);
+        socket.on("messageSeen", handleMessageSeen);
+
+        axiosSecure.patch(`/notifications/conversation/${id}`).then(() => window.dispatchEvent(new Event("notificationsUpdated"))).catch(() => { });
+
         const markSeen = async () => {
             try {
                 await axiosSecure.patch(`/messages/read/${id}`);
@@ -228,16 +242,10 @@ const ConversationPage = () => {
 
         markSeen();
 
-        socket.on("messageSeen", ({ conversationID }) => {
-            if (conversationID === id) {
-                setMessages(prev => prev.map(m => ({
-                    ...m,
-                    read: true
-                })));
-            }
-        });
-
-        return () => socket.off("messageSeen");
+        return () => {
+            socket.off("new_notification", handleNewNotification);
+            socket.off("messageSeen", handleMessageSeen);
+        };
     }, [id, userData?._id]);
 
     // Message render for links
@@ -276,11 +284,25 @@ const ConversationPage = () => {
                 <div className="w-[1px] h-6 bg-gray-200"></div>
 
                 <div className="relative">
-                    <img
-                        src={chatTarget?.photoURL}
-                        alt="avatar"
-                        className="w-10 h-10 rounded-2xl object-cover ring-2 ring-gray-100"
-                    />
+
+                    <div className="relative w-10 h-10">
+                        <div className="absolute inset-0 w-10 h-10 rounded-2xl bg-blue-100 flex items-center justify-center">
+                            <span className="text-blue-600 font-bold text-sm">
+                                {chatTarget?.name?.[0]?.toUpperCase()}
+                            </span>
+                        </div>
+
+                        <img
+                            src={chatTarget?.photoURL}
+                            className="absolute inset-0 w-10 h-10 rounded-2xl object-cover ring-2 ring-gray-100 opacity-0"
+                            onLoad={(e) => {
+                                e.target.classList.replace("opacity-0", "opacity-100");
+                                e.target.previousSibling.style.display = "none";
+                            }}
+                            onError={(e) => e.target.style.display = "none"}
+                        />
+                    </div>
+
                     <span className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full ring-2 ring-white ${isOnline ? "bg-green-400" : "bg-gray-300"}`}></span>
                 </div>
 
@@ -312,10 +334,23 @@ const ConversationPage = () => {
                         messages.length === 0 ? (
                             <div className="h-full flex flex-col items-center justify-center text-center p-10">
                                 <div className="w-20 h-20 rounded-3xl overflow-hidden mb-4 shadow-md ring-4 ring-white">
-                                    <img
-                                        src={chatTarget?.photoURL || "/default-avatar.png"}
-                                        className="w-full h-full object-cover grayscale opacity-60"
-                                    />
+                                    <div className="relative w-full h-full">
+                                        <div className="absolute inset-0 w-full h-full rounded-2xl bg-blue-100 flex items-center justify-center">
+                                            <span className="text-blue-600 font-bold text-2xl">
+                                                {chatTarget?.name?.[0]?.toUpperCase()}
+                                            </span>
+                                        </div>
+
+                                        <img
+                                            src={chatTarget?.photoURL}
+                                            className="absolute inset-0 w-full h-full rounded-2xl object-cover ring-2 ring-gray-100 opacity-0"
+                                            onLoad={(e) => {
+                                                e.target.classList.replace("opacity-0", "opacity-100");
+                                                e.target.previousSibling.style.display = "none";
+                                            }}
+                                            onError={(e) => e.target.style.display = "none"}
+                                        />
+                                    </div>
                                 </div>
                                 <h4 className="font-semibold text-gray-400 text-base mb-1">No messages yet</h4>
                                 <p className="text-xs text-gray-400">
@@ -329,10 +364,22 @@ const ConversationPage = () => {
                                     <div key={i} className={`flex items-end gap-2 ${isSender ? "flex-row-reverse" : "flex-row"}`}>
                                         {
                                             !isSender && (
-                                                <img
-                                                    src={chatTarget?.photoURL || "/default-avatar.png"}
-                                                    className="w-7 h-7 rounded-xl object-cover shrink-0 mb-1"
-                                                />
+                                                <div className="relative w-7 h-7 shrink-0 mb-1">
+                                                    <div className="absolute inset-0 rounded-xl bg-blue-100 flex items-center justify-center">
+                                                        <span className="text-blue-600 font-bold text-xs">
+                                                            {chatTarget?.name?.[0]?.toUpperCase()}
+                                                        </span>
+                                                    </div>
+                                                    <img
+                                                        src={chatTarget?.photoURL}
+                                                        className="absolute inset-0 w-7 h-7 rounded-xl object-cover opacity-0"
+                                                        onLoad={(e) => {
+                                                            e.target.classList.replace("opacity-0", "opacity-100");
+                                                            e.target.previousSibling.style.display = "none";
+                                                        }}
+                                                        onError={(e) => e.target.style.display = "none"}
+                                                    />
+                                                </div>
                                             )
                                         }
                                         <div className={`flex flex-col gap-1 max-w-[70%] ${isSender ? "items-end" : "items-start"}`}>
@@ -367,10 +414,22 @@ const ConversationPage = () => {
                 {
                     isTyping && (
                         <div className="flex items-end gap-2">
-                            <img
-                                src={chatTarget?.photoURL}
-                                className="w-7 h-7 rounded-xl object-cover shrink-0"
-                            />
+                            <div className="relative w-7 h-7 shrink-0 mb-1">
+                                <div className="absolute inset-0 rounded-xl bg-blue-100 flex items-center justify-center">
+                                    <span className="text-blue-600 font-bold text-xs">
+                                        {chatTarget?.name?.[0]?.toUpperCase()}
+                                    </span>
+                                </div>
+                                <img
+                                    src={chatTarget?.photoURL}
+                                    className="absolute inset-0 w-7 h-7 rounded-xl object-cover opacity-0"
+                                    onLoad={(e) => {
+                                        e.target.classList.replace("opacity-0", "opacity-100");
+                                        e.target.previousSibling.style.display = "none";
+                                    }}
+                                    onError={(e) => e.target.style.display = "none"}
+                                />
+                            </div>
                             <div className="bg-white border border-gray-100 rounded-2xl rounded-bl-md px-4 py-3 shadow-sm flex gap-1 items-center">
                                 <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></span>
                                 <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></span>
