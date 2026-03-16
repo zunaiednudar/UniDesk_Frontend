@@ -212,7 +212,7 @@ export const router = createBrowserRouter([
                 Component:FacultyMySchedule
             },
             {
-                path:"courses/:id",
+                path:"courses/:id/details",
                 Component:FacultyCourseDetails
             },
             {
@@ -226,6 +226,10 @@ export const router = createBrowserRouter([
             {
                 path:"chat/:id",
                 Component:ConversationPage
+            },
+            {
+                path: "notifications",
+                Component:Notification
             }
         ]
     },

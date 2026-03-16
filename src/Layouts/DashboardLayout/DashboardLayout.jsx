@@ -1,10 +1,12 @@
-import React, {useEffect, useState} from 'react';
-import {NavLink, Outlet, useLocation} from 'react-router';
+import React, { useEffect, useState } from 'react';
+import { NavLink, Outlet, useLocation } from 'react-router';
 import SidebarDashboard from "../../Components/SidebarDashboard/SidebarDashboard.jsx";
-import {Bell, PanelLeft, Check } from "lucide-react";
-import axiosSecure from "../../utils/axiosSecure.js";
+import { Bell, PanelLeft, Check } from "lucide-react";
+import { useNotifications } from '../../utils/hooks/useNotifications.js';
+import { useNotificationClick } from '../../utils/hooks/useNotificationClick.js'
 
 const DashboardLayout = ({ menuItems, role }) => {
+    const { notifications, unreadCount, todayNotifs, historyNotifs, markAllRead, markRead } = useNotifications();
     const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
 
     const [isSidebarOpen, setIsSidebarOpen] = useState(
@@ -30,97 +32,6 @@ const DashboardLayout = ({ menuItems, role }) => {
 
     const iconBtnClass = "hover:bg-gray-200 p-2 rounded-lg transition cursor-pointer";
 
-    const [notifications, setNotifications] = useState([]);
-
-    const timeAgo = (dateString) => {
-        const now = new Date();
-        const past = new Date(dateString);
-
-        const diffInSeconds = Math.floor((now - past) / 1000);
-
-        if (diffInSeconds < 60) return "Just now";
-
-        const diffInMinutes = Math.floor(diffInSeconds / 60);
-        if (diffInMinutes < 60)
-            return `${diffInMinutes} min${diffInMinutes > 1 ? "s" : ""} ago`;
-
-        const diffInHours = Math.floor(diffInMinutes / 60);
-        if (diffInHours < 24)
-            return `${diffInHours} hr${diffInHours > 1 ? "s" : ""} ago`;
-
-        const diffInDays = Math.floor(diffInHours / 24);
-        if (diffInDays < 7)
-            return `${diffInDays} day${diffInDays > 1 ? "s" : ""} ago`;
-
-        const diffInWeeks = Math.floor(diffInDays / 7);
-        if (diffInWeeks < 4)
-            return `${diffInWeeks} week${diffInWeeks > 1 ? "s" : ""} ago`;
-
-        const diffInMonths = Math.floor(diffInDays / 30);
-        if (diffInMonths < 12)
-            return `${diffInMonths} month${diffInMonths > 1 ? "s" : ""} ago`;
-
-        const diffInYears = Math.floor(diffInDays / 365);
-        return `${diffInYears} year${diffInYears > 1 ? "s" : ""} ago`;
-    };
-
-    useEffect(() => {
-        const fetchNotifications = async () => {
-            try {
-                const res = await axiosSecure.get("/notifications");
-                console.log("Notifications: ", res);
-
-                const isToday = (dateString) => {
-                    const created = new Date(dateString);
-                    const today = new Date();
-
-                    return (
-                        created.getFullYear() === today.getFullYear() &&
-                        created.getMonth() === today.getMonth() &&
-                        created.getDate() === today.getDate()
-                    );
-                };
-
-                const formattedNotifications = (res.data.notifications || []).map((notification, index) => ({
-                    id: index + 1,
-                    _id: notification._id,
-                    title: notification.type,
-                    message: notification.message,
-                    time: timeAgo(notification.createdAt),
-                    read: notification.isRead,
-                    today: isToday(notification.createdAt)
-                }));
-                setNotifications(formattedNotifications);
-            } catch (error) {
-                console.log(error);
-            }
-        }
-
-        fetchNotifications();
-    }, []);
-
-    const unreadCount = notifications.filter(n => !n.read).length;
-    const todayNotifs = notifications.filter(n => n.today).slice(0, 10);
-    const historyNotifs = notifications.filter(n => !n.today).slice(0, 10);
-
-    const markAllRead = async () => {
-        try {
-            await axiosSecure.patch("/notifications/all");
-            setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-        } catch (error) {
-            console.log(error);
-        }
-    }
-
-    const markRead = async (id, _id) => {
-        try {
-            await axiosSecure.patch(`/notifications/${_id}`);
-            setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
-        } catch (error) {
-            console.log(error);
-        }
-    }
-
     const location = useLocation();
     const isNotificationsPage = location.pathname.includes("notifications");
 
@@ -131,10 +42,12 @@ const DashboardLayout = ({ menuItems, role }) => {
     );
     const formattedPath = filteredSegments.map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1)).join(" / ");
 
+    const handleNotificationClick = useNotificationClick(markRead);
+
     return (
         <div className="gilroy flex h-dvh">
             {/* Sidebar */}
-             <SidebarDashboard menuItems={menuItems} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} toggleSidebar={toggleSidebar} isMobile={isMobile} role={role} />
+            <SidebarDashboard menuItems={menuItems} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} toggleSidebar={toggleSidebar} isMobile={isMobile} role={role} />
 
             {/* Main Content */}
             <main className="flex flex-col flex-1 gap-2 w-full overflow-y-auto">
@@ -148,7 +61,7 @@ const DashboardLayout = ({ menuItems, role }) => {
                                 </button>
                             )}
 
-                            <span className={`pb-0.5 pl-2 graphik text-gray-500 text-md capitalize ${isSidebarOpen? "ml-10" : ""}`}>{formattedPath}</span>
+                            <span className={`pb-0.5 pl-2 graphik text-gray-500 text-md capitalize ${isSidebarOpen ? "ml-10" : ""}`}>{formattedPath}</span>
                         </div>
 
                         {/* Notification icon */}
@@ -158,8 +71,8 @@ const DashboardLayout = ({ menuItems, role }) => {
 
                                 {unreadCount > 0 && (
                                     <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
-                                    {unreadCount > 9 ? "9+" : unreadCount}
-                            </span>
+                                        {unreadCount > 9 ? "9+" : unreadCount}
+                                    </span>
                                 )}
                             </button>
 
@@ -168,7 +81,7 @@ const DashboardLayout = ({ menuItems, role }) => {
                                 <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
                                     <span className="text-sm font-semibold text-gray-800">Notifications</span>
                                     {unreadCount > 0 && (
-                                        <button onClick={markAllRead} className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 transition font-medium">
+                                        <button onClick={markAllRead} className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 transition font-medium cursor-pointer">
                                             <Check className="w-3 h-3" />
                                             Mark all read
                                         </button>
@@ -185,8 +98,8 @@ const DashboardLayout = ({ menuItems, role }) => {
                                             {todayNotifs.map(n => (
                                                 <div
                                                     key={n.id}
-                                                    onClick={() => markRead(n.id, n._id)}
-                                                    className={`flex items-start gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 transition border-b border-gray-50 ${!n.read ? 'bg-blue-50/50' : ''}`}>
+                                                    onClick={() => handleNotificationClick(n)}
+                                                    className={`flex items-start gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 transition border-b border-gray-50 ${!n.read ? 'bg-blue-50/50' : ''} cursor-pointer`}>
                                                     <div className={`mt-1 w-2 h-2 rounded-full shrink-0 ${!n.read ? 'bg-blue-500' : 'bg-transparent'}`} />
                                                     <div className="flex-1 min-w-0">
                                                         <p className={`text-xs font-semibold truncate ${!n.read ? 'text-gray-900' : 'text-gray-600'}`}>{n.title}</p>
@@ -207,7 +120,7 @@ const DashboardLayout = ({ menuItems, role }) => {
                                             {historyNotifs.map(n => (
                                                 <div
                                                     key={n.id}
-                                                    onClick={() => markRead(n.id, n._id)}
+                                                    onClick={() => handleNotificationClick(n)}
                                                     className={`flex items-start gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 transition border-b border-gray-50 ${!n.read ? 'bg-blue-50/50' : ''}`}>
                                                     <div className={`mt-1 w-2 h-2 rounded-full shrink-0 ${!n.read ? 'bg-blue-500' : 'bg-transparent'}`} />
                                                     <div className="flex-1 min-w-0">
