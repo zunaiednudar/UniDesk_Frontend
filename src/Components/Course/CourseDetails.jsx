@@ -12,6 +12,8 @@ import formatName from "../../utils/formatName.js";
 import {AuthContext} from "../../Providers/AuthProvider/AuthProvider.jsx";
 import CourseFilesDrawer from "../../Components/Course/CourseFilesDrawer.jsx";
 import {toast} from "sonner";
+import EmptyState from "../../Components/EmptyState/EmptyState.jsx";
+import SectionHeader from "../../Components/SectionHeader/SectionHeader.jsx";
 
 const statusBadgeConfig = {
     active: {badge: 'bg-green-100 text-green-700 border border-green-200', dot: 'bg-green-500'},
@@ -42,13 +44,6 @@ const SectionTitle = ({icon: Icon, title, iconBg, iconColor, action}) => (
         </div>
         <h2 className="text-sm font-bold text-gray-900">{title}</h2>
         {action && <div className="ml-auto">{action}</div>}
-    </div>
-);
-
-const EmptyState = ({message}) => (
-    <div className="flex flex-col items-center py-8 text-gray-400 text-sm gap-2">
-        <AlertCircle size={24} className="text-gray-200"/>
-        {message}
     </div>
 );
 
@@ -152,7 +147,7 @@ const CourseDetails = () => {
                         name: raw.courseName,
                         description: raw.description,
                         session: raw.session,
-                        department: raw.department,
+                        department: raw.department.toUpperCase(),
                         year: raw.year,
                         semester: raw.semester,
                         faculties: populatedFaculties.map(f => ({
@@ -319,20 +314,15 @@ const CourseDetails = () => {
                 {/* Assignments — spans 2 cols */}
                 <div className="lg:col-span-2 lg:row-span-2 overflow-y-auto">
                     <SectionCard>
-                        <SectionTitle
+                        <SectionHeader
                             icon={ClipboardCheck}
                             title="Assignments"
                             iconBg="bg-orange-50"
                             iconColor="text-orange-500"
-                            action={
-                                pendingCount > 0 && (
-                                    <span
-                                        className="text-xs font-semibold text-orange-500 bg-orange-50 border border-orange-100 rounded-full px-2 py-0.5">
-                                        {pendingCount} pending
-                                    </span>
-                                )
-                            }
+                            count={pendingCount}
+                            navigate={false}
                         />
+
                         {loading ? (
                             <div className="space-y-3">
                                 {[1, 2, 3].map(i => <div key={i}
@@ -347,7 +337,7 @@ const CourseDetails = () => {
                                     const StatusIcon = cfg.icon;
                                     return (
                                         <div key={a.id}
-                                             className={`flex items-center gap-3 p-4 rounded-xl border transition-all duration-150 hover:shadow-sm ${cfg.bg} border-transparent`}>
+                                             className={`flex items-center gap-3 p-4 rounded-xl border transition-all duration-150 hover:shadow-sm ${cfg.bg} border-transparent mt-5`}>
                                             <StatusIcon size={18} className={`${cfg.color} shrink-0`}
                                                         strokeWidth={1.75}/>
                                             <div className="flex-1 min-w-0">
@@ -378,15 +368,17 @@ const CourseDetails = () => {
                     {/* Faculties */}
                     {!loading && course?.faculties?.length > 0 && (
                         <SectionCard>
-                            <SectionTitle
+                            <SectionHeader
                                 icon={GraduationCap}
                                 title="Instructors"
                                 iconBg="bg-purple-50"
                                 iconColor="text-purple-500"
+                                navigate={false}
                             />
-                            <div className="space-y-3">
+
+                            <div className="space-y-3 mt-5">
                                 {course.faculties.map((f, i) => (
-                                    <div key={i} className="flex items-center gap-3">
+                                    <div key={i} className="flex items-center gap-3 mt-5">
                                         <div
                                             className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-100 to-purple-200 flex items-center justify-center shrink-0 overflow-hidden">
                                             {f?.photoURL ? (
@@ -414,13 +406,15 @@ const CourseDetails = () => {
                         {/* Description */}
                         {!loading && course?.description && (
                             <SectionCard>
-                                <SectionTitle
+                                <SectionHeader
                                     icon={BookOpen}
-                                    title="About this Course"
+                                    title="About"
                                     iconBg="bg-gray-100"
                                     iconColor="text-gray-500"
+                                    navigate={false}
                                 />
-                                <p className="text-sm text-gray-600 leading-relaxed">{course.description}</p>
+
+                                <p className="text-sm text-gray-600 leading-relaxed mt-5">{course.description}</p>
                             </SectionCard>
                         )}
                     </div>
@@ -429,14 +423,17 @@ const CourseDetails = () => {
 
             {/* Announcements */}
             <SectionCard className="flex-1">
-                <SectionTitle
+                <SectionHeader
                     icon={Megaphone}
                     title="Announcements"
                     iconBg="bg-blue-50"
                     iconColor="text-blue-500"
+                    count={notices?.length || 0}
+                    navigate={false}
                 />
+
                 {loading ? (
-                    <div className="space-y-3">
+                    <div className="space-y-3 mt-5">
                         {[1, 2].map(i => <div key={i} className="h-16 bg-gray-50 rounded-xl animate-pulse"/>)}
                     </div>
                 ) : notices.length === 0 ? (
@@ -445,7 +442,7 @@ const CourseDetails = () => {
                     <div className="space-y-3">
                         {notices.map(n => (
                             <div key={n.id}
-                                 className="p-3 rounded-xl bg-gray-50 border border-gray-100 hover:border-blue-100 hover:bg-blue-50/30 transition-all duration-150">
+                                 className="p-3 rounded-xl bg-gray-50 border border-gray-100 hover:border-blue-100 hover:bg-blue-50/30 transition-all duration-150 mt-5">
                                 <div className="flex items-start justify-between gap-2 mb-1">
                                     <p className="text-sm font-semibold text-gray-800 leading-snug">{n.title}</p>
                                     <span className="text-[10px] text-gray-400 shrink-0 mt-0.5">{n.time}</span>

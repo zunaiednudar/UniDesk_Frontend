@@ -28,7 +28,7 @@ const Navbar = () => {
                     <NavLink to="/repository" className={({ isActive }) => `${isActive ? activeClass : normalClass}`}>Repository</NavLink>
                 </div>
                 <div className='hidden lg:flex gap-5 items-center'>
-                    <NavLink to="/login" className={({ isActive }) => `${isActive ? activeClass : normalClass}`}>Login</NavLink>
+                    <NavLink to="/login" className={({ isActive }) => `${isActive ? activeClass : normalClass}`}>Log in</NavLink>
                     <button onClick={() => navigate("/signup")} className="bg-[#1E40AF] text-white px-5 py-2 rounded-lg cursor-pointer">Sign up</button>
                 </div>
 
@@ -52,7 +52,7 @@ const Navbar = () => {
                         ${isOpen ? "translate-y-0 opacity-100 max-h-[500px]" : "-translate-y-10 opacity-0 max-h-0 overflow-hidden"}`}>
                     <NavLink onClick={toggleMenu} to="/" className={({ isActive }) => `${isActive ? activeClass : normalClass}`}>Home</NavLink>
                     <NavLink onClick={toggleMenu} to="/repository"  className={({ isActive }) => `${isActive ? activeClass : normalClass}`}>Repository</NavLink>
-                    <NavLink onClick={toggleMenu} to="/login" className={({ isActive }) => `${isActive ? activeClass : normalClass}`}>Login</NavLink>
+                    <NavLink onClick={toggleMenu} to="/login" className={({ isActive }) => `${isActive ? activeClass : normalClass}`}>Log in</NavLink>
                     <button onClick={() => {
                         navigate("/signup");
                         toggleMenu();

@@ -1,30 +1,8 @@
 import { useEffect, useRef } from "react";
 import { Megaphone } from "lucide-react";
-
-const SectionHeader = ({ icon: Icon, title, iconBg, iconColor, count }) => (
-    <div className="flex items-center gap-2.5 mb-5">
-        <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${iconBg}`}>
-            <Icon size={16} className={iconColor} strokeWidth={2} />
-        </div>
-        <h2 className="text-base font-bold text-gray-900">{title}</h2>
-        {count !== undefined && (
-            <span className="ml-1 text-xs font-semibold text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">
-                {count}
-            </span>
-        )}
-    </div>
-);
-
-const SkeletonBlock = ({ className }) => (
-    <div className={`rounded-xl bg-gray-100 animate-pulse ${className}`} />
-);
-
-const EmptyState = ({ message }) => (
-    <div className="flex flex-col items-center py-8 text-gray-400 text-sm">
-        <Megaphone size={28} className="text-gray-200 mb-2" />
-        {message}
-    </div>
-);
+import EmptyState from "../../Components/EmptyState/EmptyState.jsx";
+import SkeletonBlock from "../../Components/SkeletonBlock/SkeletonBlock.jsx";
+import SectionHeader from "../../Components/SectionHeader/SectionHeader.jsx";
 
 const RecentNotices = ({ notices = [], loading }) => {
     const containerRef = useRef(null);
@@ -89,6 +67,8 @@ const RecentNotices = ({ notices = [], loading }) => {
                 title="Recent Announcements"
                 iconBg="bg-red-50"
                 iconColor="text-red-500"
+                seeAllTo=""
+                navigate=""
             />
             {loading ? (
                 <div className="space-y-3">

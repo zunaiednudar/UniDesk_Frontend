@@ -2,10 +2,11 @@ import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
-import { useRef, useState, useEffect, useContext } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import {useRef, useState, useEffect, useContext} from "react";
+import {ChevronLeft, ChevronRight, Calendar} from "lucide-react";
 import axiosSecure from "../../utils/axiosSecure.js";
 import { AuthContext } from "../../Providers/AuthProvider/AuthProvider.jsx";
+import SectionHeader from "../../Components/SectionHeader/SectionHeader.jsx";
 
 const EVENT_TYPES = {
     appointment:  { bg: "#10b981", border: "#059669", light: "#f0fdf4", text: "#065f46" },
@@ -19,7 +20,7 @@ const TYPE_LABELS = {
     assignment:   "Assignment"
 };
 
-const Calendar = () => {
+const CalendarF = () => {
     const { userData } = useContext(AuthContext);
     const calendarRef = useRef(null);
     const [title, setTitle] = useState("");
@@ -30,7 +31,6 @@ const Calendar = () => {
     const getApi = () => calendarRef.current?.getApi();
     const prev    = () => { getApi()?.prev();  setTitle(getApi()?.view.title); };
     const next    = () => { getApi()?.next();  setTitle(getApi()?.view.title); };
-    const goToday = () => { getApi()?.today(); setTitle(getApi()?.view.title); };
 
     useEffect(() => {
         const fetchAll = async () => {
@@ -139,14 +139,14 @@ const Calendar = () => {
     }, [userData]);
 
     return (
-        <div className="gilroy space-y-6 rounded-2xl border border-gray-100 shadow-sm p-6">
-            {/* Page title */}
-            <div className="border-b border-gray-200 py-4">
-                <h1 className="text-base font-bold text-gray-900">Calendar</h1>
-                <p className="text-sm text-gray-400 mt-1">
-                    Track your appointments, announcements, and assignment deadlines
-                </p>
-            </div>
+        <div className="gilroy rounded-2xl border border-gray-100 shadow-sm p-6">
+            <SectionHeader
+                icon={Calendar}
+                title="Calendar"
+                iconBg="bg-purple-50"
+                iconColor="text-purple-500"
+                navigate={false}
+                />
 
             <div className="grid grid-cols-1 gap-6 items-start">
 
@@ -312,4 +312,4 @@ const Calendar = () => {
     );
 };
 
-export default Calendar;
+export default CalendarF;

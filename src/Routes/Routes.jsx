@@ -6,6 +6,7 @@ import SignUp from "../Pages/SignUp/SignUp.jsx";
 import Repository from "../Pages/Repository/Repository.jsx";
 import NotFound from "../Pages/NotFound.jsx/NotFound.jsx";
 
+import DashboardLayout from "../Layouts/DashboardLayout/DashboardLayout.jsx";
 import FacultyDashboardLayout from "../Layouts/FacultyDashboardLayout/FacultyDashboardLayout.jsx"
 import StudentDashboard from "../Pages/StudentDashboard/StudentDashboard.jsx";
 import MyActivity from "../Pages/StudentDashboard/MyActivity.jsx";
@@ -28,56 +29,50 @@ import StudentProfile from "../Pages/Profile/StudentProfile.jsx";
 
 import AdminDashboard from "../Pages/AdminDashboard/AdminDashboard.jsx";
 import Overview from "../Pages/AdminDashboard/Overview.jsx";
-import Users from "../Pages/AdminDashboard/Users.jsx";
+import ManageUsers from "../Pages/AdminDashboard/ManageUsers.jsx";
 import AdminRoute from "../Providers/RoleWiseRoutes/AdminRoute/AdminRoute.jsx";
-import AdminProfile from "../Pages/Profile/AdminProfile.jsx";
-import ChatPage from "../Pages/ChatPage.jsx/ChatPage.jsx";
-import ConversationPage from "../Pages/ConversationPage/ConversationPage.jsx";
+import UserDetails from "../Components/User/UserDetails.jsx";
+import ManageMentorship from "../Pages/AdminDashboard/ManageMentorship.jsx";
+import FacultyDetails from "../Components/FacultyDetails/FacultyDetails.jsx";
 
 export const router = createBrowserRouter([
     {
         path: "/",
-        element: <PublicRoute>
-            <RootLayout></RootLayout>
-        </PublicRoute>,
+        element: (
+            <PublicRoute>
+                <RootLayout />
+            </PublicRoute>
+        ),
         children: [
             {
                 index: true,
-                element: <PublicRoute>
-                    <Home></Home>
-                </PublicRoute>
+                element: <Home />
             },
             {
-                path: "/home",
-                element: <PublicRoute>
-                    <Home></Home>
-                </PublicRoute>
+                path: "home",
+                element: <Home />
             },
             {
-                path: "/login",
-                element: <PublicRoute>
-                    <Login></Login>
-                </PublicRoute>
+                path: "login",
+                element: <Login />
             },
             {
-                path: "/signup",
-                element: <PublicRoute>
-                    <SignUp></SignUp>
-                </PublicRoute>
+                path: "signup",
+                element: <SignUp />
             },
             {
-                path: "/repository",
-                element: <PublicRoute>
-                    <Repository></Repository>
-                </PublicRoute>
+                path: "repository",
+                element: <Repository />
             },
         ]
     },
     {
         path: "/dashboard/student",
-        element: <StudentRoute>
-            <StudentDashboard></StudentDashboard>
-        </StudentRoute>,
+        element: (
+            <StudentRoute>
+                <StudentDashboard />
+            </StudentRoute>
+        ),
         children: [
             {
                 index: true,
@@ -85,67 +80,45 @@ export const router = createBrowserRouter([
             },
             {
                 path: "activity",
-                element: <StudentRoute>
-                    <MyActivity></MyActivity>
-                </StudentRoute>
+                element: <MyActivity />
             },
             {
                 path: "courses",
-                element: <StudentRoute>
-                    <MyCourses></MyCourses>
-                </StudentRoute>
+                element: <MyCourses />
             },
             {
                 path: "assessments",
-                element: <StudentRoute>
-                    <MyAssessments></MyAssessments>
-                </StudentRoute>
+                element: <MyAssessments />
             },
             {
                 path: "ask-mentor",
-                element: <StudentRoute>
-                    <AskMentor></AskMentor>
-                </StudentRoute>
+                element: <AskMentor />
             },
             {
                 path: "profile",
-                element: <StudentRoute>
-                    <StudentProfile></StudentProfile>
-                </StudentRoute>
+                element: <StudentProfile />
             },
             {
                 path: "notifications",
-                element: <StudentRoute>
-                    <Notification></Notification>
-                </StudentRoute>
+                element: <Notification />
             },
             {
                 path: "courses/:id/details",
-                element: <StudentRoute>
-                    <CourseDetails></CourseDetails>
-                </StudentRoute>
+                element: <CourseDetails />
             },
             {
                 path: ":id/repository",
-                element: <StudentRoute>
-                    <Repository></Repository>
-                </StudentRoute>
-            },
-            {
-                path:"chat",
-                Component:ChatPage
-            },
-            {
-                path:"chat/:id",
-                Component:ConversationPage
+                element: <Repository />
             }
         ]
     },
     {
         path: "/dashboard/admin",
-        element: <AdminRoute>
-            <AdminDashboard></AdminDashboard>
-        </AdminRoute>,
+        element: (
+            <AdminRoute>
+                <AdminDashboard />
+            </AdminRoute>
+        ),
         children: [
             {
                 index: true,
@@ -153,27 +126,31 @@ export const router = createBrowserRouter([
             },
             {
                 path: "overview",
-                element: <AdminRoute>
-                    <Overview></Overview>
-                </AdminRoute>
+                element: <Overview />
             },
             {
                 path: "users",
-                element: <AdminRoute>
-                    <Users></Users>
-                </AdminRoute>
+                element: <ManageUsers />
             },
             {
-                path: "profile",
-                element: <AdminRoute>
-                    <AdminProfile></AdminProfile>
-                </AdminRoute>
+                path: "mentorship",
+                element: <ManageMentorship />
+            },
+            {
+                path: "notifications",
+                element: <Notification />
+            },
+            {
+                path: "users/:email/details",
+                element: <UserDetails />
+            },
+            {
+                path: "mentorship/faculties/:email/details",
+                element: <FacultyDetails />
             },
             {
                 path: ":id/repository",
-                element: <AdminRoute>
-                    <Repository></Repository>
-                </AdminRoute>
+                element: <Repository />
             }
         ]
     },
@@ -212,31 +189,17 @@ export const router = createBrowserRouter([
                 Component:FacultyMySchedule
             },
             {
-                path:"courses/:id/details",
+                path:"courses/:id",
                 Component:FacultyCourseDetails
             },
             {
                 path: ":id/repository",
                 Component: Repository
-            },
-            {
-                path:"chat",
-                Component:ChatPage
-            },
-            {
-                path:"chat/:id",
-                Component:ConversationPage
-            },
-            {
-                path: "notifications",
-                Component:Notification
             }
         ]
     },
     {
         path: "*",
-        element: <PublicRoute>
-            <NotFound></NotFound>
-        </PublicRoute>
+        element: <NotFound />
     }
 ]);
