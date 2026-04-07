@@ -20,6 +20,7 @@ const UserDetails = () => {
     const {userData} = useContext(AuthContext);
 
     const [user, setUser] = useState(null);
+    const [originalUser, setOriginalUser] = useState(null);
 
     // Design helper states representing loading
     const [loading, setLoading] = useState(false);
@@ -43,6 +44,7 @@ const UserDetails = () => {
                 // Getting the selected user details
                 const userRes = await axiosSecure.get(`/users/${email}`);
                 setUser(userRes.data.user);
+                setOriginalUser(userRes.data.user);
             } catch {
                 toast.error("Error fetching user data");
             } finally {
@@ -110,6 +112,7 @@ const UserDetails = () => {
 
             if (updateRes.status === 200) {
                 setUser(prev => ({...prev, ...payload}));
+                setOriginalUser(prev => ({...prev, ...payload}));
                 setPhotoFile(null);
                 toast.success("User updated successfully.");
             }
@@ -121,6 +124,8 @@ const UserDetails = () => {
     };
 
     const RoleIcon = roleConfig[user?.role]?.icon ?? School;
+
+    const isDirty = photoFile !== null || JSON.stringify(user) !== JSON.stringify(originalUser);
 
     return (
         <div className="gilroy min-h-screen py-8 px-4">
@@ -366,8 +371,8 @@ const UserDetails = () => {
                         <div className="flex justify-end pb-8">
                             <button
                                 type="submit"
-                                disabled={updating}
-                                className="px-8 py-2.5 bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold rounded-lg transition disabled:opacity-60 disabled:cursor-not-allowed"
+                                disabled={updating || !isDirty}
+                                className="px-8 py-2.5 bg-blue-700 hover:bg-blue-800 min-w-48 text-white text-sm font-semibold rounded-lg transition disabled:opacity-60 disabled:cursor-not-allowed"
                             >
                                 {updating ? "Saving..." : "Save changes"}
                             </button>
