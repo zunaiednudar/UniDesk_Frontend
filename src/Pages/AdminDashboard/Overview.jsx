@@ -248,7 +248,11 @@ const Overview = () => {
                             {loading ? (
                                 [1, 2, 3, 4, 5].map(i => <SkeletonRow key={i} />)
                             ) : paginated.length === 0 ? (
-                                <EmptyState message="No courses match your search." />
+                                <tr>
+                                    <td colSpan={7}>
+                                        <EmptyState message="No courses match your search." />
+                                    </td>
+                                </tr>
                             ) : (
                                 paginated.map(course => (
                                     <tr
