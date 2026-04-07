@@ -4,13 +4,15 @@ import React, {useContext, useEffect, useState} from "react";
 import {AuthContext} from "../../Providers/AuthProvider/AuthProvider.jsx";
 import {
     CalendarCheck, GraduationCap, School, SquarePen,
-    UsersRound, Trash2, ShieldCheck, TrendingUp, ShieldUser
+    UsersRound, Trash2, ShieldCheck, TrendingUp, ShieldUser,
+    Search, ChevronUp, ChevronDown
 } from "lucide-react";
 import {useNavigate} from "react-router";
 import SkeletonBlock from "../../Components/SkeletonBlock/SkeletonBlock.jsx";
 import StatCard from "../../Components/StatCard/StatCard.jsx";
 import SectionHeader from "../../Components/SectionHeader/SectionHeader.jsx";
 import EmptyState from "../../Components/EmptyState/EmptyState.jsx";
+import {Pagination} from '@mui/material';
 
 import {
     PieChart,
@@ -50,6 +52,22 @@ const userStatusConfig = {
 
 // Design helpers for pie chart
 const PIE_COLORS = ['#6366f1', '#22c55e', '#ef4444'];
+
+const SortHeader = ({ label, field, sortField, sortDir, onSort }) => {
+    const active = sortField === field;
+    return (
+        <div
+            className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wide cursor-pointer select-none group"
+            onClick={() => onSort(field)}
+        >
+            {label}
+            <span className={`flex flex-col transition-opacity ${active ? 'opacity-100' : 'opacity-0 group-hover:opacity-40'}`}>
+                <ChevronUp size={10} className={active && sortDir === 'asc' ? 'text-blue-500' : 'text-gray-400'} />
+                <ChevronDown size={10} className={active && sortDir === 'desc' ? 'text-blue-500' : 'text-gray-400'} />
+            </span>
+        </div>
+    );
+};
 
 const UserStatusChart = ({data, loading}) => (
     <div className="w-full h-full bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
@@ -250,6 +268,15 @@ const ManageUsers = () => {
     // Design helper states representing loading
     const [loading, setLoading] = useState(false);
 
+    const [searchQuery, setSearchQuery] = useState('');
+    const [roleFilter, setRoleFilter] = useState('all');
+    const [statusFilter, setStatusFilter] = useState('all');
+    const [sortField, setSortField] = useState('name');
+    const [sortDir, setSortDir] = useState('asc');
+    const [currentPage, setCurrentPage] = useState(1);
+
+    const ITEMS_PER_PAGE = 10;
+
     const navigate = useNavigate();
 
     const {userData} = useContext(AuthContext);
@@ -383,6 +410,38 @@ const ManageUsers = () => {
         fetchUsers();
     }, [userData]);
 
+    const handleSort = (field) => {
+        if (sortField === field) {
+            setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortField(field);
+            setSortDir('asc');
+        }
+        setCurrentPage(1);
+    };
+
+    const q = searchQuery.toLowerCase();
+    const filtered = userList
+        .filter(u => {
+            if (roleFilter !== 'all' && u.role !== roleFilter) return false;
+            if (statusFilter !== 'all' && u.status !== statusFilter) return false;
+            return (
+                u.name?.toLowerCase().includes(q) ||
+                u.email?.toLowerCase().includes(q) ||
+                u.studentID?.toLowerCase().includes(q) ||
+                u.department?.toLowerCase().includes(q)
+            );
+        })
+        .sort((a, b) => {
+            const valA = (a[sortField] ?? '').toString().toLowerCase();
+            const valB = (b[sortField] ?? '').toString().toLowerCase();
+            const cmp = valA < valB ? -1 : valA > valB ? 1 : 0;
+            return sortDir === 'asc' ? cmp : -cmp;
+        });
+
+    const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+    const paginated = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+
     return (
         <div className="gilroy space-y-6">
             {/* Page Title */}
@@ -435,27 +494,81 @@ const ManageUsers = () => {
             </div>
 
             {/* Users List */}
-            <div
-                className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6"
-            >
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-4">
                 <SectionHeader
                     icon={UsersRound}
                     title="All Users"
                     iconBg="bg-blue-50"
                     iconColor="text-blue-500"
-                    count={loading ? undefined : userList.length}
+                    count={loading ? undefined : filtered.length}
                     navigate={false}
                 />
+
+                {/* Filters */}
+                <div className="flex flex-col sm:flex-row gap-3 mt-6">
+                    {/* Search */}
+                    <div className="relative flex-1">
+                        <Search size={15} className="text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                        <input
+                            type="text"
+                            placeholder="Search by name, email, ID or department…"
+                            value={searchQuery}
+                            onChange={e => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+                            className="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                        />
+                    </div>
+
+                    {/* Role filter */}
+                    <div className="flex gap-2 flex-wrap">
+                        {['all', 'student', 'faculty'].map(r => (
+                            <button
+                                key={r}
+                                onClick={() => { setRoleFilter(r); setCurrentPage(1); }}
+                                className={`px-3.5 py-2 rounded-xl text-xs font-semibold capitalize transition-all ${
+                                    roleFilter === r ? 'bg-blue-500 text-white shadow-sm' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                                }`}
+                            >
+                                {r === 'all' ? 'All Roles' : r}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Status filter */}
+                    <div className="flex gap-2 flex-wrap">
+                        {['all', 'verified', 'pending', 'suspended'].map(s => (
+                            <button
+                                key={s}
+                                onClick={() => { setStatusFilter(s); setCurrentPage(1); }}
+                                className={`px-3.5 py-2 rounded-xl text-xs font-semibold capitalize transition-all ${
+                                    statusFilter === s ? 'bg-blue-500 text-white shadow-sm' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                                }`}
+                            >
+                                {s === 'all' ? 'All Status' : s}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Sort bar */}
+                {!loading && filtered.length > 0 && (
+                    <div className="hidden md:flex items-center gap-6 px-3 py-2 bg-gray-50 rounded-xl border border-gray-100">
+                        <SortHeader label="Name"       field="name"      sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                        <SortHeader label="Role"       field="role"      sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                        <SortHeader label="Status"     field="status"    sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                        <SortHeader label="Department" field="department" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                        <SortHeader label="Joined"     field="createdAt" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                    </div>
+                )}
 
                 {loading ? (
                     <div className="space-y-3">
                         {[1, 2, 3].map(i => <SkeletonBlock key={i} className="h-6"/>)}
                     </div>
-                ) : userList.length === 0 ? (
-                    <EmptyState message="No users found."/>
+                ) : paginated.length === 0 ? (
+                    <EmptyState message="No users match your search."/>
                 ) : (
                     <div>
-                        {userList.map(user => (
+                        {paginated.map(user => (
                             <UserItem
                                 key={user.id}
                                 user={user}
@@ -465,6 +578,18 @@ const ManageUsers = () => {
                         ))}
                     </div>
                 )}
+
+                {/* Pagination */}
+                <div className="flex justify-center pt-2">
+                    <Pagination
+                        count={totalPages}
+                        page={currentPage}
+                        onChange={(_, value) => setCurrentPage(value)}
+                        color="primary"
+                        siblingCount={1}
+                        boundaryCount={1}
+                    />
+                </div>
             </div>
         </div>
     );
