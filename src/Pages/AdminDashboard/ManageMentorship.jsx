@@ -12,6 +12,8 @@ import StatCard from "../../Components/StatCard/StatCard.jsx";
 import SectionHeader from "../../Components/SectionHeader/SectionHeader.jsx";
 import EmptyState from "../../Components/EmptyState/EmptyState.jsx";
 
+import formatName from "../../Utils/formatName";
+
 // Supervisor indicator config
 const supervisorConfig = {
     true: {
@@ -176,7 +178,7 @@ const ManageMentorship = () => {
                         department: user.department,
                         designation: user.designation,
                         email: user.email,
-                        name: user.name,
+                        name: formatName(user.name),
                         photoURL: user.photoURL ?? null,
                         researchInterests: user.researchInterests || [],
                         role: user.role,

@@ -14,6 +14,8 @@ import SectionHeader from "../../Components/SectionHeader/SectionHeader.jsx";
 import EmptyState from "../../Components/EmptyState/EmptyState.jsx";
 import {Pagination} from '@mui/material';
 
+import formatName from "../../Utils/formatName";
+
 import {
     PieChart,
     BarChart,
@@ -308,7 +310,7 @@ const ManageUsers = () => {
                         department: user.department,
                         designation: user.designation,
                         email: user.email,
-                        name: user.name,
+                        name: formatName(user.name),
                         photoURL: user.photoURL ?? null,
                         researchInterests: user.researchInterests || [],
                         role: user.role,

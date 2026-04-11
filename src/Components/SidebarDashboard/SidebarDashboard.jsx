@@ -94,12 +94,14 @@ const SidebarDashboard = ({ menuItems, isSidebarOpen, setIsSidebarOpen, toggleSi
                                 <LayoutDashboard className="w-5 h-5" />
                             </NavLink>
 
-                            <NavLink
-                                to={`/dashboard/${role}/chat`}
-                                className={({ isActive }) => (isActive ? activeClass : normalClass)}
-                            >
-                                <IoChatboxEllipsesOutline className="w-5 h-5" />
-                            </NavLink>
+                            {role !== 'admin' && (
+                                <NavLink
+                                    to={`/dashboard/${role}/chat`}
+                                    className={({ isActive }) => (isActive ? activeClass : normalClass)}
+                                >
+                                    <IoChatboxEllipsesOutline className="w-5 h-5" />
+                                </NavLink>
+                            )}
 
                             {userData && (
                                 <NavLink to={`/dashboard/${role}/${userData._id}/repository`} className={({ isActive }) => isActive ? activeClass : normalClass}>

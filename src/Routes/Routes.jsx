@@ -166,14 +166,6 @@ export const router = createBrowserRouter([
             {
                 path: ":id/repository",
                 Component: Repository
-            },
-            {
-                path:"chat",
-                Component:ChatPage
-            },
-            {
-                path:"chat/:id",
-                Component:ConversationPage
             }
         ]
     },
