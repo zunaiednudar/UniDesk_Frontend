@@ -37,7 +37,7 @@ const DashboardLayout = ({ menuItems, role }) => {
 
     const pathSegments = location.pathname.split("/").filter(Boolean);
     const filteredSegments = pathSegments.filter(segment =>
-        segment !== "student" && segment !== "admin" &&
+        segment !== "student" && segment !== "admin" && segment !== "new" &&
         !/^[a-f\d]{24}$/i.test(segment) && // remove Mongo ObjectId
         !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(segment) // remove emails
     );

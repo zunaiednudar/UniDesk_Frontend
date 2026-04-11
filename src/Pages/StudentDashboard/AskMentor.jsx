@@ -1,5 +1,5 @@
 import {useContext, useEffect, useRef, useState} from 'react';
-import {useLocation} from 'react-router';
+import {useLocation, useNavigate} from 'react-router';
 import {
     Search, Mail, Calendar, MapPin, BookOpen,
     AlertCircle, Users, Clock, CheckCircle2,
@@ -511,7 +511,7 @@ const BookingModal = ({instructor, onClose, onBooked}) => {
 };
 
 
-const SupervisorCard = ({supervisor, onBookClick}) => {
+const SupervisorCard = ({supervisor, onBookClick, onChatClick}) => {
     const relCfg = supervisorRelConfig[supervisor.relationshipType] ?? supervisorRelConfig.project;
     const RelIcon = relCfg.icon;
 
@@ -547,9 +547,8 @@ const SupervisorCard = ({supervisor, onBookClick}) => {
                     <Calendar size={12}/> Set Appointment
                 </button>
                 <button
-                    disabled
-                    title="Chat coming soon"
-                    className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold border border-gray-200 text-gray-400 rounded-xl cursor-not-allowed opacity-60">
+                    onClick={() => onChatClick(supervisor)}
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold border border-blue-200 text-blue-500 rounded-xl hover:bg-blue-50 active:scale-95 transition-all">
                     <MessageSquare size={12}/> Chat
                 </button>
             </div>
@@ -557,7 +556,7 @@ const SupervisorCard = ({supervisor, onBookClick}) => {
     );
 };
 
-const InstructorCard = ({instructor, onBookClick}) => {
+const InstructorCard = ({instructor, onBookClick, onChatClick}) => {
     const avail = availabilityConfig[instructor.status] ?? availabilityConfig.verified;
 
     return (
@@ -620,11 +619,12 @@ const InstructorCard = ({instructor, onBookClick}) => {
 
             {/* Actions */}
             <div className="flex flex-col lg:flex-row gap-2.5 mt-auto">
-                <a href={`mailto:${instructor.email}`}
-                   className="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm font-semibold bg-blue-500 text-white rounded-xl hover:bg-blue-600 active:scale-95 transition-all duration-150">
-                    <Mail size={14}/>
+                <button
+                    onClick={() => onChatClick(instructor)}
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm font-semibold bg-blue-500 text-white rounded-xl hover:bg-blue-600 active:scale-95 transition-all duration-150">
+                    <MessageSquare size={14}/>
                     Message
-                </a>
+                </button>
                 <button
                     onClick={() => onBookClick(instructor)}
                     disabled={instructor.status === 'suspended'}
@@ -792,6 +792,30 @@ const AskMentor = () => {
     const {userData} = useContext(AuthContext);
 
     const location = useLocation();
+    const navigate = useNavigate();
+
+    const handleChatClick = async (person) => {
+        const receiver = {
+            _id: person.id,
+            name: person.name,
+            email: person.email,
+            photoURL: person.photoURL ?? null,
+        };
+        try {
+            const res = await axiosSecure.get(`/conversation/user/${userData._id}`);
+            const conversations = res.data?.users || [];
+            const existing = conversations.find(
+                item => item.user?._id?.toString() === person.id?.toString()
+            );
+            if (existing?.conversationID) {
+                navigate(`/dashboard/student/chat/${existing.conversationID}`, {state: {receiver}});
+            } else {
+                navigate(`/dashboard/student/chat/new?receiverID=${person.id}`, {state: {receiver}});
+            }
+        } catch {
+            navigate(`/dashboard/student/chat/new?receiverID=${person.id}`, {state: {receiver}});
+        }
+    };
 
     const [instructors, setInstructors] = useState([]);
     const [loadingInst, setLoadingInst] = useState(true);
@@ -1064,6 +1088,7 @@ const AskMentor = () => {
                             key={inst.id}
                             instructor={inst}
                             onBookClick={setBookingFor}
+                            onChatClick={handleChatClick}
                         />
                     ))
                 )}
@@ -1078,7 +1103,7 @@ const AskMentor = () => {
                     iconColor="text-purple-500"
                     count={supervisors?.length || 0}
                     navigate={false}
-                    />
+                />
 
                 <div className="p-5">
                     {loadingSup ? (
@@ -1094,7 +1119,8 @@ const AskMentor = () => {
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             {supervisors.map(s => (
                                 <SupervisorCard key={s.id + s.relationshipType} supervisor={s}
-                                                onBookClick={setBookingFor}/>
+                                                onBookClick={setBookingFor}
+                                                onChatClick={handleChatClick}/>
                             ))}
                         </div>
                     )}
