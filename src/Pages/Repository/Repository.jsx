@@ -262,7 +262,9 @@ const Repository = () => {
     const [totalUploadCount, setTotalUploadCount] = useState(0);
     const [totalDownloadCount, setTotalDownloadCount] = useState(0);
 
-    const [statusFilter, setStatusFilter] = useState(userData?.role === "admin" ? "pending" : "all");
+    const [statusFilter, setStatusFilter] = useState(() =>
+        userData?.role === "admin" ? "pending" : "all"
+    );
     const [itemType, setItemType] = useState('notes');
 
     const [uploadStatus, setUploadStatus] = useState("idle");
@@ -326,24 +328,24 @@ const Repository = () => {
     }
 
     const handleApprove = async (item) => {
-         try {
-             const data = {
-                 status: "approved",
-             };
+        try {
+            const data = {
+                status: "approved",
+            };
 
-             const approveRes = await axiosSecure.patch(`/repository/${item._id}`, data);
+            const approveRes = await axiosSecure.patch(`/repository/${item._id}`, data);
 
-             if (approveRes.status === 200) {
+            if (approveRes.status === 200) {
                 toast.success("Item approved successfully");
 
-                 setRepositoryItems(prev =>
-                     prev.map(i => i._id === item._id ? { ...i, status: "approved", contributionPoints: 10 } : i)
-                 );
-                 setStatusFilter("approved");
-             }
-         } catch {
-             toast.error("Item approval failed!");
-         }
+                setRepositoryItems(prev =>
+                    prev.map(i => i._id === item._id ? { ...i, status: "approved", contributionPoints: 10 } : i)
+                );
+                setStatusFilter("approved");
+            }
+        } catch {
+            toast.error("Item approval failed!");
+        }
     }
 
     const handleReject = async (reason) => {
@@ -534,7 +536,7 @@ const Repository = () => {
                 (statusFilter === "all" && item.status === "approved") ||
                 (statusFilter === "pending" && item.uploader?._id === id && item.status === "pending") ||
                 (statusFilter === "personal" && item.uploader?._id === id && item.status === "approved") ||
-                (statusFilter === item.status && userData.role === "admin");
+                (statusFilter === item.status && userData?.role === "admin");
 
             return matchesSearch && matchesStatus;
         });
@@ -819,13 +821,13 @@ const Repository = () => {
                             }}
                             className={optionCls}
                         >
-                            {userData.role !== "admin" && (
+                            {userData?.role !== "admin" && (
                                 <>
                                     <option value="all">All</option>
                                     <option value="pending">Pending</option>
                                 </>
                             )}
-                            {userData.role === "admin" && (
+                            {userData?.role === "admin" && (
                                 <>
                                     <option value="pending">Pending</option>
                                     <option value="approved">Approved</option>
@@ -875,7 +877,7 @@ const Repository = () => {
                                 <ItemCard
                                     id={id}
                                     key={repoItem._id}
-                                    isAdmin={userData.role === "admin"}
+                                    isAdmin={userData?.role === "admin"}
                                     item={repoItem}
                                     onDownload={(item) => handleDownload(item.url, item.title)}
                                     onDelete={(item) => {
@@ -1054,7 +1056,7 @@ const Repository = () => {
                             setTags([]);
                             setTagInput('');
                         }
-                    }>close</button>
+                        }>close</button>
                     </form>
                 </dialog>
 
