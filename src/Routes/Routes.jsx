@@ -141,6 +141,10 @@ export const router = createBrowserRouter([
                 element: <Notification />
             },
             {
+                path: "courses/:id/details",
+                element: <CourseDetails />
+            },
+            {
                 path: "users/:email/details",
                 element: <UserDetails />
             },

@@ -2,11 +2,12 @@ import {toast} from "sonner";
 import axiosSecure from "../../utils/axiosSecure.js";
 import {useContext, useEffect, useState} from "react";
 import {AuthContext} from "../../Providers/AuthProvider/AuthProvider.jsx";
-import {AlertCircle, BookOpen, TrendingUp, Award, Search, ChevronUp, ChevronDown, Building2, Users} from "lucide-react";
+import {BookOpen, TrendingUp, Award, Search, ChevronUp, ChevronDown, ChevronRight, Building2, Users} from "lucide-react";
 import {Pagination} from '@mui/material';
 import DefaultProfile from "../../assets/default-profile.png";
 import StatCard from "../../Components/StatCard/StatCard.jsx";
 import EmptyState from "../../Components/EmptyState/EmptyState.jsx";
+import {useNavigate} from "react-router";
 
 // Design helpers representing status
 
@@ -77,6 +78,7 @@ const FacultyAvatars = ({faculties}) => {
 
 const Overview = () => {
     const {userData} = useContext(AuthContext);
+    const navigate = useNavigate();
 
     const [courses, setCourses] = useState([]);
 
@@ -242,6 +244,8 @@ const Overview = () => {
                                 <th className="px-5 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
                                     Status
                                 </th>
+                                {/* Arrow col */}
+                                <th className="px-5 py-3.5 w-10" />
                             </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-50">
@@ -249,7 +253,7 @@ const Overview = () => {
                                 [1, 2, 3, 4, 5].map(i => <SkeletonRow key={i} />)
                             ) : paginated.length === 0 ? (
                                 <tr>
-                                    <td colSpan={7}>
+                                    <td colSpan={8}>
                                         <EmptyState message="No courses match your search." />
                                     </td>
                                 </tr>
@@ -257,7 +261,8 @@ const Overview = () => {
                                 paginated.map(course => (
                                     <tr
                                         key={course.id}
-                                            className={`hover:bg-gray-50/60 transition-colors duration-100 group ${statusBgConfig[course.status]}`}
+                                        onClick={() => navigate(`/dashboard/admin/courses/${course.id}/details`, { state: { isAdmin: true } })}
+                                        className={`hover:bg-blue-50/40 transition-colors duration-100 group cursor-pointer ${statusBgConfig[course.status]}`}
                                     >
                                         {/* Code */}
                                         <td className="px-5 py-4">
@@ -306,6 +311,14 @@ const Overview = () => {
                                             <span className={`px-2.5 py-1 rounded-full text-xs font-semibold capitalize ${statusBadgeConfig[course.status] ?? 'bg-gray-100 text-gray-600'}`}>
                                                 {course.status}
                                             </span>
+                                        </td>
+
+                                        {/* Arrow */}
+                                        <td className="px-5 py-4 text-right">
+                                            <ChevronRight
+                                                size={15}
+                                                className="text-gray-300 group-hover:text-blue-400 group-hover:translate-x-0.5 transition-all duration-150 inline-block"
+                                            />
                                         </td>
                                     </tr>
                                 ))

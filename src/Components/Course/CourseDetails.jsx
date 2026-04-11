@@ -1,5 +1,5 @@
 import {useContext, useEffect, useState} from 'react';
-import {useParams, useNavigate} from 'react-router';
+import {useParams, useNavigate, useLocation} from 'react-router';
 import {
     ArrowLeft, BookOpen, Users, Building2, Hash, GraduationCap,
     ClipboardCheck, Megaphone, Calendar, AlertCircle,
@@ -10,6 +10,7 @@ import axiosSecure from "../../utils/axiosSecure.js";
 import timeAgo from "../../utils/timeAgo.js";
 import formatName from "../../utils/formatName.js";
 import {AuthContext} from "../../Providers/AuthProvider/AuthProvider.jsx";
+import DefaultProfile from "../../assets/default-profile.png";
 import CourseFilesDrawer from "../../Components/Course/CourseFilesDrawer.jsx";
 import {toast} from "sonner";
 import EmptyState from "../../Components/EmptyState/EmptyState.jsx";
@@ -108,7 +109,10 @@ const LeaveModal = ({course, onClose, onLeft}) => {
 const CourseDetails = () => {
     const {id} = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
     const {userData} = useContext(AuthContext);
+
+    const isAdmin = location.state?.isAdmin === true;
 
     const [course, setCourse] = useState(null);
     const [assignments, setAssignments] = useState([]);
@@ -122,107 +126,147 @@ const CourseDetails = () => {
             if (!id || !userData?._id) return;
             setLoading(true);
             try {
-                const [courseRes, myCoursesRes] = await Promise.all([
-                    axiosSecure.get(`/courses/${id}`),
-                    axiosSecure.get('/courses/my-courses'),
-                ]);
+                if (isAdmin) {
+                    // ── Admin path ──
+                    // /courses/:id accepts the admin role — no separate admin endpoint exists.
+                    // Skip /courses/my-courses (student/faculty only), per-student submission
+                    // lookups, and announcements — none of which apply to an admin view.
+                    const courseRes = await axiosSecure.get(`/courses/${id}`);
+                    const raw = courseRes.data.course || courseRes.data;
 
-                const raw = courseRes.data.course || courseRes.data;
+                    if (raw?._id) {
+                        setCourse({
+                            id: raw._id,
+                            code: raw.courseCode,
+                            name: raw.courseName,
+                            description: raw.description,
+                            session: raw.session,
+                            department: raw.department?.toUpperCase() ?? '—',
+                            year: raw.year,
+                            semester: raw.semester,
+                            faculties: Array.isArray(raw.faculties)
+                                ? raw.faculties.map(f => ({
+                                    name: formatName(f?.name),
+                                    email: f?.email ?? "",
+                                    photoURL: f?.photoURL ?? null,
+                                }))
+                                : [],
+                            students: Array.isArray(raw.students)
+                                ? raw.students.map(s => ({
+                                    name: formatName(s?.name),
+                                    email: s?.email ?? "",
+                                    photoURL: s?.photoURL ?? null,
+                                    roll: s?.studentID ?? "",
+                                }))
+                                : [],
+                            status: raw.status ?? 'active',
+                        });
+                    }
 
-                const allMyCourses = [
-                    ...(myCoursesRes.data.activeCourses || []),
-                    ...(myCoursesRes.data.completedCourses || []),
-                ];
-                const matched = allMyCourses.find(
-                    c => c._id === id || c._id?.toString() === id
-                );
-                const populatedFaculties = Array.isArray(matched?.faculties)
-                    ? matched.faculties
-                    : [];
+                } else {
+                    // ── Student path: original logic unchanged ──
+                    const [courseRes, myCoursesRes] = await Promise.all([
+                        axiosSecure.get(`/courses/${id}`),
+                        axiosSecure.get('/courses/my-courses'),
+                    ]);
 
-                if (raw?._id) {
-                    setCourse({
-                        id: raw._id,
-                        code: raw.courseCode,
-                        name: raw.courseName,
-                        description: raw.description,
-                        session: raw.session,
-                        department: raw.department.toUpperCase(),
-                        year: raw.year,
-                        semester: raw.semester,
-                        faculties: populatedFaculties.map(f => ({
-                            name: formatName(f?.name),
-                            email: f?.email ?? "",
-                            photoURL: f?.photoURL ?? null,
-                        })),
-                        students: Array.isArray(raw.students)
-                            ? raw.students.map(s => ({
-                                name: formatName(s?.name),
-                                email: s?.email ?? "",
-                                photoURL: s?.photoURL ?? null,
-                                roll: s?.studentID ?? "",
-                            }))
-                            : [],
-                        status: raw.status ?? 'active',
-                    });
+                    const raw = courseRes.data.course || courseRes.data;
+
+                    const allMyCourses = [
+                        ...(myCoursesRes.data.activeCourses || []),
+                        ...(myCoursesRes.data.completedCourses || []),
+                    ];
+                    const matched = allMyCourses.find(
+                        c => c._id === id || c._id?.toString() === id
+                    );
+                    const populatedFaculties = Array.isArray(matched?.faculties)
+                        ? matched.faculties
+                        : [];
+
+                    if (raw?._id) {
+                        setCourse({
+                            id: raw._id,
+                            code: raw.courseCode,
+                            name: raw.courseName,
+                            description: raw.description,
+                            session: raw.session,
+                            department: raw.department.toUpperCase(),
+                            year: raw.year,
+                            semester: raw.semester,
+                            faculties: populatedFaculties.map(f => ({
+                                name: formatName(f?.name),
+                                email: f?.email ?? "",
+                                photoURL: f?.photoURL ?? null,
+                            })),
+                            students: Array.isArray(raw.students)
+                                ? raw.students.map(s => ({
+                                    name: formatName(s?.name),
+                                    email: s?.email ?? "",
+                                    photoURL: s?.photoURL ?? null,
+                                    roll: s?.studentID ?? "",
+                                }))
+                                : [],
+                            status: raw.status ?? 'active',
+                        });
+                    }
+
+                    // Fetch assignments with per-student submission status
+                    const assignRes = await axiosSecure.get(`/course/${id}/assignments`);
+                    const allAssignments = assignRes.data.assignments || [];
+
+                    const assignmentsWithSubmissions = await Promise.all(
+                        allAssignments.map(async (assignment) => {
+                            const { data } = await axiosSecure.get(`/course/${id}/assignment/${assignment._id}`);
+                            return { assignment, submission: data.submission };
+                        })
+                    );
+
+                    const mapped = assignmentsWithSubmissions.map(({ assignment, submission }) => {
+                        let status = 'pending';
+                        if (submission?.submittedAt) {
+                            const diffHrs = (new Date(submission.submittedAt) - new Date(assignment.dueDate)) / (1000 * 60 * 60);
+                            status = diffHrs <= 0 ? 'completed' : 'late';
+                        } else if (new Date(assignment.dueDate) < new Date()) {
+                            status = 'missed';
+                        }
+                        return {
+                            id: assignment._id,
+                            title: assignment.title,
+                            description: assignment.description,
+                            dueDate: new Date(assignment.dueDate).toLocaleDateString('en-US', {
+                                month: 'short', day: 'numeric', year: 'numeric'
+                            }),
+                            dueDateRaw: assignment.dueDate,
+                            status,
+                        };
+                    }).sort((a, b) => new Date(a.dueDateRaw) - new Date(b.dueDateRaw));
+
+                    setAssignments(mapped);
+
+                    // Fetch announcements (student only)
+                    const noticeRes = await axiosSecure.get(`/course/${id}/announcements`);
+                    const allNotices = (noticeRes.data.announcements || [])
+                        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+                        .slice(0, 10)
+                        .map(n => ({
+                            id: n._id,
+                            title: n.title,
+                            message: n.description,
+                            time: timeAgo(n.createdAt),
+                            faculty: n.faculty?.name || '',
+                        }));
+                    setNotices(allNotices);
                 }
 
-                // Fetch assignments
-                const assignRes = await axiosSecure.get(`/course/${id}/assignments`);
-                const allAssignments = assignRes.data.assignments || [];
-
-                // Fetch each assignment's submission for the current student
-                const assignmentsWithSubmissions = await Promise.all(
-                    allAssignments.map(async (assignment) => {
-                        const { data } = await axiosSecure.get(`/course/${id}/assignment/${assignment._id}`);
-                        return { assignment, submission: data.submission };
-                    })
-                );
-
-                const mapped = assignmentsWithSubmissions.map(({ assignment, submission }) => {
-                    let status = 'pending';
-                    if (submission?.submittedAt) {
-                        const diffHrs = (new Date(submission.submittedAt) - new Date(assignment.dueDate)) / (1000 * 60 * 60);
-                        status = diffHrs <= 0 ? 'completed' : 'late';
-                    } else if (new Date(assignment.dueDate) < new Date()) {
-                        status = 'missed';
-                    }
-                    return {
-                        id: assignment._id,
-                        title: assignment.title,
-                        description: assignment.description,
-                        dueDate: new Date(assignment.dueDate).toLocaleDateString('en-US', {
-                            month: 'short', day: 'numeric', year: 'numeric'
-                        }),
-                        dueDateRaw: assignment.dueDate,
-                        status,
-                    };
-                }).sort((a, b) => new Date(a.dueDateRaw) - new Date(b.dueDateRaw));
-
-                setAssignments(mapped);
-
-                // Fetch announcements
-                const noticeRes = await axiosSecure.get(`/course/${id}/announcements`);
-                const allNotices = (noticeRes.data.announcements || [])
-                    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-                    .slice(0, 10)
-                    .map(n => ({
-                        id: n._id,
-                        title: n.title,
-                        message: n.description,
-                        time: timeAgo(n.createdAt),
-                        faculty: n.faculty?.name || '',
-                    }));
-                setNotices(allNotices);
-
-            } catch {
+            } catch (err) {
+                console.error("CourseDetails fetch error:", err?.response?.status, err?.response?.data ?? err.message);
                 toast.error("Error fetching data");
             } finally {
                 setLoading(false);
             }
         };
         fetchAll();
-    }, [id, userData]);
+    }, [id, userData, isAdmin]);
 
     const statusCfg = statusBadgeConfig[course?.status] ?? statusBadgeConfig.active;
     const pendingCount = assignments.filter(a => a.status === 'pending').length;
@@ -259,24 +303,27 @@ const CourseDetails = () => {
                             </div>
                             <p className="text-base text-gray-500 mt-1">{course.name}</p>
                         </div>
-                        <div className="flex items-center gap-2">
-                            <button
-                                onClick={() => setDrawerOpen(true)}
-                                className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-orange-50 hover:border-orange-200 hover:text-orange-600 transition-all duration-150"
-                            >
-                                <FolderOpen size={15} strokeWidth={1.75}/>
-                                Course Files
-                            </button>
-                            {course?.status === 'active' && (
+
+                        {!isAdmin && (
+                            <div className="flex items-center gap-2">
                                 <button
-                                    onClick={() => setLeaveOpen(true)}
-                                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-red-200 text-sm font-medium text-red-500 hover:bg-red-50 transition-all duration-150"
+                                    onClick={() => setDrawerOpen(true)}
+                                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-orange-50 hover:border-orange-200 hover:text-orange-600 transition-all duration-150"
                                 >
-                                    <LogOut size={15} strokeWidth={1.75}/>
-                                    Leave Course
+                                    <FolderOpen size={15} strokeWidth={1.75}/>
+                                    Course Files
                                 </button>
-                            )}
-                        </div>
+                                {course?.status === 'active' && (
+                                    <button
+                                        onClick={() => setLeaveOpen(true)}
+                                        className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-red-200 text-sm font-medium text-red-500 hover:bg-red-50 transition-all duration-150"
+                                    >
+                                        <LogOut size={15} strokeWidth={1.75}/>
+                                        Leave Course
+                                    </button>
+                                )}
+                            </div>
+                        )}
                     </div>
                 ) : (
                     <p className="text-gray-400 text-sm">Course not found.</p>
@@ -285,7 +332,7 @@ const CourseDetails = () => {
 
             {/* Info Cards Row */}
             {!loading && course && (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className={`grid gap-4 ${isAdmin ? 'grid-cols-2 md:grid-cols-3' : 'grid-cols-2 md:grid-cols-4'}`}>
                     {[
                         {icon: Building2, label: 'Department', value: course.department || '—'},
                         {
@@ -293,9 +340,8 @@ const CourseDetails = () => {
                             label: 'Session',
                             value: [course.year, course.semester, course.session].filter(Boolean).join(' · ') || '—'
                         },
-                        // Fix: course.students is now an array of objects
                         {icon: Users, label: 'Students', value: `${course.students.length} enrolled`},
-                        {icon: ClipboardCheck, label: 'Assignments', value: `${doneCount}/${assignments.length} done`},
+                        ...(!isAdmin ? [{icon: ClipboardCheck, label: 'Assignments', value: `${doneCount}/${assignments.length} done`}] : []),
                     ].map(({icon: Icon, label, value}) => (
                         <div key={label} className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4">
                             <div className="flex items-center gap-2 mb-1.5">
@@ -311,55 +357,110 @@ const CourseDetails = () => {
             {/* Main Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 lg:grid-rows-2 lg:max-h-[720px] gap-6">
 
-                {/* Assignments — spans 2 cols */}
+                {/* Left panel: Enrolled Students (admin) or Assignments (student) — spans 2 cols */}
                 <div className="lg:col-span-2 lg:row-span-2 overflow-y-auto">
-                    <SectionCard>
-                        <SectionHeader
-                            icon={ClipboardCheck}
-                            title="Assignments"
-                            iconBg="bg-orange-50"
-                            iconColor="text-orange-500"
-                            count={pendingCount}
-                            navigate={false}
-                        />
+                    {isAdmin ? (
+                        <SectionCard className="h-full">
+                            <SectionHeader
+                                icon={Users}
+                                title="Enrolled Students"
+                                iconBg="bg-indigo-50"
+                                iconColor="text-indigo-500"
+                                count={course?.students?.length ?? 0}
+                                navigate={false}
+                            />
 
-                        {loading ? (
-                            <div className="space-y-3">
-                                {[1, 2, 3].map(i => <div key={i}
-                                                         className="h-14 bg-gray-50 rounded-xl animate-pulse"/>)}
-                            </div>
-                        ) : assignments.length === 0 ? (
-                            <EmptyState message="No assignments yet."/>
-                        ) : (
-                            <div className="space-y-2">
-                                {assignments.map(a => {
-                                    const cfg = assignmentStatusConfig[a.status] ?? assignmentStatusConfig.pending;
-                                    const StatusIcon = cfg.icon;
-                                    return (
-                                        <div key={a.id}
-                                             className={`flex items-center gap-3 p-4 rounded-xl border transition-all duration-150 hover:shadow-sm ${cfg.bg} border-transparent mt-5`}>
-                                            <StatusIcon size={18} className={`${cfg.color} shrink-0`}
-                                                        strokeWidth={1.75}/>
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-sm font-medium text-gray-800 truncate">{a.title}</p>
-                                                {a.description && (
-                                                    <p className="text-xs text-gray-400 mt-0.5 truncate">{a.description}</p>
+                            {loading ? (
+                                <div className="space-y-3 mt-5">
+                                    {[1, 2, 3, 4, 5].map(i => (
+                                        <div key={i} className="h-14 bg-gray-50 rounded-xl animate-pulse"/>
+                                    ))}
+                                </div>
+                            ) : !course?.students?.length ? (
+                                <EmptyState message="No students enrolled yet."/>
+                            ) : (
+                                <div className="space-y-2 mt-5 overflow-y-auto max-h-[580px] pr-1">
+                                    {course.students.map((s, i) => (
+                                        <div
+                                            key={s.email || i}
+                                            className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 bg-gray-50 hover:bg-indigo-50/40 hover:border-indigo-100 transition-all duration-150"
+                                        >
+                                            {/* Avatar */}
+                                            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-100 to-indigo-200 flex items-center justify-center shrink-0 overflow-hidden">
+                                                {s?.photoURL ? (
+                                                    <img src={s.photoURL} alt={s.name} className="w-full h-full object-cover"/>
+                                                ) : (
+                                                    <span className="text-xs font-bold text-indigo-600">
+                                                        {s?.name?.[0]?.toUpperCase() || '?'}
+                                                    </span>
                                                 )}
                                             </div>
-                                            <div className="text-right shrink-0">
-                                                <span
-                                                    className={`text-[10px] font-bold uppercase tracking-wider ${cfg.color}`}>{cfg.label}</span>
-                                                <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1 justify-end">
-                                                    <Calendar size={10} strokeWidth={2}/>
-                                                    {a.dueDate}
-                                                </p>
+
+                                            {/* Name + Email */}
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-medium text-gray-800 truncate">{s?.name || '—'}</p>
+                                                {s?.email && (
+                                                    <p className="text-xs text-gray-400 truncate">{s.email}</p>
+                                                )}
                                             </div>
+
+                                            {/* Roll / Student ID */}
+                                            {s?.roll && (
+                                                <span className="text-xs font-semibold text-indigo-500 bg-indigo-50 border border-indigo-100 px-2.5 py-1 rounded-full shrink-0">
+                                                    {s.roll}
+                                                </span>
+                                            )}
                                         </div>
-                                    );
-                                })}
-                            </div>
-                        )}
-                    </SectionCard>
+                                    ))}
+                                </div>
+                            )}
+                        </SectionCard>
+                    ) : (
+                        <SectionCard>
+                            <SectionHeader
+                                icon={ClipboardCheck}
+                                title="Assignments"
+                                iconBg="bg-orange-50"
+                                iconColor="text-orange-500"
+                                count={pendingCount}
+                                navigate={false}
+                            />
+
+                            {loading ? (
+                                <div className="space-y-3">
+                                    {[1, 2, 3].map(i => <div key={i} className="h-14 bg-gray-50 rounded-xl animate-pulse"/>)}
+                                </div>
+                            ) : assignments.length === 0 ? (
+                                <EmptyState message="No assignments yet."/>
+                            ) : (
+                                <div className="space-y-2">
+                                    {assignments.map(a => {
+                                        const cfg = assignmentStatusConfig[a.status] ?? assignmentStatusConfig.pending;
+                                        const StatusIcon = cfg.icon;
+                                        return (
+                                            <div key={a.id}
+                                                 className={`flex items-center gap-3 p-4 rounded-xl border transition-all duration-150 hover:shadow-sm ${cfg.bg} border-transparent mt-5`}>
+                                                <StatusIcon size={18} className={`${cfg.color} shrink-0`} strokeWidth={1.75}/>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-sm font-medium text-gray-800 truncate">{a.title}</p>
+                                                    {a.description && (
+                                                        <p className="text-xs text-gray-400 mt-0.5 truncate">{a.description}</p>
+                                                    )}
+                                                </div>
+                                                <div className="text-right shrink-0">
+                                                    <span className={`text-[10px] font-bold uppercase tracking-wider ${cfg.color}`}>{cfg.label}</span>
+                                                    <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1 justify-end">
+                                                        <Calendar size={10} strokeWidth={2}/>
+                                                        {a.dueDate}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </SectionCard>
+                    )}
                 </div>
 
                 {/* Right column */}
@@ -421,43 +522,45 @@ const CourseDetails = () => {
                 </div>
             </div>
 
-            {/* Announcements */}
-            <SectionCard className="flex-1">
-                <SectionHeader
-                    icon={Megaphone}
-                    title="Announcements"
-                    iconBg="bg-blue-50"
-                    iconColor="text-blue-500"
-                    count={notices?.length || 0}
-                    navigate={false}
-                />
+            {/* Announcements — student view only */}
+            {!isAdmin && (
+                <SectionCard className="flex-1">
+                    <SectionHeader
+                        icon={Megaphone}
+                        title="Announcements"
+                        iconBg="bg-blue-50"
+                        iconColor="text-blue-500"
+                        count={notices?.length || 0}
+                        navigate={false}
+                    />
 
-                {loading ? (
-                    <div className="space-y-3 mt-5">
-                        {[1, 2].map(i => <div key={i} className="h-16 bg-gray-50 rounded-xl animate-pulse"/>)}
-                    </div>
-                ) : notices.length === 0 ? (
-                    <EmptyState message="No announcements."/>
-                ) : (
-                    <div className="space-y-3">
-                        {notices.map(n => (
-                            <div key={n.id}
-                                 className="p-3 rounded-xl bg-gray-50 border border-gray-100 hover:border-blue-100 hover:bg-blue-50/30 transition-all duration-150 mt-5">
-                                <div className="flex items-start justify-between gap-2 mb-1">
-                                    <p className="text-sm font-semibold text-gray-800 leading-snug">{n.title}</p>
-                                    <span className="text-[10px] text-gray-400 shrink-0 mt-0.5">{n.time}</span>
+                    {loading ? (
+                        <div className="space-y-3 mt-5">
+                            {[1, 2].map(i => <div key={i} className="h-16 bg-gray-50 rounded-xl animate-pulse"/>)}
+                        </div>
+                    ) : notices.length === 0 ? (
+                        <EmptyState message="No announcements."/>
+                    ) : (
+                        <div className="space-y-3">
+                            {notices.map(n => (
+                                <div key={n.id}
+                                     className="p-3 rounded-xl bg-gray-50 border border-gray-100 hover:border-blue-100 hover:bg-blue-50/30 transition-all duration-150 mt-5">
+                                    <div className="flex items-start justify-between gap-2 mb-1">
+                                        <p className="text-sm font-semibold text-gray-800 leading-snug">{n.title}</p>
+                                        <span className="text-[10px] text-gray-400 shrink-0 mt-0.5">{n.time}</span>
+                                    </div>
+                                    {n.message && (
+                                        <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed">{n.message}</p>
+                                    )}
+                                    {n.faculty && (
+                                        <p className="text-[10px] text-gray-400 mt-1.5">— {n.faculty}</p>
+                                    )}
                                 </div>
-                                {n.message && (
-                                    <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed">{n.message}</p>
-                                )}
-                                {n.faculty && (
-                                    <p className="text-[10px] text-gray-400 mt-1.5">— {n.faculty}</p>
-                                )}
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </SectionCard>
+                            ))}
+                        </div>
+                    )}
+                </SectionCard>
+            )}
 
             {/* Files Drawer */}
             <CourseFilesDrawer
