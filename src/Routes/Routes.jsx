@@ -204,7 +204,7 @@ export const router = createBrowserRouter([
                 Component:FacultyMySchedule
             },
             {
-                path:"courses/:id",
+                path:"courses/:id/details",
                 Component:FacultyCourseDetails
             },
             {
