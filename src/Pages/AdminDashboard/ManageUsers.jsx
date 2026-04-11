@@ -14,7 +14,7 @@ import SectionHeader from "../../Components/SectionHeader/SectionHeader.jsx";
 import EmptyState from "../../Components/EmptyState/EmptyState.jsx";
 import {Pagination} from '@mui/material';
 
-import formatName from "../../Utils/formatName";
+import formatName from "../../utils/formatName";
 
 import {
     PieChart,

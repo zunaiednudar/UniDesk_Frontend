@@ -12,7 +12,7 @@ import StatCard from "../../Components/StatCard/StatCard.jsx";
 import SectionHeader from "../../Components/SectionHeader/SectionHeader.jsx";
 import EmptyState from "../../Components/EmptyState/EmptyState.jsx";
 
-import formatName from "../../Utils/formatName";
+import formatName from "../../utils/formatName";
 
 // Supervisor indicator config
 const supervisorConfig = {
