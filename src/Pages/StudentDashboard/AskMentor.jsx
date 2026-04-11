@@ -827,7 +827,7 @@ const AskMentor = () => {
 
     const [appointments, setAppointments] = useState([]);
     const [loadingAppt, setLoadingAppt] = useState(true);
-    const [apptFilter, setApptFilter] = useState('all');
+    const [apptFilter, setApptFilter] = useState('approved');
 
     const [bookingFor, setBookingFor] = useState(null);
     const [cancellingAppt, setCancellingAppt] = useState(null);
@@ -1160,7 +1160,7 @@ const AskMentor = () => {
                 </div>
 
                 {/* Rows */}
-                <div className="px-3">
+                <div className="px-3 lg:max-h-[720px] overflow-y-auto">
                     {loadingAppt ? (
                         <div className="space-y-0">
                             {[1, 2, 3].map(i => (
