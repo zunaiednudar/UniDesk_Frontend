@@ -4,7 +4,7 @@ import {
     ArrowLeft, BookOpen, Users, Building2, Hash, GraduationCap,
     ClipboardCheck, Megaphone, Calendar, AlertCircle,
     CheckCircle2, Circle, AlertTriangle, FolderOpen,
-    LogOut, X, Loader2
+    LogOut, X, Loader2, Paperclip, FileText, Image as ImageIcon, ExternalLink
 } from 'lucide-react';
 import axiosSecure from "../../utils/axiosSecure.js";
 import timeAgo from "../../utils/timeAgo.js";
@@ -253,7 +253,13 @@ const CourseDetails = () => {
                             title: n.title,
                             message: n.description,
                             time: timeAgo(n.createdAt),
-                            faculty: n.faculty?.name || '',
+                            createdAt: n.createdAt,
+                            faculty: {
+                                name: n.faculty?.name || '',
+                                email: n.faculty?.email || '',
+                                photoURL: n.faculty?.photoURL || null,
+                            },
+                            attachments: Array.isArray(n.attachments) ? n.attachments : [],
                         }));
                     setNotices(allNotices);
                 }
@@ -357,7 +363,7 @@ const CourseDetails = () => {
             {/* Main Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 lg:grid-rows-2 lg:max-h-[720px] gap-6">
 
-                {/* Left panel: Enrolled Students (admin) or Assignments (student) — spans 2 cols */}
+                {/* Left panel */}
                 <div className="lg:col-span-2 lg:row-span-2 overflow-y-auto">
                     {isAdmin ? (
                         <SectionCard className="h-full">
@@ -524,7 +530,7 @@ const CourseDetails = () => {
 
             {/* Announcements — student view only */}
             {!isAdmin && (
-                <SectionCard className="flex-1">
+                <SectionCard className="flex-1 lg:max-h-[720px] overflow-y-auto">
                     <SectionHeader
                         icon={Megaphone}
                         title="Announcements"
@@ -536,25 +542,80 @@ const CourseDetails = () => {
 
                     {loading ? (
                         <div className="space-y-3 mt-5">
-                            {[1, 2].map(i => <div key={i} className="h-16 bg-gray-50 rounded-xl animate-pulse"/>)}
+                            {[1, 2].map(i => <div key={i} className="h-24 bg-gray-50 rounded-xl animate-pulse"/>)}
                         </div>
                     ) : notices.length === 0 ? (
                         <EmptyState message="No announcements."/>
                     ) : (
-                        <div className="space-y-3">
+                        <div className="space-y-4 mt-5">
                             {notices.map(n => (
                                 <div key={n.id}
-                                     className="p-3 rounded-xl bg-gray-50 border border-gray-100 hover:border-blue-100 hover:bg-blue-50/30 transition-all duration-150 mt-5">
-                                    <div className="flex items-start justify-between gap-2 mb-1">
-                                        <p className="text-sm font-semibold text-gray-800 leading-snug">{n.title}</p>
-                                        <span className="text-[10px] text-gray-400 shrink-0 mt-0.5">{n.time}</span>
+                                     className="rounded-2xl bg-gray-50 border border-gray-100 hover:border-blue-100 hover:bg-blue-50/20 transition-all duration-150 overflow-hidden">
+
+                                    {/* Header */}
+                                    <div className="px-4 pt-4 pb-3">
+                                        <div className="flex items-start justify-between gap-3">
+                                            <p className="text-sm font-semibold text-gray-900 leading-snug">{n.title}</p>
+                                            <span className="text-[10px] text-gray-400 shrink-0 mt-0.5 whitespace-nowrap">{n.time}</span>
+                                        </div>
+
+                                        {/* Full description */}
+                                        {n.message && (
+                                            <p className="text-xs text-gray-600 mt-2 leading-relaxed whitespace-pre-line">{n.message}</p>
+                                        )}
                                     </div>
-                                    {n.message && (
-                                        <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed">{n.message}</p>
+
+                                    {/* Attachments */}
+                                    {n.attachments?.length > 0 && (
+                                        <div className="px-4 pb-3 flex flex-wrap gap-2">
+                                            {n.attachments.map((att, i) => {
+                                                const isImage = att.resourceType === 'image';
+                                                const isVideo = att.resourceType === 'video';
+                                                return isImage ? (
+                                                    <a key={i} href={att.url} target="_blank" rel="noopener noreferrer"
+                                                       className="block rounded-xl overflow-hidden border border-gray-200 hover:border-blue-300 transition-all shrink-0">
+                                                        <img src={att.url} alt={att.name}
+                                                             className="h-24 w-36 object-cover"/>
+                                                    </a>
+                                                ) : (
+                                                    <a key={i} href={att.url} target="_blank" rel="noopener noreferrer"
+                                                       className="flex items-center gap-2 px-3 py-2 rounded-xl border border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50 transition-all text-xs text-gray-700 font-medium max-w-[220px]">
+                                                        {isVideo
+                                                            ? <FileText size={13} className="text-blue-400 shrink-0"/>
+                                                            : <Paperclip size={13} className="text-gray-400 shrink-0"/>
+                                                        }
+                                                        <span className="truncate">{att.name || 'Attachment'}</span>
+                                                        <ExternalLink size={11} className="text-gray-300 shrink-0 ml-auto"/>
+                                                    </a>
+                                                );
+                                            })}
+                                        </div>
                                     )}
-                                    {n.faculty && (
-                                        <p className="text-[10px] text-gray-400 mt-1.5">— {n.faculty}</p>
-                                    )}
+
+                                    {/* Footer: faculty info */}
+                                    <div className="px-4 py-2.5 border-t border-gray-100 flex items-center gap-2">
+                                        <div className="w-5 h-5 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center shrink-0 overflow-hidden">
+                                            {n.faculty?.photoURL ? (
+                                                <img src={n.faculty.photoURL} alt={n.faculty.name} className="w-full h-full object-cover"/>
+                                            ) : (
+                                                <span className="text-[9px] font-bold text-blue-600">
+                                                    {n.faculty?.name?.[0]?.toUpperCase() || '?'}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="min-w-0">
+                                            <span className="text-[11px] font-medium text-gray-600 truncate">{n.faculty?.name || '—'}</span>
+                                            {n.faculty?.email && (
+                                                <span className="text-[10px] text-gray-400 ml-1.5">· {n.faculty.email}</span>
+                                            )}
+                                        </div>
+                                        {n.attachments?.length > 0 && (
+                                            <span className="ml-auto flex items-center gap-1 text-[10px] text-gray-400">
+                                                <Paperclip size={10}/>
+                                                {n.attachments.length}
+                                            </span>
+                                        )}
+                                    </div>
                                 </div>
                             ))}
                         </div>
