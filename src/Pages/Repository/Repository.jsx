@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo, useRef, useState} from 'react';
+import React, {useContext, useEffect, useMemo, useRef, useState} from 'react';
 import {
     ChartNoAxesCombined,
     Trophy,
@@ -8,7 +8,7 @@ import {
     Search,
     File,
     FileImage, FileText,
-    Calendar, Download, Eye, UsersRound, BookCheck, Trash2
+    Calendar, Download, UsersRound, BookCheck, Trash2, Check, X
 } from 'lucide-react';
 import {
     Chart as ChartJS,
@@ -27,6 +27,7 @@ import formatName from "../../utils/formatName.js";
 import {toast} from "sonner";
 import {uploadFileToCloudinary} from "../../utils/uploadToCloudinary.js";
 import { Pagination } from '@mui/material';
+import {AuthContext} from "../../Providers/AuthProvider/AuthProvider.jsx";
 
 ChartJS.register(
     CategoryScale,
@@ -83,7 +84,7 @@ const fileTypeConfig = {
 
 const defaultFileType = {icon: File, bg: "bg-gray-100", text: "text-gray-500", label: "File"};
 
-const ItemCard = ({id, item, onDownload, onView, onDelete}) => {
+const ItemCard = ({id, item, onDownload, onDelete, onApprove, onReject, isAdmin = false}) => {
     const extension = item.url?.split(".").pop().split("?")[0].toLowerCase() ?? "";
     const fileConfig = fileTypeConfig[extension] ?? defaultFileType;
     const FileIcon = fileConfig.icon;
@@ -94,6 +95,7 @@ const ItemCard = ({id, item, onDownload, onView, onDelete}) => {
             <div className="shrink-0 w-10 h-10 rounded-xl flex items-center justify-center bg-gray-100">
                 <FileIcon className={`w-5 h-5 ${fileConfig.text}`} strokeWidth={1.75}/>
             </div>
+
             <div className="flex-1 min-w-0">
                 <span className={`text-[10px] font-semibold uppercase tracking-wide ${fileConfig.text}`}>
                     {item.itemType ?? fileConfig.label}
@@ -116,12 +118,26 @@ const ItemCard = ({id, item, onDownload, onView, onDelete}) => {
                 <span className="text-xs font-medium text-gray-500 capitalize">{item?.courseName}</span>
             </div>
 
+            {/* Tags */}
+            {item.tags?.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                    {item.tags.map((tag, index) => (
+                        <span
+                            key={index}
+                            className="px-2 py-0.5 text-[10px] font-medium bg-blue-50 text-blue-600 rounded-full border border-blue-100"
+                        >
+                {tag}
+            </span>
+                    ))}
+                </div>
+            )}
+
             {/* Uploader + Date */}
             <div className="flex flex-col items-start justify-between text-xs text-gray-400">
                 <div className="flex items-center gap-2 min-w-0">
                     <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-[10px] font-bold shrink-0 uppercase overflow-hidden">
                         {item.uploader?.photoURL
-                            ? <img src={item.uploader.photoURL} alt={item.uploader.name} className="w-full h-full object-cover" />
+                            ? <img src={item.uploader?.photoURL} alt={item.uploader?.name} className="w-full h-full object-cover" />
                             : item.uploader?.name?.[0] ?? "?"
                         }
                     </div>
@@ -147,41 +163,60 @@ const ItemCard = ({id, item, onDownload, onView, onDelete}) => {
                     </div>
                     <div className="flex items-center gap-1 text-xs text-gray-400">
                         <ChartNoAxesCombined className="w-3.5 h-3.5" />
-                        <span className="font-medium text-blue-600">{item.contributionPoints ?? 0}</span>
+                        <span className="font-medium text-blue-600">
+                            {item.status === "approved" ? (item.contributionPoints || 10) : 0}
+                        </span>
                         <span>pts</span>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-1.5">
-                    <button
-                        onClick={() => {
-                            onView?.(item);
-                        }}
-                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
-                        <Eye className="w-3.5 h-3.5" />
-                        View
-                    </button>
+                <div className="flex flex-col items-center gap-1.5">
+                    <div className="flex flex-col lg:flex-row items-center gap-1">
+                        <button
+                            onClick={() => {
+                                onDownload?.(item);
+                            }}
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-blue-700 rounded-lg hover:bg-blue-800 transition">
+                            <Download className="w-3.5 h-3.5" />
+                            Download
+                        </button>
 
-                    <button
-                        onClick={() => {
-                            onDownload?.(item);
-                        }}
-                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-blue-700 rounded-lg hover:bg-blue-800 transition">
-                        <Download className="w-3.5 h-3.5" />
-                        Download
-                    </button>
+                        {((id && item.uploader?._id === id) || isAdmin) && (
+                            <button
+                                onClick={() => {
+                                    onDelete?.(item);
+                                }}
+                                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-orange-700 rounded-lg hover:bg-orange-800 transition">
+                                <Trash2 className="w-3.5 h-3.5" />
+                                Delete
+                            </button>
+                        )}
+                    </div>
+
+                    <div className="flex flex-col lg:flex-row items-center gap-1">
+                        {isAdmin && item.status !== "approved" && item.status !== "rejected" && (
+                            <button
+                                onClick={() => {
+                                    onApprove?.(item);
+                                }}
+                                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-emerald-400 rounded-lg hover:bg-emerald-500 transition">
+                                <Check className="w-3.5 h-3.5" />
+                                Approve
+                            </button>
+                        )}
+
+                        {isAdmin && item.status !== "rejected" && (
+                            <button
+                                onClick={() => {
+                                    onReject?.(item);
+                                }}
+                                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-red-400 rounded-lg hover:bg-red-500 transition">
+                                <X className="w-3.5 h-3.5" />
+                                Reject
+                            </button>
+                        )}
+                    </div>
                 </div>
-
-                {(item.uploader._id === id) && (
-                    <button
-                        onClick={() => {
-                            onDelete?.(item);
-                        }}
-                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-orange-700 rounded-lg hover:bg-orange-800 transition">
-                        <Trash2 className="w-3.5 h-3.5" />
-                        Delete
-                    </button>
-                )}
             </div>
         </div>
     );
@@ -213,6 +248,8 @@ const months = [
 ];
 
 const Repository = () => {
+    const {userData} = useContext(AuthContext);
+
     const {id} = useParams();
     const [contributionPoints, setContributionPoints] = useState(0);
     const [repositoryItems, setRepositoryItems] = useState([]);
@@ -225,7 +262,7 @@ const Repository = () => {
     const [totalUploadCount, setTotalUploadCount] = useState(0);
     const [totalDownloadCount, setTotalDownloadCount] = useState(0);
 
-    const [statusFilter, setStatusFilter] = useState('all');
+    const [statusFilter, setStatusFilter] = useState(userData?.role === "admin" ? "pending" : "all");
     const [itemType, setItemType] = useState('notes');
 
     const [uploadStatus, setUploadStatus] = useState("idle");
@@ -236,6 +273,27 @@ const Repository = () => {
     const [itemToDeleteId, setItemToDeleteId] = useState(null);
 
     const [currentPage, setCurrentPage] = useState(1);
+
+    const [tags, setTags] = useState([]);
+    const [tagInput, setTagInput] = useState('');
+
+    const [itemToRejectId, setItemToRejectId] = useState(null);
+    const [rejectionReason, setRejectionReason] = useState('');
+
+    const handleTagKeyDown = (e) => {
+        if (e.key === 'Enter' || e.key === ',') {
+            e.preventDefault();
+            const newTag = tagInput.trim().toLowerCase();
+            if (newTag && !tags.includes(newTag)) {
+                setTags(prev => [...prev, newTag]);
+            }
+            setTagInput('');
+        }
+    };
+
+    const removeTag = (tagToRemove) => {
+        setTags(prev => prev.filter(t => t !== tagToRemove));
+    };
 
     const handleDownload = async (url, title) => {
         try {
@@ -258,49 +316,83 @@ const Repository = () => {
             const res = await axiosSecure.delete(`/repository/${itemId}`);
 
             if (res.status === 200) {
-                toast("Item permanently deleted");
-                window.location.reload();
+                toast.success("Item permanently deleted");
+                setRepositoryItems(prev => prev.filter(item => item._id !== itemId));
+                // window.location.reload();
             }
         } catch {
             toast.error("Item deletion failed");
         }
     }
 
-    const handleView = (url) => {
-        const ext = url.split('?')[0].split('.').pop().toLowerCase();
-        const imageTypes = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+    const handleApprove = async (item) => {
+         try {
+             const data = {
+                 status: "approved",
+             };
 
-        if (imageTypes.includes(ext)) {
-            window.open(url, '_blank', 'noopener,noreferrer');
-        } else {
-            window.open(`https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`, '_blank', 'noopener,noreferrer');
-        }
+             const approveRes = await axiosSecure.patch(`/repository/${item._id}`, data);
+
+             if (approveRes.status === 200) {
+                toast.success("Item approved successfully");
+
+                 setRepositoryItems(prev =>
+                     prev.map(i => i._id === item._id ? { ...i, status: "approved", contributionPoints: 10 } : i)
+                 );
+                 setStatusFilter("approved");
+             }
+         } catch {
+             toast.error("Item approval failed!");
+         }
     }
+
+    const handleReject = async (reason) => {
+        try {
+            const res = await axiosSecure.patch(`/repository/${itemToRejectId}`, {
+                status: "rejected",
+                rejectedReason: reason
+            });
+
+            if (res.status === 200) {
+                toast.success("Item rejected");
+                setRepositoryItems(prev =>
+                    prev.map(i => i._id === itemToRejectId ? { ...i, status: "rejected" } : i)
+                );
+                setStatusFilter("rejected");
+                document.getElementById("reject_modal").close();
+                setItemToRejectId(null);
+                setRejectionReason('');
+            }
+        } catch {
+            toast.error("Rejection failed");
+        }
+    };
 
     useEffect(() => {
         const fetchData = async () => {
             try {
                 const [repositoryRes, leaderboardRes] = await Promise.all([
-                    axiosSecure.get('/repository'),
+                    axiosSecure.get('/repository', { params: { limit: 1000 } }),
                     axiosSecure.get('/repository/leaderboard'),
                 ]);
 
                 const repositoryItems = repositoryRes.data.items;
 
                 const totalContributionPoints = repositoryItems.reduce((sum, item) => {
-                    if (item.uploader._id === id) return sum + item.contributionPoints;
+                    if (item.uploader?._id === id && item.status === "approved")
+                        return sum + (item.contributionPoints || 10);
                     return sum;
                 }, 0);
 
                 const totalApproved = repositoryItems.reduce((sum, item) => {
-                    if (item.uploader._id === id) return sum + 1;
+                    if (item.uploader?._id === id && item.status === "approved") return sum + 1;
                     return sum;
                 }, 0);
 
                 const totalContributors = new Set(
                     repositoryItems
                         .filter(item => item.contributionPoints > 0)
-                        .map(item => item.uploader._id)
+                        .map(item => item.uploader?._id)
                 ).size;
 
                 const totalUploaded = repositoryItems.length;
@@ -311,22 +403,23 @@ const Repository = () => {
 
                 const allPersonalNotes = repositoryItems
                     .filter(item => {
-                        return (item.uploader._id === id) && (item.itemType.toLowerCase() === "notes");
+                        return (item.uploader?._id === id) && (item.status === "approved") && (item.itemType.toLowerCase() === "notes");
                     });
 
                 const allQuestionBanksAnswers = repositoryItems
                     .filter(item => {
-                        return (item.uploader._id === id) && ((item.itemType.toLowerCase() === "question bank") || (item.itemType.toLowerCase() === "solved questions"));
+                        return (item.uploader?._id === id) && (item.status === "approved") && ((item.itemType.toLowerCase() === "question bank") || (item.itemType.toLowerCase() === "solved questions"));
                     });
 
                 const allAssessments = repositoryItems
                     .filter(item => {
-                        return (item.uploader._id === id) && ((item.itemType.toLowerCase() === "project_report") || (item.itemType.toLowerCase() === "lab_report") || (item.itemType.toLowerCase() === "assignment"));
+                        return (item.uploader?._id === id) && (item.status === "approved") && ((item.itemType.toLowerCase() === "project_report") || (item.itemType.toLowerCase() === "lab_report") || (item.itemType.toLowerCase() === "assignment"));
                     });
 
                 const otherMaterials = repositoryItems
                     .filter(item => {
-                        return (item.uploader._id === id)
+                        return (item.uploader?._id === id)
+                            && (item.status === "approved")
                             && (item.itemType.toLowerCase() !== "notes")
                             && (item.itemType.toLowerCase() !== "question bank")
                             && (item.itemType.toLowerCase() !== "solved questions")
@@ -341,7 +434,7 @@ const Repository = () => {
                     .reduce((acc, item) => {
                         const month = new Date(item.approvedAt).getMonth();
                         if (new Date(item.approvedAt).getFullYear() === new Date().getFullYear())
-                            acc[month] = (acc[month] || 0) + item.contributionPoints;
+                            acc[month] = (acc[month] || 0) + (item.contributionPoints || 10);
                         return acc;
                     }, Array(12).fill(0));
 
@@ -349,7 +442,7 @@ const Repository = () => {
                     .reduce((acc, item) => {
                         const month = new Date(item.approvedAt).getMonth();
                         if (new Date(item.approvedAt).getFullYear() === new Date().getFullYear())
-                            acc[month] = (acc[month] || 0) + item.contributionPoints;
+                            acc[month] = (acc[month] || 0) + (item.contributionPoints || 10);
                         return acc;
                     }, Array(12).fill(0));
 
@@ -357,7 +450,7 @@ const Repository = () => {
                     .reduce((acc, item) => {
                         const month = new Date(item.approvedAt).getMonth();
                         if (new Date(item.approvedAt).getFullYear() === new Date().getFullYear())
-                            acc[month] = (acc[month] || 0) + item.contributionPoints;
+                            acc[month] = (acc[month] || 0) + (item.contributionPoints || 10);
                         return acc;
                     }, Array(12).fill(0));
 
@@ -365,7 +458,7 @@ const Repository = () => {
                     .reduce((acc, item) => {
                         const month = new Date(item.approvedAt).getMonth();
                         if (new Date(item.approvedAt).getFullYear() === new Date().getFullYear())
-                            acc[month] = (acc[month] || 0) + item.contributionPoints;
+                            acc[month] = (acc[month] || 0) + (item.contributionPoints || 10);
                         return acc;
                     }, Array(12).fill(0));
 
@@ -434,15 +527,19 @@ const Repository = () => {
                 item.title.toLowerCase().includes(q) ||
                 item.courseCode.toLowerCase().includes(q) ||
                 item.courseName.toLowerCase().includes(q) ||
+                item.tags?.some(tag => tag.toLowerCase().includes(q)) ||
                 item.uploader?.name?.toLowerCase().includes(q);
 
             const matchesStatus =
-                statusFilter === "all" || (statusFilter === "personal" && item.uploader._id === id);
+                (statusFilter === "all" && item.status === "approved") ||
+                (statusFilter === "pending" && item.uploader?._id === id && item.status === "pending") ||
+                (statusFilter === "personal" && item.uploader?._id === id && item.status === "approved") ||
+                (statusFilter === item.status && userData.role === "admin");
 
             return matchesSearch && matchesStatus;
         });
 
-    }, [repositoryItems, searchQuery, statusFilter, id]);
+    }, [repositoryItems, searchQuery, statusFilter, id, userData]);
 
     // Pagination setup
 
@@ -465,7 +562,8 @@ const Repository = () => {
             courseName: formData.get("course-name")?.trim(),
             year: formData.get("year")?.trim(),
             semester: formData.get("semester")?.trim(),
-            itemType: itemType
+            itemType: itemType,
+            tags: tags
         };
 
         if (!material) {
@@ -498,6 +596,11 @@ const Repository = () => {
             return;
         }
 
+        if (tags.length === 0) {
+            toast.error("Please add at least one tag!");
+            return;
+        }
+
         const fileData = await uploadFileToCloudinary(material);
 
         if (!fileData?.url) {
@@ -520,11 +623,27 @@ const Repository = () => {
                 document.getElementById("my_modal_1").close();
                 e.target.reset();
                 setItemType("notes");
+                setTags([]);
+                setTagInput('');
 
                 setMaterial(null);
                 if (fileInputRef.current) {
                     fileInputRef.current.value = "";
                 }
+
+                setRepositoryItems(prev => [
+                    {
+                        ...submissionRes.data.item,
+                        uploader: {
+                            _id: userData._id,
+                            name: userData.name,
+                            email: userData.email,
+                            photoURL: userData.photoURL ?? null,
+                        }
+                    },
+                    ...prev
+                ]);
+                setStatusFilter("pending");
             }
         } catch {
             toast.error("Failed to submit material");
@@ -597,7 +716,7 @@ const Repository = () => {
 
                         {/* Contribution graph */}
                         {graphData && (
-                            <div className="flex-1">
+                            <div className="flex-1 min-h-[400px]">
                                 <Line data={graphData} options={options}/>
                             </div>
                         )}
@@ -615,7 +734,7 @@ const Repository = () => {
                                 return (
 
                                     <div
-                                        key={person.user._id ?? person.rank}
+                                        key={person.user?._id ?? person.rank}
                                         className={`${style.bg} ${style.border} border rounded-2xl px-5 py-4 flex items-center gap-4 overflow-x-auto`}
                                     >
                                         {/* Rank badge */}
@@ -631,36 +750,28 @@ const Repository = () => {
                                         <div className="flex items-center gap-3 shrink-0">
                                             <div
                                                 className="overflow-hidden w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-sm font-bold shrink-0 uppercase">
-                                                {person.user.photoURL
-                                                    ? <img src={person.user.photoURL} alt={person.user.name}
+                                                {person.user?.photoURL
+                                                    ? <img src={person.user?.photoURL} alt={person.user?.name}
                                                            className="w-full h-full object-cover"/>
-                                                    : person.user.name?.[0] ?? "?"
+                                                    : person.user?.name?.[0] ?? "?"
                                                 }
                                             </div>
                                             <div className="min-w-0">
-                                                <p className="text-sm font-semibold text-gray-900">{formatName(person.user.name)}</p>
-                                                <p className="text-xs text-gray-400">{person.user.studentID ?? ""}</p>
+                                                <p className="text-sm font-semibold text-gray-900">{formatName(person.user?.name)}</p>
+                                                <p className="text-xs text-gray-400">{person.user?.studentID ?? ""}</p>
                                             </div>
                                         </div>
 
                                         {/* Stats */}
-                                        <div className="hidden sm:flex sm:flex-1 sm:justify-end items-center gap-5">
-                                            <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                                                <Upload className="w-3.5 h-3.5 text-blue-400"/>
-                                                <span
-                                                    className="font-medium text-gray-700">{person.itemsUploaded}</span>
-                                                <span>uploads</span>
-                                            </div>
-                                            <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                                                <CheckCircle className="w-3.5 h-3.5 text-emerald-400"/>
-                                                <span
-                                                    className="font-medium text-gray-700">{person.itemsApproved}</span>
-                                                <span>approved</span>
-                                            </div>
+                                        <div className="flex flex-1 justify-end items-center gap-1.5 text-xs text-gray-500">
+                                            <CheckCircle className="w-3.5 h-3.5 text-emerald-400"/>
+                                            <span
+                                                className="font-medium text-gray-700">{person.itemsApproved}</span>
+                                            <span>approved</span>
                                         </div>
 
                                         {/* Points */}
-                                        <div className="shrink-0 text-right sm:min-w-20">
+                                        <div className="shrink-0 text-right">
                                             <p className="text-base font-bold text-green-700">{person.totalPoints.toLocaleString()}</p>
                                             <p className="text-[10px] text-gray-400 uppercase tracking-wide">pts</p>
                                         </div>
@@ -687,7 +798,7 @@ const Repository = () => {
                         <Search size={15} className="text-gray-400 absolute left-3 top-1/2 -translate-y-1/2"/>
                         <input
                             type="text"
-                            placeholder="Search by course title, course code, course name, material type or uploader name…"
+                            placeholder="Search by course title, course code, course name, material type, tags or uploader name…"
                             value={searchQuery}
                             onChange={e => {
                                 setSearchQuery(e.target.value);
@@ -708,8 +819,20 @@ const Repository = () => {
                             }}
                             className={optionCls}
                         >
-                            <option value="all">All</option>
-                            <option value="personal">Personal</option>
+                            {userData.role !== "admin" && (
+                                <>
+                                    <option value="all">All</option>
+                                    <option value="pending">Pending</option>
+                                </>
+                            )}
+                            {userData.role === "admin" && (
+                                <>
+                                    <option value="pending">Pending</option>
+                                    <option value="approved">Approved</option>
+                                    <option value="rejected">Rejected</option>
+                                </>
+                            )}
+                            <option value="personal">My Uploads</option>
                         </select>
                     )}
 
@@ -732,7 +855,7 @@ const Repository = () => {
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 shrink-0 stroke-current" fill="none" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        <span>Study material uploaded successfully!</span>
+                        <span>Study material uploaded successfully. Please wait for approval!</span>
                     </div>
                 )}
 
@@ -752,12 +875,17 @@ const Repository = () => {
                                 <ItemCard
                                     id={id}
                                     key={repoItem._id}
+                                    isAdmin={userData.role === "admin"}
                                     item={repoItem}
-                                    onView={(item) => handleView(item.url)}
                                     onDownload={(item) => handleDownload(item.url, item.title)}
                                     onDelete={(item) => {
                                         setItemToDeleteId(item._id);
                                         document.getElementById('my_modal_2').showModal();
+                                    }}
+                                    onApprove={(item) => handleApprove(item)}
+                                    onReject={(item) => {
+                                        setItemToRejectId(item._id);
+                                        document.getElementById('reject_modal').showModal();
                                     }}
                                 />
                             ))}
@@ -765,7 +893,7 @@ const Repository = () => {
                     </div>
                 ): (
                     <div
-                        className="h-[800px] bg-white border border-gray-200 rounded-2xl py-14 flex flex-col items-center justify-center text-center mb-5">
+                        className="max-h-[800px] bg-white border border-gray-200 rounded-2xl py-14 flex flex-col items-center justify-center text-center mb-5">
                         <File className="w-8 h-8 text-gray-200 mb-3"/>
                         <p className="text-sm font-medium text-gray-400">No study material found</p>
                     </div>
@@ -794,6 +922,8 @@ const Repository = () => {
                                     document.getElementById("my_modal_1").close();
                                     setMaterial(null);
                                     if (fileInputRef.current) fileInputRef.current.value = "";
+                                    setTags([]);
+                                    setTagInput('');
                                 }}
                                 className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
 
@@ -843,6 +973,35 @@ const Repository = () => {
                                 <input type="text" name="course-name" className={inputCls} placeholder="System Development Project" />
                             </div>
 
+                            {/* Tags */}
+                            <div>
+                                <label className={labelCls}>Tags</label>
+                                <div className={`${inputCls} flex flex-wrap gap-1.5 min-h-[42px] cursor-text`}>
+                                    {tags.map((tag, index) => (
+                                        <span
+                                            key={index}
+                                            className="flex items-center gap-1 px-2 py-0.5 text-[11px] font-medium bg-blue-50 text-blue-600 rounded-full border border-blue-100"
+                                        >
+                                            {tag}
+                                            <button
+                                                type="button"
+                                                onClick={() => removeTag(tag)}
+                                                className="text-blue-400 hover:text-blue-700 leading-none"
+                                            >×</button>
+                                        </span>
+                                    ))}
+                                    <input
+                                        type="text"
+                                        value={tagInput}
+                                        onChange={(e) => setTagInput(e.target.value)}
+                                        onKeyDown={handleTagKeyDown}
+                                        placeholder={tags.length === 0 ? "Type a tag and press Enter…" : ""}
+                                        className="flex-1 min-w-[120px] outline-none text-sm bg-transparent"
+                                    />
+                                </div>
+                                <p className="text-xs text-gray-400 -mt-2 mb-3">Press Enter or comma to add a tag</p>
+                            </div>
+
                             {/* Year + Semester */}
                             <div className="flex flex-col lg:flex-row justify-between gap-4">
                                 <div className="flex-1">
@@ -866,7 +1025,7 @@ const Repository = () => {
                                         onChange={(e) => setItemType(e.target.value)}
                                         className={optionCls}
                                     >
-                                        <option value="notes">Personal Note</option>
+                                        <option value="notes">Notes</option>
                                         <option value="question bank">Question Bank</option>
                                         <option value="solved questions">Answer</option>
                                         <option value="project_report">Project Report</option>
@@ -891,8 +1050,11 @@ const Repository = () => {
                             setMaterial(null);
                             if (fileInputRef.current) {
                                 fileInputRef.current.value = "";
-                            }}
-                        }>close</button>
+                            }
+                            setTags([]);
+                            setTagInput('');
+                        }
+                    }>close</button>
                     </form>
                 </dialog>
 
@@ -913,6 +1075,44 @@ const Repository = () => {
 
                     <form method="dialog" className="modal-backdrop">
                         <button>close</button>
+                    </form>
+                </dialog>
+
+                {/* Rejection Modal */}
+                <dialog id="reject_modal" className="modal modal-bottom sm:modal-middle">
+                    <div className="modal-box">
+                        <h4 className="text-lg font-semibold text-gray-900 mb-4">Reject Item</h4>
+                        <div>
+                            <label className={labelCls}>Reason</label>
+                            <textarea
+                                rows={4}
+                                value={rejectionReason}
+                                onChange={(e) => setRejectionReason(e.target.value)}
+                                placeholder="Provide a reason for rejection..."
+                                className={inputCls}
+                            />
+                        </div>
+                        <div className="modal-action">
+                            <button
+                                className="btn btn-ghost btn-sm"
+                                onClick={() => {
+                                    document.getElementById("reject_modal").close();
+                                    setItemToRejectId(null);
+                                    setRejectionReason('');
+                                }}
+                            >Cancel</button>
+                            <button
+                                className="btn btn-error btn-sm text-white"
+                                disabled={!rejectionReason.trim()}
+                                onClick={() => handleReject(rejectionReason.trim())}
+                            >Reject</button>
+                        </div>
+                    </div>
+                    <form method="dialog" className="modal-backdrop">
+                        <button onClick={() => {
+                            setItemToRejectId(null);
+                            setRejectionReason('');
+                        }}>close</button>
                     </form>
                 </dialog>
             </div>

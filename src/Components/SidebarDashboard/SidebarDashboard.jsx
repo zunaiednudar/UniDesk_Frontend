@@ -1,10 +1,20 @@
-import { NavLink, useLocation, useNavigate } from "react-router";
+import {NavLink, useLocation, useNavigate} from "react-router";
 import React, { useContext } from "react";
-import { Bell, GraduationCap, Moon, UserRound, PanelLeft, PanelRight, LayoutDashboard, LibraryBig } from "lucide-react";
-import { AuthContext } from "../../Providers/AuthProvider/AuthProvider.jsx";
+import {
+    Bell,
+    GraduationCap,
+    Moon,
+    UserRound,
+    PanelLeft,
+    PanelRight,
+    LayoutDashboard,
+    LibraryBig,
+    UserStar
+} from "lucide-react";
+import {AuthContext} from "../../Providers/AuthProvider/AuthProvider.jsx";
 import DefaultProfile from "../../assets/default-profile.png";
-import { toast } from "sonner";
-import { IoChatboxEllipsesOutline } from "react-icons/io5";
+import {toast} from "sonner";
+import {IoChatboxEllipsesOutline} from "react-icons/io5";
 
 const SidebarDashboard = ({ menuItems, isSidebarOpen, setIsSidebarOpen, toggleSidebar, isMobile, role }) => {
     const { userData, logout } = useContext(AuthContext);
@@ -84,12 +94,14 @@ const SidebarDashboard = ({ menuItems, isSidebarOpen, setIsSidebarOpen, toggleSi
                                 <LayoutDashboard className="w-5 h-5" />
                             </NavLink>
 
-                            <NavLink
-                                to={`/dashboard/${role}/chat`}
-                                className={({ isActive }) => (isActive ? activeClass : normalClass)}
-                            >
-                                <IoChatboxEllipsesOutline className="w-5 h-5" />
-                            </NavLink>
+                            {role !== 'admin' && (
+                                <NavLink
+                                    to={`/dashboard/${role}/chat`}
+                                    className={({ isActive }) => (isActive ? activeClass : normalClass)}
+                                >
+                                    <IoChatboxEllipsesOutline className="w-5 h-5" />
+                                </NavLink>
+                            )}
 
                             {userData && (
                                 <NavLink to={`/dashboard/${role}/${userData._id}/repository`} className={({ isActive }) => isActive ? activeClass : normalClass}>
@@ -102,12 +114,15 @@ const SidebarDashboard = ({ menuItems, isSidebarOpen, setIsSidebarOpen, toggleSi
                             <button className={iconBtnClass}><Moon className="w-5 h-5" /></button>
                             <div className="dropdown dropdown-top">
                                 <button tabIndex={0} className={`${iconBtnClass} ${isProfilePage ? 'bg-gray-300' : 'hover:bg-gray-200'}`}>
-                                    {/*<UserRound className="w-5 h-5" />*/}
-                                    <img
-                                        src={userData?.photoURL || DefaultProfile}
-                                        alt={userData?.name || "Profile"}
-                                        className="w-5 h-5 rounded-full object-cover"
-                                    />
+                                    {role === "admin" ? (
+                                        <UserStar className="w-5 h-5" />
+                                    ) : (
+                                        <img
+                                            src={userData?.photoURL || DefaultProfile}
+                                            alt={userData?.name || "Profile"}
+                                            className="w-5 h-5 rounded-full object-cover"
+                                        />
+                                    )}
                                 </button>
 
                                 <ul tabIndex={0} className="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-60">
@@ -118,7 +133,9 @@ const SidebarDashboard = ({ menuItems, isSidebarOpen, setIsSidebarOpen, toggleSi
                                         {userData?.email ?? ''}
                                     </li>
                                     <div className="divider my-0" />
-                                    <li><NavLink to="./profile" className={({ isActive }) => isActive ? activeClass : normalClass}>Settings</NavLink></li>
+                                    {role !== "admin" && (
+                                        <li><NavLink to="./profile" className={({ isActive }) => isActive ? activeClass : normalClass}>Settings</NavLink></li>
+                                    )}
                                     <li><a className="p-2 cursor-pointer" onClick={handleOpenModal}>Logout</a></li>
                                 </ul>
                             </div>

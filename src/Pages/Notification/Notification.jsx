@@ -1,17 +1,70 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Bell, Check } from "lucide-react";
-import { useNotifications } from "../../utils/hooks/useNotifications.js";
-import CardSkeleton from "../../Components/CardSkeleton/CardSkeleton.jsx";
-import useNotificationClick from "../../utils/hooks/useNotificationClick.js";
+import axiosSecure from "../../utils/axiosSecure.js";
+import timeAgo from "../../utils/timeAgo.js";
 
 const Notifications = () => {
-    const { notifications, unreadCount, todayNotifs, historyNotifs, markAllRead, markRead, loading } = useNotifications();
+    const [notifications, setNotifications] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-    const handleNotificationClick = useNotificationClick(markRead);
+    const isToday = (dateString) => {
+        const created = new Date(dateString);
+        const today = new Date();
+        return (
+            created.getFullYear() === today.getFullYear() &&
+            created.getMonth() === today.getMonth() &&
+            created.getDate() === today.getDate()
+        );
+    };
+
+    useEffect(() => {
+        const fetchNotifications = async () => {
+            try {
+                const res = await axiosSecure.get("/notifications");
+                const formatted = (res.data.notifications || []).map((n, index) => ({
+                    id: index + 1,
+                    _id: n._id,
+                    title: n.type,
+                    message: n.message,
+                    time: timeAgo(n.createdAt),
+                    read: n.isRead,
+                    today: isToday(n.createdAt)
+                }));
+                setNotifications(formatted);
+            } catch (error) {
+                console.log(error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchNotifications();
+    }, []);
+
+    const unreadCount = notifications.filter(n => !n.read).length;
+    const todayNotifs = notifications.filter(n => n.today);
+    const historyNotifs = notifications.filter(n => !n.today);
+
+    const markAllRead = async () => {
+        try {
+            await axiosSecure.patch("/notifications/all");
+            setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+        } catch (error) {
+            console.log(error);
+        }
+    };
+
+    const markRead = async (id, _id) => {
+        try {
+            await axiosSecure.patch(`/notifications/${_id}`);
+            setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+        } catch (error) {
+            console.log(error);
+        }
+    };
 
     const NotificationRow = ({ n }) => (
         <div
-            onClick={() => handleNotificationClick(n)}
+            onClick={() => !n.read && markRead(n.id, n._id)}
             className={`flex flex-col md:flex-row items-start gap-4 p-4 rounded-xl transition border cursor-pointer
                 ${!n.read
                 ? 'bg-blue-50/60 border-blue-100 hover:bg-blue-50'
@@ -54,10 +107,25 @@ const Notifications = () => {
                 </div>
 
                 {/* Loading skeleton */}
-
-                {
-                    loading && <CardSkeleton variant="notification"></CardSkeleton>
-                }
+                {loading && (
+                    <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+                        <div className="px-4 py-3 border-b border-gray-100 bg-gray-50">
+                            <div className="h-3 w-12 bg-gray-200 rounded animate-pulse" />
+                        </div>
+                        <div className="p-3 space-y-2">
+                            {[...Array(4)].map((_, i) => (
+                                <div key={i} className="flex items-start gap-4 p-4 rounded-xl border border-gray-100">
+                                    <div className="mt-1.5 w-2 h-2 rounded-full bg-gray-200 shrink-0" />
+                                    <div className="flex-1 space-y-2">
+                                        <div className="h-3 bg-gray-200 rounded animate-pulse w-1/3" />
+                                        <div className="h-3 bg-gray-100 rounded animate-pulse w-2/3" />
+                                    </div>
+                                    <div className="h-3 w-12 bg-gray-100 rounded animate-pulse" />
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
 
                 {/* Today */}
                 {!loading && todayNotifs.length > 0 && (

@@ -1,5 +1,5 @@
 import {useContext, useEffect, useRef, useState} from 'react';
-import {useLocation} from 'react-router';
+import {useLocation, useNavigate} from 'react-router';
 import {
     Search, Mail, Calendar, MapPin, BookOpen,
     AlertCircle, Users, Clock, CheckCircle2,
@@ -11,6 +11,9 @@ import axiosSecure from "../../utils/axiosSecure.js";
 import formatName from "../../utils/formatName.js";
 import {AuthContext} from "../../Providers/AuthProvider/AuthProvider.jsx";
 import {toast} from "sonner";
+import SectionHeader from "../../Components/SectionHeader/SectionHeader.jsx";
+import EmptyState from "../../Components/EmptyState/EmptyState.jsx";
+import SkeletonCard from "../../Components/SkeletonCard/SkeletonCard.jsx";
 
 const availabilityConfig = {
     verified: {dot: 'bg-green-400', badge: 'bg-green-100 text-green-700', label: 'Available'},
@@ -128,46 +131,6 @@ const MetaRow = ({icon: Icon, children, href, linkClass = ''}) => (
             <a href={href} className={`hover:underline truncate ${linkClass}`}>{children}</a>
         ) : (
             <span className="truncate">{children}</span>
-        )}
-    </div>
-);
-
-const SkeletonCard = () => (
-    <div className="bg-white rounded-2xl border border-gray-100 p-6 animate-pulse">
-        <div className="flex items-start gap-4 mb-4 pb-4 border-b border-gray-100">
-            <div className="w-16 h-16 rounded-full bg-gray-200 flex-shrink-0"/>
-            <div className="flex-1 space-y-2">
-                <div className="h-4 w-36 bg-gray-200 rounded"/>
-                <div className="h-3 w-28 bg-gray-100 rounded"/>
-                <div className="h-5 w-20 bg-gray-100 rounded-full mt-2"/>
-            </div>
-        </div>
-        <div className="space-y-2 mb-4">
-            <div className="h-3 w-48 bg-gray-100 rounded"/>
-            <div className="h-3 w-36 bg-gray-100 rounded"/>
-        </div>
-        <div className="flex gap-3">
-            <div className="flex-1 h-10 bg-gray-100 rounded-xl"/>
-            <div className="flex-1 h-10 bg-gray-100 rounded-xl"/>
-        </div>
-    </div>
-);
-
-const EmptyState = ({message, onClear}) => (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center col-span-full">
-        <div className="w-14 h-14 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Search size={24} className="text-gray-300"/>
-        </div>
-        <h3 className="text-base font-semibold text-gray-900 mb-1">{message ?? 'No instructors found'}</h3>
-        {onClear && (
-            <>
-                <p className="text-sm text-gray-400 mb-4">Try adjusting your search or clear it to see all
-                    instructors.</p>
-                <button onClick={onClear}
-                        className="px-5 py-2 text-sm font-semibold bg-orange-500 text-white rounded-xl hover:bg-orange-600 transition">
-                    Clear Search
-                </button>
-            </>
         )}
     </div>
 );
@@ -548,7 +511,7 @@ const BookingModal = ({instructor, onClose, onBooked}) => {
 };
 
 
-const SupervisorCard = ({supervisor, onBookClick}) => {
+const SupervisorCard = ({supervisor, onBookClick, onChatClick}) => {
     const relCfg = supervisorRelConfig[supervisor.relationshipType] ?? supervisorRelConfig.project;
     const RelIcon = relCfg.icon;
 
@@ -584,9 +547,8 @@ const SupervisorCard = ({supervisor, onBookClick}) => {
                     <Calendar size={12}/> Set Appointment
                 </button>
                 <button
-                    disabled
-                    title="Chat coming soon"
-                    className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold border border-gray-200 text-gray-400 rounded-xl cursor-not-allowed opacity-60">
+                    onClick={() => onChatClick(supervisor)}
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold border border-blue-200 text-blue-500 rounded-xl hover:bg-blue-50 active:scale-95 transition-all">
                     <MessageSquare size={12}/> Chat
                 </button>
             </div>
@@ -594,7 +556,7 @@ const SupervisorCard = ({supervisor, onBookClick}) => {
     );
 };
 
-const InstructorCard = ({instructor, onBookClick}) => {
+const InstructorCard = ({instructor, onBookClick, onChatClick}) => {
     const avail = availabilityConfig[instructor.status] ?? availabilityConfig.verified;
 
     return (
@@ -657,11 +619,12 @@ const InstructorCard = ({instructor, onBookClick}) => {
 
             {/* Actions */}
             <div className="flex flex-col lg:flex-row gap-2.5 mt-auto">
-                <a href={`mailto:${instructor.email}`}
-                   className="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm font-semibold bg-blue-500 text-white rounded-xl hover:bg-blue-600 active:scale-95 transition-all duration-150">
-                    <Mail size={14}/>
+                <button
+                    onClick={() => onChatClick(instructor)}
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm font-semibold bg-blue-500 text-white rounded-xl hover:bg-blue-600 active:scale-95 transition-all duration-150">
+                    <MessageSquare size={14}/>
                     Message
-                </a>
+                </button>
                 <button
                     onClick={() => onBookClick(instructor)}
                     disabled={instructor.status === 'suspended'}
@@ -829,6 +792,30 @@ const AskMentor = () => {
     const {userData} = useContext(AuthContext);
 
     const location = useLocation();
+    const navigate = useNavigate();
+
+    const handleChatClick = async (person) => {
+        const receiver = {
+            _id: person.id,
+            name: person.name,
+            email: person.email,
+            photoURL: person.photoURL ?? null,
+        };
+        try {
+            const res = await axiosSecure.get(`/conversation/user/${userData._id}`);
+            const conversations = res.data?.users || [];
+            const existing = conversations.find(
+                item => item.user?._id?.toString() === person.id?.toString()
+            );
+            if (existing?.conversationID) {
+                navigate(`/dashboard/student/chat/${existing.conversationID}`, {state: {receiver}});
+            } else {
+                navigate(`/dashboard/student/chat/new?receiverID=${person.id}`, {state: {receiver}});
+            }
+        } catch {
+            navigate(`/dashboard/student/chat/new?receiverID=${person.id}`, {state: {receiver}});
+        }
+    };
 
     const [instructors, setInstructors] = useState([]);
     const [loadingInst, setLoadingInst] = useState(true);
@@ -840,7 +827,7 @@ const AskMentor = () => {
 
     const [appointments, setAppointments] = useState([]);
     const [loadingAppt, setLoadingAppt] = useState(true);
-    const [apptFilter, setApptFilter] = useState('all');
+    const [apptFilter, setApptFilter] = useState('approved');
 
     const [bookingFor, setBookingFor] = useState(null);
     const [cancellingAppt, setCancellingAppt] = useState(null);
@@ -1094,31 +1081,30 @@ const AskMentor = () => {
                 {loadingInst ? (
                     [1, 2, 3, 4].map(i => <SkeletonCard key={i}/>)
                 ) : filteredInst.length === 0 ? (
-                    <EmptyState onClear={() => setSearchQuery('')}/>
+                    <EmptyState message="No faculty found."/>
                 ) : (
                     filteredInst.map(inst => (
                         <InstructorCard
                             key={inst.id}
                             instructor={inst}
                             onBookClick={setBookingFor}
+                            onChatClick={handleChatClick}
                         />
                     ))
                 )}
             </div>
 
             {/* Supervisors Section */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                <div className="flex items-center gap-2 px-5 py-4 border-b border-gray-100">
-                    <div className="w-7 h-7 rounded-lg bg-purple-50 flex items-center justify-center">
-                        <GraduationCap size={14} className="text-purple-500" strokeWidth={2}/>
-                    </div>
-                    <h2 className="text-sm font-bold text-gray-900">My Supervisors</h2>
-                    {!loadingSup && (
-                        <span className="text-xs font-semibold text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">
-                            {supervisors.length}
-                        </span>
-                    )}
-                </div>
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden px-6 py-4">
+                <SectionHeader
+                    icon={GraduationCap}
+                    title="My Supervisors"
+                    iconBg="bg-purple-50"
+                    iconColor="text-purple-500"
+                    count={supervisors?.length || 0}
+                    navigate={false}
+                />
+
                 <div className="p-5">
                     {loadingSup ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -1133,7 +1119,8 @@ const AskMentor = () => {
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             {supervisors.map(s => (
                                 <SupervisorCard key={s.id + s.relationshipType} supervisor={s}
-                                                onBookClick={setBookingFor}/>
+                                                onBookClick={setBookingFor}
+                                                onChatClick={handleChatClick}/>
                             ))}
                         </div>
                     )}
@@ -1143,18 +1130,14 @@ const AskMentor = () => {
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                 {/* Header */}
                 <div
-                    className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-5 py-4 border-b border-gray-100">
-                    <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-lg bg-purple-50 flex items-center justify-center">
-                            <Calendar size={14} className="text-purple-500" strokeWidth={2}/>
-                        </div>
-                        <h2 className="text-sm font-bold text-gray-900">My Appointments</h2>
-                        {!loadingAppt && (
-                            <span className="text-xs font-semibold text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">
-                                {appointments.length}
-                            </span>
-                        )}
-                    </div>
+                    className="flex flex-col sm:flex-row items-start justify-between gap-3 px-5 py-4 border-b border-gray-100">
+                    <SectionHeader
+                        icon={Calendar}
+                        title="My Appointments"
+                        iconBg="bg-purple-50"
+                        iconColor="text-purple-500"
+                        navigate={false}
+                    />
 
                     {/* Filter pills */}
                     <div className="flex items-center gap-1.5 flex-wrap">
@@ -1177,7 +1160,7 @@ const AskMentor = () => {
                 </div>
 
                 {/* Rows */}
-                <div className="px-3">
+                <div className="px-3 lg:max-h-[720px] overflow-y-auto">
                     {loadingAppt ? (
                         <div className="space-y-0">
                             {[1, 2, 3].map(i => (

@@ -1,15 +1,18 @@
 import React, {useContext, useEffect, useState} from 'react';
 import {PieChart, Pie, Cell, Tooltip, ResponsiveContainer} from 'recharts';
 import {
-    BookOpen, ClipboardCheck, Calendar, Clock, AlertCircle, ChevronRight
+    BookOpen, ClipboardCheck, Calendar, Clock
 } from 'lucide-react';
 import axiosSecure from "../../utils/axiosSecure.js";
 import timeAgo from "../../utils/timeAgo.js";
 import {AuthContext} from "../../Providers/AuthProvider/AuthProvider.jsx";
 import RecentNotices from "../../Components/RecentNotices/RecentNotices.jsx";
-import CalendarF from "../../Components/Calendar/Calendar.jsx"
-import {NavLink} from "react-router";
+import CalendarF from "../../Components/CalendarF/CalendarF.jsx"
 import {toast} from "sonner";
+import SectionHeader from "../../Components/SectionHeader/SectionHeader.jsx";
+import StatCard from "../../Components/StatCard/StatCard.jsx";
+import SkeletonBlock from "../../Components/SkeletonBlock/SkeletonBlock.jsx";
+import EmptyState from "../../Components/EmptyState/EmptyState.jsx";
 
 // Design helpers for due date
 const getDueDateClasses = (dateStr, isCompleted) => {
@@ -45,49 +48,6 @@ const appointmentStatusConfig = {
 
 // Pie chart section colors
 const PIE_COLORS = ['#10B981', '#F59E0B', '#EF4444'];
-
-// General stat card template
-// Different stats are shown at the top of the main body
-const StatCard = ({icon: Icon, value, label, iconBg, iconColor}) => (
-    <div
-        className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center gap-5 hover:shadow-md transition-shadow duration-200">
-        <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${iconBg}`}>
-            <Icon size={22} className={iconColor} strokeWidth={1.75}/>
-        </div>
-        <div>
-            <div className="text-3xl font-bold text-gray-900 leading-tight">{value ?? '—'}</div>
-            <div className="text-sm text-gray-400 mt-0.5 font-medium">{label}</div>
-        </div>
-    </div>
-);
-
-// General section header template
-// Different sections in main body has this header, attached with 'See all' option which routes to specific pages via NavLink
-const SectionHeader = ({icon: Icon, title, iconBg, iconColor, count, seeAllTo, navigate}) => (
-    <div className="flex flex-col lg:flex-row items-start justify-between gap-2 mb-5 lg:mb-0">
-        <div className="flex items-center gap-2.5 mb-5">
-            <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${iconBg}`}>
-                <Icon size={16} className={iconColor} strokeWidth={2}/>
-            </div>
-            <h2 className="text-base font-bold text-gray-900">{title}</h2>
-            {count !== undefined && (
-                <span className="ml-1 text-xs font-semibold text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">
-                {count}
-            </span>)
-            }
-        </div>
-
-        {navigate === true && (
-            <NavLink
-                to={seeAllTo}
-                className="flex items-center p-2 gap-1 text-xs font-semibold text-gray-500 border border-gray-500 hover:text-blue-600 hover:border-blue-600 rounded transition-colors"
-            >
-                See all
-                <ChevronRight size={13} strokeWidth={2.5}/>
-            </NavLink>
-        )}
-    </div>
-);
 
 // Task item component which is used to represent each task in the task list used in the 'Tasks' section
 const TaskItem = ({task}) => {
@@ -191,18 +151,6 @@ const AppointmentCard = ({appointment}) => {
         </div>);
 };
 
-// Design helper for representing item loading
-const SkeletonBlock = ({className}) => (<div className={`rounded-xl bg-gray-100 animate-pulse ${className}`}/>);
-
-// General section body template
-// Different sections in the main body contain this body, if there is no item to show
-const EmptyState = ({message}) => (
-    <div className="flex flex-col items-center py-8 text-gray-400 text-sm">
-        <AlertCircle size={28} className="text-gray-200 mb-2"/>
-        {message}
-    </div>
-);
-
 // Main component
 const MyActivity = () => {
     const {userData} = useContext(AuthContext);
@@ -231,7 +179,7 @@ const MyActivity = () => {
                 ]);
 
                 // List upcoming appointments
-                const upcomingAppointments = (appointmentsRes.data.appointments || []).map((appointment, index) => ({
+                const allAppointments = (appointmentsRes.data.appointments || []).map((appointment, index) => ({
                     id: index + 1,
                     faculty: appointment.faculty.name,
                     startTime: new Date(appointment.startTime).toLocaleTimeString([], {
@@ -241,6 +189,8 @@ const MyActivity = () => {
                     room: appointment.faculty.room,
                     status: appointment.status,
                 }));
+
+                const upcomingAppointments = allAppointments.filter(appointment => appointment.status === "approved");
 
                 // Set appointments and stats immediately
                 setAppointments(upcomingAppointments);
@@ -396,7 +346,7 @@ const MyActivity = () => {
             </div>
 
             {/* Main Grid */}
-            <div className="grid grid-cols-1 xl:grid-cols-5 xl:grid-rows-6 gap-6 items-start">
+            <div className="grid grid-cols-1 xl:grid-cols-5 xl:grid-rows-[auto_1fr] gap-6 items-start">
                 {/* Recent Announcements */}
                 <div className="w-full h-full xl:col-span-3 xl:row-span-2">
                     <RecentNotices notices={notices} loading={loading}/>
@@ -429,27 +379,26 @@ const MyActivity = () => {
                     )}
                 </div>
 
-                {/* Calendar */}
+                {/* CalendarF */}
                 <div className="w-full h-full xl:col-span-3 xl:row-span-4">
                     <CalendarF/>
                 </div>
 
                 {/* Submission Overview */}
-                <div className="w-full h-full xl:col-span-2 xl:row-span-2 flex flex-col gap-6">
-                    <div className="w-full h-full bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                <div className="w-full xl:col-span-2 xl:row-span-2">
+                    <div className="w-full bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
                         <SectionHeader
                             icon={ClipboardCheck}
                             title="Performance Overview"
                             iconBg="bg-green-50"
                             iconColor="text-green-500"
-                            seeAllTo=""
                             navigate={false}
                         />
                         {loading ? (
                             <SkeletonBlock className="h-48"/>
                         ) : (
                             <>
-                                <ResponsiveContainer width="100%" height={360}>
+                                <ResponsiveContainer width="100%" height={300}>
                                     <PieChart>
                                         <Pie
                                             data={pieData}
@@ -459,7 +408,9 @@ const MyActivity = () => {
                                             label={({percent}) => percent > 0 ? `${(percent * 100).toFixed(0)}%` : ''}
                                             labelLine={false}
                                         >
-                                            {pieData.map((_, idx) => (<Cell key={idx} fill={PIE_COLORS[idx]}/>))}
+                                            {pieData.map((_, idx) => (
+                                                <Cell key={idx} fill={PIE_COLORS[idx]}/>
+                                            ))}
                                         </Pie>
                                         <Tooltip formatter={(value, name) => [value, name]}/>
                                     </PieChart>
@@ -470,8 +421,10 @@ const MyActivity = () => {
                                     {pieData.map((entry, idx) => (
                                         <div key={idx} className="flex flex-col items-center gap-1">
                                             <div className="flex items-center gap-1">
-                                                <div className="w-2 h-2 rounded-full"
-                                                     style={{backgroundColor: PIE_COLORS[idx]}}/>
+                                                <div
+                                                    className="w-2 h-2 rounded-full"
+                                                    style={{backgroundColor: PIE_COLORS[idx]}}
+                                                />
                                                 <span className="text-xs text-gray-500 text-center">{entry.name}</span>
                                             </div>
                                             <span className="text-sm font-bold text-gray-900">{entry.value}</span>
