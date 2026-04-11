@@ -6,7 +6,6 @@ import SignUp from "../Pages/SignUp/SignUp.jsx";
 import Repository from "../Pages/Repository/Repository.jsx";
 import NotFound from "../Pages/NotFound.jsx/NotFound.jsx";
 
-import DashboardLayout from "../Layouts/DashboardLayout/DashboardLayout.jsx";
 import FacultyDashboardLayout from "../Layouts/FacultyDashboardLayout/FacultyDashboardLayout.jsx"
 import StudentDashboard from "../Pages/StudentDashboard/StudentDashboard.jsx";
 import MyActivity from "../Pages/StudentDashboard/MyActivity.jsx";
@@ -35,6 +34,10 @@ import UserDetails from "../Components/User/UserDetails.jsx";
 import ManageMentorship from "../Pages/AdminDashboard/ManageMentorship.jsx";
 import FacultyDetails from "../Components/FacultyDetails/FacultyDetails.jsx";
 
+import ChatPage from "../Pages/ChatPage.jsx/ChatPage.jsx";
+import ConversationPage from "../Pages/ConversationPage/ConversationPage.jsx";
+import {Activity} from "lucide-react";
+
 export const router = createBrowserRouter([
     {
         path: "/",
@@ -46,23 +49,23 @@ export const router = createBrowserRouter([
         children: [
             {
                 index: true,
-                element: <Home />
+                Component: Home
             },
             {
                 path: "home",
-                element: <Home />
+                Component: Home
             },
             {
                 path: "login",
-                element: <Login />
+                Component: Login
             },
             {
                 path: "signup",
-                element: <SignUp />
+                Component: SignUp
             },
             {
                 path: "repository",
-                element: <Repository />
+                Component: Repository
             },
         ]
     },
@@ -80,35 +83,43 @@ export const router = createBrowserRouter([
             },
             {
                 path: "activity",
-                element: <MyActivity />
+                Component: MyActivity
             },
             {
                 path: "courses",
-                element: <MyCourses />
+                Component: MyCourses
             },
             {
                 path: "assessments",
-                element: <MyAssessments />
+                Component: MyAssessments
             },
             {
                 path: "ask-mentor",
-                element: <AskMentor />
+                Component: AskMentor
             },
             {
                 path: "profile",
-                element: <StudentProfile />
+                Component: StudentProfile
             },
             {
                 path: "notifications",
-                element: <Notification />
+                Component: Notification
             },
             {
                 path: "courses/:id/details",
-                element: <CourseDetails />
+                Component: CourseDetails,
             },
             {
                 path: ":id/repository",
-                element: <Repository />
+                Component: Repository
+            },
+            {
+                path:"chat",
+                Component:ChatPage
+            },
+            {
+                path:"chat/:id",
+                Component:ConversationPage
             }
         ]
     },
@@ -126,35 +137,43 @@ export const router = createBrowserRouter([
             },
             {
                 path: "overview",
-                element: <Overview />
+                Component: Overview
             },
             {
                 path: "users",
-                element: <ManageUsers />
+                Component: ManageUsers
             },
             {
                 path: "mentorship",
-                element: <ManageMentorship />
+                Component: ManageMentorship
             },
             {
                 path: "notifications",
-                element: <Notification />
+                Component: Notification
             },
             {
                 path: "courses/:id/details",
-                element: <CourseDetails />
+                Component: CourseDetails
             },
             {
                 path: "users/:email/details",
-                element: <UserDetails />
+                Component: UserDetails
             },
             {
                 path: "mentorship/faculties/:email/details",
-                element: <FacultyDetails />
+                Component: FacultyDetails
             },
             {
                 path: ":id/repository",
-                element: <Repository />
+                Component: Repository
+            },
+            {
+                path:"chat",
+                Component:ChatPage
+            },
+            {
+                path:"chat/:id",
+                Component:ConversationPage
             }
         ]
     },
@@ -199,6 +218,14 @@ export const router = createBrowserRouter([
             {
                 path: ":id/repository",
                 Component: Repository
+            },
+            {
+                path:"chat",
+                Component:ChatPage
+            },
+            {
+                path:"chat/:id",
+                Component:ConversationPage
             }
         ]
     },
