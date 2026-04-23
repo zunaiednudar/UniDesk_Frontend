@@ -194,14 +194,14 @@ const SignUp = () => {
 
                     <fieldset className="fieldset">
                         <legend className="fieldset-legend">Full Name</legend>
-                        <input type="text" name="name" className="input w-full" placeholder="Your Name" required />
+                        <input type="text" name="name" className="input input-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Your Name" required />
                     </fieldset>
 
                     {/* Email Field */}
 
                     <fieldset className="fieldset">
                         <legend className="fieldset-legend">University Email</legend>
-                        <input type="email" name="email" className="input w-full" placeholder="email@stud.kuet.ac.bd"
+                        <input type="email" name="email" className="input input-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="email@stud.kuet.ac.bd"
                             required />
                     </fieldset>
 
@@ -217,7 +217,7 @@ const SignUp = () => {
 
                     <fieldset className="fieldset">
                         <legend className="fieldset-legend">Role</legend>
-                        <select name="role" value={role} className="w-full select" onChange={(e) => setRole(e.target.value)}
+                        <select name="role" value={role} className="w-full select focus:outline-none focus:ring-2 focus:ring-blue-500" onChange={(e) => setRole(e.target.value)}
                             required>
                             <option value="" disabled={true}>Select Role</option>
                             <option value="faculty">Faculty</option>
@@ -236,7 +236,7 @@ const SignUp = () => {
 
                                 <fieldset className="fieldset">
                                     <legend className="fieldset-legend">Student ID</legend>
-                                    <input type="text" name="studentID" className="input w-full" placeholder="2107001"
+                                    <input type="text" name="studentID" className="input input-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="2107001"
                                         required />
                                 </fieldset>
 
@@ -244,7 +244,7 @@ const SignUp = () => {
 
                                 <fieldset className="fieldset">
                                     <legend className="fieldset-legend">Batch</legend>
-                                    <input type="text" name="batch" className="input w-full" placeholder="2K21" required />
+                                    <input type="text" name="batch" className="input input-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="2K21" required />
                                 </fieldset>
                             </>
                         )
@@ -260,7 +260,7 @@ const SignUp = () => {
 
                                 <fieldset className="fieldset">
                                     <legend className="fieldset-legend">Designation</legend>
-                                    <select defaultValue="" name="designation" className="w-full select" required>
+                                    <select defaultValue="" name="designation" className="w-full select focus:outline-none focus:ring-2 focus:ring-blue-500" required>
                                         <option value="" disabled>
                                             Select Designation
                                         </option>
@@ -275,7 +275,7 @@ const SignUp = () => {
 
                                 <fieldset className="fieldset">
                                     <legend className="fieldset-legend">Room No</legend>
-                                    <input type="text" name="room" className="input w-full" placeholder="CSE 201, B-Block, Academic Building"
+                                    <input type="text" name="room" className="input input-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="CSE 201, B-Block, Academic Building"
                                         required />
                                 </fieldset>
                             </>
@@ -286,7 +286,7 @@ const SignUp = () => {
 
                     <fieldset className="fieldset">
                         <legend className="fieldset-legend">Department</legend>
-                        <select defaultValue="" name="department" className="w-full select" required>
+                        <select defaultValue="" name="department" className="w-full select focus:outline-none focus:ring-2 focus:ring-blue-500" required>
                             <option value="" disabled>Select Department</option>
                             <option value="arch">Architecture</option>
                             <option value="bme">Biomedical Engineering</option>
@@ -311,7 +311,7 @@ const SignUp = () => {
 
                     <fieldset className="fieldset">
                         <legend className="fieldset-legend">Password</legend>
-                        <input type="password" name="password" className="input w-full" placeholder="••••••" required />
+                        <input type="password" name="password" className="input input-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="••••••" required />
                     </fieldset>
                     {
                         error && <p className='text-sm text-red-600 mb-1 text-justify'>{error}</p>
@@ -321,7 +321,7 @@ const SignUp = () => {
 
                     <fieldset className="fieldset mb-5">
                         <legend className="fieldset-legend">Confirm Password</legend>
-                        <input type="password" name="confirmPassword" className="input w-full" placeholder="••••••" required />
+                        <input type="password" name="confirmPassword" className="input input-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="••••••" required />
                     </fieldset>
 
                     {/* Submit Button */}

@@ -95,7 +95,7 @@ const PendingVerification = () => {
     return (
         <div className="min-h-screen flex items-center justify-center px-6 gilroy">
             <div className="w-full max-w-lg bg-white rounded-2xl shadow-lg p-8 text-center">
-                <p className="text-3xl font-semibold mb-4">Verify Your Email</p>
+                <p className="text-3xl font-semibold mb-4 graphik">Verify Your Email</p>
                 <p className="text-gray-600 mb-6">
                     Verification email sent to your email. Please verify your account to continue.
                 </p>

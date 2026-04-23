@@ -139,14 +139,14 @@ const Login = () => {
 
                     <fieldset className="fieldset">
                         <legend className="fieldset-legend">University Email</legend>
-                        <input type="email" name="email" className="input w-full" placeholder="email@kuet.ac.bd" required />
+                        <input type="email" name="email" className="input input-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="email@kuet.ac.bd" required />
                     </fieldset>
 
                     {/* Password Field */}
 
                     <fieldset className="fieldset mb-2">
                         <legend className="fieldset-legend">Password</legend>
-                        <input type="password" name="password" className="input w-full" placeholder="••••••" required />
+                        <input type="password" name="password" className="input input-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="••••••" required />
                     </fieldset>
                     <div className="w-full flex justify-end mb-5">
                         <p onClick={passwordResetModalOpen} className="text-sm text-blue-500 font-medium cursor-pointer">Forgot Password?</p>
@@ -168,7 +168,7 @@ const Login = () => {
                         <form onSubmit={handleForgotPassword} className='w-full'>
                             <fieldset className="fieldset mb-5">
                                 <legend className="fieldset-legend text-sm">Enter your email</legend>
-                                <input type="email" name="forgotEmail" className="input w-full" placeholder="email@stud.kuet.ac.bd" required />
+                                <input type="email" name="forgotEmail" className="input input-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="email@stud.kuet.ac.bd" required />
                             </fieldset>
                             <div className='flex gap-5 justify-end'>
                                 <button type="submit" className='btn'>Submit</button>

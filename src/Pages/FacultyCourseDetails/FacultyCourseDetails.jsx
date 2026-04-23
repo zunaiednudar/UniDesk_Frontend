@@ -1303,7 +1303,7 @@ const FacultyCourseDetails = () => {
                         <button onClick={openCreateAnnouncementModal} className="flex gap-2 items-center bg-[#1E40AF] text-white px-5 py-2 rounded-lg cursor-pointer text-center transition-colors hover:bg-blue-600 duration-500 text-xs md:text-sm lg:text-md"><IoMdCreate /> Create
                         </button>
                     </div>
-                    <div className='flex flex-col gap-2'>
+                    <div className='flex flex-col gap-2 max-h-[720px] overflow-y-auto pr-1'>
                         {
                             announcements.length === 0 ?
                                 <EmptyState message={"No announcement found"}></EmptyState>
@@ -1341,7 +1341,7 @@ const FacultyCourseDetails = () => {
                             <button className="flex gap-2 items-center bg-[#1E40AF] text-white px-5 py-2 rounded-lg cursor-pointer text-center transition-colors hover:bg-blue-600 duration-500 text-xs md:text-sm lg:text-md" onClick={openUploadAssignmentModal}><IoMdCreate /> Create
                             </button>
                         </div>
-                        <div className='flex flex-col gap-2'>
+                        <div className='flex flex-col gap-2 max-h-[720px] overflow-y-auto pr-1'>
                             {
                                 assignments.length === 0 ?
                                     <EmptyState message={"No assignment found"}></EmptyState>
@@ -1404,7 +1404,7 @@ const FacultyCourseDetails = () => {
                                 </div>
                                 <p className='font-semibold'>Description</p>
                             </div>
-                            <p className='w-full text-gray-500 text-sm'>
+                            <p className='w-full text-gray-500 text-sm max-h-[720px] overflow-y-auto pr-1'>
                                 {!course?.description ? "No description found" : course?.description}
                             </p>
                         </div>

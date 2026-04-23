@@ -3,6 +3,7 @@ import DotGrid from "../../Components/DotGrid/DotGrid.jsx";
 import TextType from "../../Components/TextType/TextType.jsx";
 import { ArrowRight, GraduationCap, MessageSquare, ClipboardCheck, BarChart3, Calendar, Users, CircleCheckBig } from "lucide-react";
 import {Link} from "react-router";
+import kuet from "../../assets/kuet.jpg";
 
 const Home = () => {
     const stats = [
@@ -157,7 +158,7 @@ const Home = () => {
                     <div className="grid lg:grid-cols-2 gap-12 items-center">
                         <div className="relative w-full">
                             <img
-                                src="src/assets/kuet.jpg"
+                                src={kuet}
                                 alt="Khulna University of Engineering and Technology Campus"
                                 className="w-full h-auto max-w-full rounded-2xl shadow-xl object-cover"
                             />
