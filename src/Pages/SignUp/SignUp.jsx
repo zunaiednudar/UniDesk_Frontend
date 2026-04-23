@@ -84,6 +84,8 @@ const SignUp = () => {
             const freshToken = await user.getIdToken(true);
             localStorage.setItem("access-token", freshToken);
 
+            sessionStorage.setItem("pending-verification-mail-sent", "true");
+
             await sendVerificationEmailToUser(user);
 
             // Users Information storing in database

@@ -78,6 +78,7 @@ const PendingVerification = () => {
 
     const handleResend = async () => {
         try {
+            sessionStorage.setItem("pending-verification-mail-sent", "true");
             await sendVerificationEmailToUser();
             toast.success("Verification email sent. Check your inbox");
         } catch (error) {
