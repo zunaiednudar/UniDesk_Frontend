@@ -10,34 +10,53 @@ import axiosSecure from '../../utils/axiosSecure.js';
 import formatName from '../../utils/formatName.js';
 
 const Login = () => {
-    const { login, signInWithGoogle, setLoading, passwordReset, removeUser, logout, userData,setUserData } = useContext(AuthContext);
+    const { login, signInWithGoogle, setLoading, passwordReset, removeUser, logout, userData, setUserData } = useContext(AuthContext);
     const navigate = useNavigate();
 
     // Email Login
 
-    const handleLogin =async (e) => {
+    const handleLogin = async (e) => {
         e.preventDefault();
         const form = e.target;
 
         const email = form.email.value;
         const password = form.password.value;
 
-        login(email, password).then(async (res) => {
+        try {
+            const res = await login(email, password);
             const user = res.user;
-            // console.log(user);
-            const dbData=await axiosSecure.get(`/users/${user.email}`);
-            // console.log(dbData);
-            if (dbData.data.user.role === "student")
+
+            const freshToken = await user.getIdToken(true);
+            localStorage.setItem("access-token", freshToken);
+
+
+            const accountRes = await axiosSecure.get("/users/account-status");
+            const account = accountRes.data.user;
+
+            setUserData(account);
+
+            if (account.status === "pending") {
+                navigate("/pending-verification");
+                return;
+            }
+
+            if (account.status === "suspended") {
+                navigate("/suspended");
+                return;
+            }
+
+            if (account.role === "student")
                 navigate("/dashboard/student");
-            else if (dbData.data.user.role === "faculty")
+            else if (account.role === "faculty")
                 navigate("/dashboard/faculty");
             else
                 navigate("/dashboard/admin");
-            toast.success(`Welcome ${formatName(dbData?.data?.user?.name) || "back"}`);
-        }).catch((error) => {
+            toast.success(`Welcome ${formatName(account?.name) || "back"}`);
+
+        } catch (error) {
             toast.error(formatErrorMessage(error));
             setLoading(false);
-        });
+        }
     }
 
     // Forgot Password

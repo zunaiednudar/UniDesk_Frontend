@@ -3,6 +3,7 @@ import { auth } from "../../Firebase/firebase.init.js";
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup, updateProfile, onAuthStateChanged, sendPasswordResetEmail, deleteUser } from "firebase/auth";
 import { fetchUserData } from '../../utils/fetchUserData.js';
 import socket from '../../utils/socket.js';
+import { fetchAccountStatus } from '../../utils/fetchAccountStatus.js';
 
 export const AuthContext = createContext();
 
@@ -82,8 +83,12 @@ const AuthProvider = ({ children }) => {
                 const idToken = await currentUser.getIdToken();
                 setToken(idToken);
                 localStorage.setItem("access-token", idToken);
-                const res = await fetchUserData(currentUser);
-                setUserData(res);
+
+                const accountData=await fetchAccountStatus();
+                setUserData(accountData);
+
+                // const res = await fetchUserData(currentUser);
+                // setUserData(res);
             }
             else {
                 setUserData(null);
