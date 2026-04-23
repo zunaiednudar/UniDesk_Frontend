@@ -10,7 +10,7 @@ import { handleGoogleLogin } from '../../utils/handleGoogleLogin.js';
 import { formatErrorMessage } from '../../utils/formatErrorMessages.js';
 
 const SignUp = () => {
-    const { signUp, updateUser, setUser, signInWithGoogle, removeUser,logout,setUserData } = useContext(AuthContext);
+    const { signUp, updateUser, setUser, signInWithGoogle, removeUser, logout, setUserData, sendVerificationEmailToUser } = useContext(AuthContext);
 
     const [role, setRole] = useState("");
     const [error, setError] = useState("");
@@ -81,12 +81,20 @@ const SignUp = () => {
             const result = await signUp(data.email, password);
             const user = result.user;
 
+            const freshToken = await user.getIdToken(true);
+            localStorage.setItem("access-token", freshToken);
+
+            await sendVerificationEmailToUser(user);
+
             // Users Information storing in database
 
             try {
-                const res = await axiosSecure.post("/users", data);
+                await axiosSecure.post("/users", data);
 
-                setUserData(res.data.user);
+                const accountRes = await axiosSecure.get("/users/account-status");
+                const account = accountRes.data.user;
+
+                setUserData(account);
 
                 await updateUser({
                     displayName: data.name,
@@ -95,13 +103,8 @@ const SignUp = () => {
 
                 setUser({ ...user, displayName: data.name, photoURL: data.photoURL });
 
-                toast.success("Signed up successfully");
-                if (role === "student")
-                    navigate("/dashboard/student");
-                else if (role === "faculty")
-                    navigate("/dashboard/faculty");
-                else
-                    navigate("/dashboard/admin");
+                toast.success("Account created. Verification email sent to your email.");
+                navigate("/pending-verification", { replace: true });
             } catch (dbError) {
                 await removeUser();
                 toast.error(
@@ -111,8 +114,9 @@ const SignUp = () => {
             }
         } catch (error) {
             toast.error(formatErrorMessage(error));
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
     };
 
     return (
@@ -161,7 +165,7 @@ const SignUp = () => {
                 className="w-full max-w-full lg:max-w-[50%] min-h-screen flex flex-col items-center justify-center p-10">
                 <p className="graphik font-semibold text-black text-3xl md:text-5xl mb-5">Create Account</p>
                 <p className="text-gray-400 mb-10 text-sm md:text-[16px]">Join the UniDesk Community today</p>
-                <button onClick={() => handleGoogleLogin(signInWithGoogle, removeUser, logout, navigate,setUserData)}
+                <button onClick={() => handleGoogleLogin(signInWithGoogle, removeUser, logout, navigate, setUserData)}
                     className="w-full max-w-[500px] h-12 btn bg-white text-black border-[#e5e5e5] mb-5 cursor-pointer">
                     <svg aria-label="Google logo" width="16" height="16" xmlns="http://www.w3.org/2000/svg"
                         viewBox="0 0 512 512">

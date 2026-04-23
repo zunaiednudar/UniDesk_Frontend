@@ -10,6 +10,12 @@ const PublicRoute = ({ children }) => {
         return <Loading></Loading>;
 
     if (user && user.email) {
+        if (userData?.status === "pending")
+            return <Navigate to="/pending-verification" replace />;
+
+        if (userData?.status === "suspended")
+            return <Navigate to="/suspended" replace />;
+        
         if (userData?.role === "student")
             return <Navigate to="/dashboard/student" replace></Navigate>;
         if (userData?.role === "faculty")

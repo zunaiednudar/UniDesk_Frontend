@@ -10,8 +10,14 @@ const FacultyRoute = ({ children }) => {
     if (loading || (user && !userData))
         return <Loading></Loading>;
 
-    if(!user)
+    if (!user)
         return <Navigate to="/login" replace></Navigate>
+
+    if (userData?.status === "pending")
+        return <Navigate to="/pending-verification" replace />;
+
+    if (userData?.status === "suspended")
+        return <Navigate to="/suspended" replace />;
 
     if (userData?.role !== "faculty")
         return <NotFound></NotFound>;
