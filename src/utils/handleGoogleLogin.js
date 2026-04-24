@@ -1,7 +1,8 @@
 import { toast } from "sonner";
 import axiosSecure from "./axiosSecure.js";
+import { formatErrorMessage } from "./formatErrorMessages.js";
 
-export const handleGoogleLogin = async (signInWithGoogle, removeUser, logout,navigate,setUserData) => {
+export const handleGoogleLogin = async (signInWithGoogle, removeUser, logout, navigate, setUserData) => {
     try {
         const res = await signInWithGoogle();
 
@@ -12,11 +13,14 @@ export const handleGoogleLogin = async (signInWithGoogle, removeUser, logout,nav
         const email = user.email;
         const isNewUser = res._tokenResponse?.isNewUser;
 
+        const freshToken = await user.getIdToken(true);
+        localStorage.setItem("access-token", freshToken);
+
         if (!email.endsWith(".kuet.ac.bd")) {
             toast.error("Please use a valid KUET email.");
-            if (isNewUser) 
+            if (isNewUser)
                 await removeUser();
-            else 
+            else
                 await logout();
             return;
         }
@@ -39,9 +43,17 @@ export const handleGoogleLogin = async (signInWithGoogle, removeUser, logout,nav
         };
 
         try {
-            const res = await axiosSecure.post("/users", data);
+            await axiosSecure.post("/users", data);
 
-            setUserData(res.data.user); 
+            const accountRes = await axiosSecure.get("/users/account-status");
+            const account = accountRes.data.user;
+
+            setUserData(account);
+
+            if (account.status === "suspended") {
+                navigate("/suspended");
+                return;
+            }
 
             toast.success("Logged in with Google");
 
@@ -55,9 +67,9 @@ export const handleGoogleLogin = async (signInWithGoogle, removeUser, logout,nav
                 navigate("/dashboard/admin");
 
         } catch (dbError) {
-            if (isNewUser) 
+            if (isNewUser)
                 await removeUser();
-            else 
+            else
                 await logout();
 
             toast.error(dbError.response?.data?.message || "Login failed");

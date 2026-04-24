@@ -5,6 +5,8 @@ import Login from "../Pages/Login/Login.jsx";
 import SignUp from "../Pages/SignUp/SignUp.jsx";
 import Repository from "../Pages/Repository/Repository.jsx";
 import NotFound from "../Pages/NotFound.jsx/NotFound.jsx";
+import PendingVerification from "../Pages/PendingVerification/PendingVerification.jsx";
+import Suspended from "../Pages/Suspended/Suspended.jsx";
 
 import FacultyDashboardLayout from "../Layouts/FacultyDashboardLayout/FacultyDashboardLayout.jsx"
 import StudentDashboard from "../Pages/StudentDashboard/StudentDashboard.jsx";
@@ -15,6 +17,7 @@ import AskMentor from "../Pages/StudentDashboard/AskMentor.jsx";
 import PublicRoute from "../Providers/PublicRoute/PublicRoute.jsx";
 import StudentRoute from "../Providers/RoleWiseRoutes/StudentRoute/StudentRoute.jsx";
 import FacultyRoute from "../Providers/RoleWiseRoutes/FacultyRoute/FacultyRoute.jsx";
+import AccountStatusRoute from "../Providers/AccountStatusRoute/AccountStatusRoute.jsx";
 import FacultyDashboard from "../Pages/FacultyDashboard/FacultyDashboard.jsx";
 import FacultyMyProfile from "../Pages/FacultyMyProfile/FacultyMyProfile.jsx";
 import FacultyMyCourses from "../Pages/FacultyMyCourses/FacultyMyCourses.jsx";
@@ -36,7 +39,7 @@ import FacultyDetails from "../Components/FacultyDetails/FacultyDetails.jsx";
 
 import ChatPage from "../Pages/ChatPage.jsx/ChatPage.jsx";
 import ConversationPage from "../Pages/ConversationPage/ConversationPage.jsx";
-import {Activity} from "lucide-react";
+import { Activity } from "lucide-react";
 
 export const router = createBrowserRouter([
     {
@@ -68,6 +71,22 @@ export const router = createBrowserRouter([
                 Component: Repository
             },
         ]
+    },
+    {
+        path: "/pending-verification",
+        element: (
+            <AccountStatusRoute allowedStatus="pending">
+                <PendingVerification />
+            </AccountStatusRoute>
+        )
+    },
+    {
+        path: "/suspended",
+        element: (
+            <AccountStatusRoute allowedStatus="suspended">
+                <Suspended />
+            </AccountStatusRoute>
+        )
     },
     {
         path: "/dashboard/student",
@@ -114,12 +133,12 @@ export const router = createBrowserRouter([
                 Component: Repository
             },
             {
-                path:"chat",
-                Component:ChatPage
+                path: "chat",
+                Component: ChatPage
             },
             {
-                path:"chat/:id",
-                Component:ConversationPage
+                path: "chat/:id",
+                Component: ConversationPage
             }
         ]
     },
@@ -170,54 +189,54 @@ export const router = createBrowserRouter([
         ]
     },
     {
-        path:"/dashboard/faculty",
-        element:<FacultyRoute>
+        path: "/dashboard/faculty",
+        element: <FacultyRoute>
             <FacultyDashboardLayout></FacultyDashboardLayout>
         </FacultyRoute>,
-        children:[
+        children: [
             {
-                index:true,
-                element:<Navigate to="activity"/>
+                index: true,
+                element: <Navigate to="activity" />
             },
             {
-                path:"activity",
-                Component:FacultyDashboard
+                path: "activity",
+                Component: FacultyDashboard
             },
             {
-                path:"profile",
-                Component:FacultyMyProfile
+                path: "profile",
+                Component: FacultyMyProfile
             },
             {
-                path:"courses",
-                Component:FacultyMyCourses
+                path: "courses",
+                Component: FacultyMyCourses
             },
             {
-                path:"supervises",
-                Component:FacultyMySupervises
+                path: "supervises",
+                Component: FacultyMySupervises
             },
             {
-                path:"appointments",
-                Component:FacultyMyAppointments
+                path: "appointments",
+                Component: FacultyMyAppointments
             },
             {
-                path:"schedule",
-                Component:FacultyMySchedule
+                path: "schedule",
+                Component: FacultyMySchedule
             },
             {
-                path:"courses/:id/details",
-                Component:FacultyCourseDetails
+                path: "courses/:id/details",
+                Component: FacultyCourseDetails
             },
             {
                 path: ":id/repository",
                 Component: Repository
             },
             {
-                path:"chat",
-                Component:ChatPage
+                path: "chat",
+                Component: ChatPage
             },
             {
-                path:"chat/:id",
-                Component:ConversationPage
+                path: "chat/:id",
+                Component: ConversationPage
             }
         ]
     },

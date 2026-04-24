@@ -10,34 +10,53 @@ import axiosSecure from '../../utils/axiosSecure.js';
 import formatName from '../../utils/formatName.js';
 
 const Login = () => {
-    const { login, signInWithGoogle, setLoading, passwordReset, removeUser, logout, userData,setUserData } = useContext(AuthContext);
+    const { login, signInWithGoogle, setLoading, passwordReset, removeUser, logout, userData, setUserData } = useContext(AuthContext);
     const navigate = useNavigate();
 
     // Email Login
 
-    const handleLogin =async (e) => {
+    const handleLogin = async (e) => {
         e.preventDefault();
         const form = e.target;
 
         const email = form.email.value;
         const password = form.password.value;
 
-        login(email, password).then(async (res) => {
+        try {
+            const res = await login(email, password);
             const user = res.user;
-            // console.log(user);
-            const dbData=await axiosSecure.get(`/users/${user.email}`);
-            // console.log(dbData);
-            if (dbData.data.user.role === "student")
+
+            const freshToken = await user.getIdToken(true);
+            localStorage.setItem("access-token", freshToken);
+
+
+            const accountRes = await axiosSecure.get("/users/account-status");
+            const account = accountRes.data.user;
+
+            setUserData(account);
+
+            if (account.status === "pending") {
+                navigate("/pending-verification");
+                return;
+            }
+
+            if (account.status === "suspended") {
+                navigate("/suspended");
+                return;
+            }
+
+            if (account.role === "student")
                 navigate("/dashboard/student");
-            else if (dbData.data.user.role === "faculty")
+            else if (account.role === "faculty")
                 navigate("/dashboard/faculty");
             else
                 navigate("/dashboard/admin");
-            toast.success(`Welcome ${formatName(dbData?.data?.user?.name) || "back"}`);
-        }).catch((error) => {
+            toast.success(`Welcome ${formatName(account?.name) || "back"}`);
+
+        } catch (error) {
             toast.error(formatErrorMessage(error));
             setLoading(false);
-        });
+        }
     }
 
     // Forgot Password
@@ -120,14 +139,14 @@ const Login = () => {
 
                     <fieldset className="fieldset">
                         <legend className="fieldset-legend">University Email</legend>
-                        <input type="email" name="email" className="input w-full" placeholder="email@kuet.ac.bd" required />
+                        <input type="email" name="email" className="input input-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="email@kuet.ac.bd" required />
                     </fieldset>
 
                     {/* Password Field */}
 
                     <fieldset className="fieldset mb-2">
                         <legend className="fieldset-legend">Password</legend>
-                        <input type="password" name="password" className="input w-full" placeholder="••••••" required />
+                        <input type="password" name="password" className="input input-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="••••••" required />
                     </fieldset>
                     <div className="w-full flex justify-end mb-5">
                         <p onClick={passwordResetModalOpen} className="text-sm text-blue-500 font-medium cursor-pointer">Forgot Password?</p>
@@ -149,7 +168,7 @@ const Login = () => {
                         <form onSubmit={handleForgotPassword} className='w-full'>
                             <fieldset className="fieldset mb-5">
                                 <legend className="fieldset-legend text-sm">Enter your email</legend>
-                                <input type="email" name="forgotEmail" className="input w-full" placeholder="email@stud.kuet.ac.bd" required />
+                                <input type="email" name="forgotEmail" className="input input-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="email@stud.kuet.ac.bd" required />
                             </fieldset>
                             <div className='flex gap-5 justify-end'>
                                 <button type="submit" className='btn'>Submit</button>

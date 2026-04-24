@@ -10,7 +10,7 @@ import { handleGoogleLogin } from '../../utils/handleGoogleLogin.js';
 import { formatErrorMessage } from '../../utils/formatErrorMessages.js';
 
 const SignUp = () => {
-    const { signUp, updateUser, setUser, signInWithGoogle, removeUser,logout,setUserData } = useContext(AuthContext);
+    const { signUp, updateUser, setUser, signInWithGoogle, removeUser, logout, setUserData, sendVerificationEmailToUser } = useContext(AuthContext);
 
     const [role, setRole] = useState("");
     const [error, setError] = useState("");
@@ -81,12 +81,22 @@ const SignUp = () => {
             const result = await signUp(data.email, password);
             const user = result.user;
 
+            const freshToken = await user.getIdToken(true);
+            localStorage.setItem("access-token", freshToken);
+
+            sessionStorage.setItem("pending-verification-mail-sent", "true");
+
+            await sendVerificationEmailToUser(user);
+
             // Users Information storing in database
 
             try {
-                const res = await axiosSecure.post("/users", data);
+                await axiosSecure.post("/users", data);
 
-                setUserData(res.data.user);
+                const accountRes = await axiosSecure.get("/users/account-status");
+                const account = accountRes.data.user;
+
+                setUserData(account);
 
                 await updateUser({
                     displayName: data.name,
@@ -95,13 +105,8 @@ const SignUp = () => {
 
                 setUser({ ...user, displayName: data.name, photoURL: data.photoURL });
 
-                toast.success("Signed up successfully");
-                if (role === "student")
-                    navigate("/dashboard/student");
-                else if (role === "faculty")
-                    navigate("/dashboard/faculty");
-                else
-                    navigate("/dashboard/admin");
+                toast.success("Account created. Verification email sent to your email.");
+                navigate("/pending-verification", { replace: true });
             } catch (dbError) {
                 await removeUser();
                 toast.error(
@@ -111,8 +116,9 @@ const SignUp = () => {
             }
         } catch (error) {
             toast.error(formatErrorMessage(error));
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
     };
 
     return (
@@ -161,7 +167,7 @@ const SignUp = () => {
                 className="w-full max-w-full lg:max-w-[50%] min-h-screen flex flex-col items-center justify-center p-10">
                 <p className="graphik font-semibold text-black text-3xl md:text-5xl mb-5">Create Account</p>
                 <p className="text-gray-400 mb-10 text-sm md:text-[16px]">Join the UniDesk Community today</p>
-                <button onClick={() => handleGoogleLogin(signInWithGoogle, removeUser, logout, navigate,setUserData)}
+                <button onClick={() => handleGoogleLogin(signInWithGoogle, removeUser, logout, navigate, setUserData)}
                     className="w-full max-w-[500px] h-12 btn bg-white text-black border-[#e5e5e5] mb-5 cursor-pointer">
                     <svg aria-label="Google logo" width="16" height="16" xmlns="http://www.w3.org/2000/svg"
                         viewBox="0 0 512 512">
@@ -188,14 +194,14 @@ const SignUp = () => {
 
                     <fieldset className="fieldset">
                         <legend className="fieldset-legend">Full Name</legend>
-                        <input type="text" name="name" className="input w-full" placeholder="Your Name" required />
+                        <input type="text" name="name" className="input input-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Your Name" required />
                     </fieldset>
 
                     {/* Email Field */}
 
                     <fieldset className="fieldset">
                         <legend className="fieldset-legend">University Email</legend>
-                        <input type="email" name="email" className="input w-full" placeholder="email@stud.kuet.ac.bd"
+                        <input type="email" name="email" className="input input-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="email@stud.kuet.ac.bd"
                             required />
                     </fieldset>
 
@@ -211,7 +217,7 @@ const SignUp = () => {
 
                     <fieldset className="fieldset">
                         <legend className="fieldset-legend">Role</legend>
-                        <select name="role" value={role} className="w-full select" onChange={(e) => setRole(e.target.value)}
+                        <select name="role" value={role} className="w-full select focus:outline-none focus:ring-2 focus:ring-blue-500" onChange={(e) => setRole(e.target.value)}
                             required>
                             <option value="" disabled={true}>Select Role</option>
                             <option value="faculty">Faculty</option>
@@ -230,7 +236,7 @@ const SignUp = () => {
 
                                 <fieldset className="fieldset">
                                     <legend className="fieldset-legend">Student ID</legend>
-                                    <input type="text" name="studentID" className="input w-full" placeholder="2107001"
+                                    <input type="text" name="studentID" className="input input-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="2107001"
                                         required />
                                 </fieldset>
 
@@ -238,7 +244,7 @@ const SignUp = () => {
 
                                 <fieldset className="fieldset">
                                     <legend className="fieldset-legend">Batch</legend>
-                                    <input type="text" name="batch" className="input w-full" placeholder="2K21" required />
+                                    <input type="text" name="batch" className="input input-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="2K21" required />
                                 </fieldset>
                             </>
                         )
@@ -254,7 +260,7 @@ const SignUp = () => {
 
                                 <fieldset className="fieldset">
                                     <legend className="fieldset-legend">Designation</legend>
-                                    <select defaultValue="" name="designation" className="w-full select" required>
+                                    <select defaultValue="" name="designation" className="w-full select focus:outline-none focus:ring-2 focus:ring-blue-500" required>
                                         <option value="" disabled>
                                             Select Designation
                                         </option>
@@ -269,7 +275,7 @@ const SignUp = () => {
 
                                 <fieldset className="fieldset">
                                     <legend className="fieldset-legend">Room No</legend>
-                                    <input type="text" name="room" className="input w-full" placeholder="CSE 201, B-Block, Academic Building"
+                                    <input type="text" name="room" className="input input-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="CSE 201, B-Block, Academic Building"
                                         required />
                                 </fieldset>
                             </>
@@ -280,7 +286,7 @@ const SignUp = () => {
 
                     <fieldset className="fieldset">
                         <legend className="fieldset-legend">Department</legend>
-                        <select defaultValue="" name="department" className="w-full select" required>
+                        <select defaultValue="" name="department" className="w-full select focus:outline-none focus:ring-2 focus:ring-blue-500" required>
                             <option value="" disabled>Select Department</option>
                             <option value="arch">Architecture</option>
                             <option value="bme">Biomedical Engineering</option>
@@ -305,7 +311,7 @@ const SignUp = () => {
 
                     <fieldset className="fieldset">
                         <legend className="fieldset-legend">Password</legend>
-                        <input type="password" name="password" className="input w-full" placeholder="••••••" required />
+                        <input type="password" name="password" className="input input-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="••••••" required />
                     </fieldset>
                     {
                         error && <p className='text-sm text-red-600 mb-1 text-justify'>{error}</p>
@@ -315,7 +321,7 @@ const SignUp = () => {
 
                     <fieldset className="fieldset mb-5">
                         <legend className="fieldset-legend">Confirm Password</legend>
-                        <input type="password" name="confirmPassword" className="input w-full" placeholder="••••••" required />
+                        <input type="password" name="confirmPassword" className="input input-bordered w-full focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="••••••" required />
                     </fieldset>
 
                     {/* Submit Button */}

@@ -1,8 +1,9 @@
 import React, { createContext, useEffect, useState } from 'react';
 import { auth } from "../../Firebase/firebase.init.js";
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup, updateProfile, onAuthStateChanged, sendPasswordResetEmail, deleteUser } from "firebase/auth";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup, updateProfile, onAuthStateChanged, sendPasswordResetEmail, deleteUser, sendEmailVerification } from "firebase/auth";
 import { fetchUserData } from '../../utils/fetchUserData.js';
 import socket from '../../utils/socket.js';
+import { fetchAccountStatus } from '../../utils/fetchAccountStatus.js';
 
 export const AuthContext = createContext();
 
@@ -58,6 +59,24 @@ const AuthProvider = ({ children }) => {
         return sendPasswordResetEmail(auth, email);
     }
 
+    // Email verification
+
+    const sendVerificationEmailToUser = async (targetUser = auth.currentUser) => {
+        if (!targetUser)
+            throw new Error("No authenticated user found");
+
+        return sendEmailVerification(targetUser);
+    };
+
+    const reloadCurrentUser = async () => {
+        if (!auth.currentUser)
+            throw new Error("No authenticated user found");
+
+        await auth.currentUser.reload();
+        return auth.currentUser;
+    };
+
+
     // Delete user
 
     const removeUser = () => {
@@ -82,8 +101,12 @@ const AuthProvider = ({ children }) => {
                 const idToken = await currentUser.getIdToken();
                 setToken(idToken);
                 localStorage.setItem("access-token", idToken);
-                const res = await fetchUserData(currentUser);
-                setUserData(res);
+
+                const accountData = await fetchAccountStatus();
+                setUserData(accountData);
+
+                // const res = await fetchUserData(currentUser);
+                // setUserData(res);
             }
             else {
                 setUserData(null);
@@ -98,16 +121,16 @@ const AuthProvider = ({ children }) => {
     // Socket io
 
     useEffect(() => {
-        if (!userData?._id) 
+        if (!userData?._id)
             return;
 
         const joinRoom = () => {
             socket.emit("join", userData._id.toString());
         };
 
-        if (!socket.connected) 
+        if (!socket.connected)
             socket.connect();
-        if (socket.connected) 
+        if (socket.connected)
             joinRoom();
 
         socket.on("connect", joinRoom);
@@ -133,7 +156,9 @@ const AuthProvider = ({ children }) => {
         removeUser,
         token,
         userData,
-        setUserData
+        setUserData,
+        sendVerificationEmailToUser,
+        reloadCurrentUser,
     };
 
     return <AuthContext value={authData}>{children}</AuthContext>
