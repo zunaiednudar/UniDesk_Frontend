@@ -242,6 +242,10 @@ export const router = createBrowserRouter([
             {
                 path: "chat/:id",
                 Component: ConversationPage
+            },
+            {
+                path: "plagiarism-check",
+                Component: PlagiarismCheck
             }
         ]
     },
