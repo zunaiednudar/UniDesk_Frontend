@@ -214,7 +214,7 @@ const PlagiarismCheck = () => {
     const handleDrop        = (e)    => { e.preventDefault(); addFiles(Array.from(e.dataTransfer.files)); };
 
     const handleCheck = async () => {
-        if (files.length < 2) return;
+        if (files.length < 1) return;
         setChecking(true);
         setError(null);
         setResult(null);
@@ -256,14 +256,6 @@ const PlagiarismCheck = () => {
 
             {/* Back + Header */}
             <div>
-                <button
-                    onClick={() => navigate(-1)}
-                    className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-700 transition mb-4 group"
-                >
-                    <ArrowLeft size={15} className="group-hover:-translate-x-0.5 transition-transform" strokeWidth={2} />
-                    Back
-                </button>
-
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
                         <h1 className="graphik text-3xl font-semibold text-gray-900">Plagiarism Check</h1>
@@ -282,7 +274,7 @@ const PlagiarismCheck = () => {
                         />
                         <button
                             onClick={handleCheck}
-                            disabled={checking || files.length < 2}
+                            disabled={checking || files.length < 1}
                             className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 text-sm font-semibold text-white hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-150"
                         >
                             {checking
@@ -316,9 +308,7 @@ const PlagiarismCheck = () => {
                             <Upload size={11} /> Add more
                         </button>
                     )}
-                    {files.length === 1 && (
-                        <span className="text-[11px] text-amber-500 font-medium">Add at least one more file to compare</span>
-                    )}
+
                 </div>
             )}
 

@@ -142,7 +142,7 @@ export const router = createBrowserRouter([
                 Component: ConversationPage
             },
             {
-                path: "assessments/:id/plagiarism-check",
+                path: "plagiarism-check",
                 Component: PlagiarismCheck
             }
         ]

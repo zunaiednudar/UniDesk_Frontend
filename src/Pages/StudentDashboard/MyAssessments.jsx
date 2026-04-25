@@ -3,7 +3,7 @@ import {useNavigate} from 'react-router';
 import {
     ClipboardCheck, Search, Upload, Download, Calendar,
     CheckCircle2, Clock, AlertCircle, Star, MessageSquare, ChevronDown, ChevronUp,
-    GraduationCap, BookOpen, Briefcase, X, Trash2, ScanEye, ShieldCheck
+    GraduationCap, BookOpen, Briefcase, X, Trash2, ScanEye
 } from 'lucide-react';
 import axiosSecure from "../../utils/axiosSecure.js";
 import formatName from "../../utils/formatName.js";
@@ -473,24 +473,7 @@ const AssignmentRow = ({assignment, onSubmitted, onUnsubmitted, onRecheckSent}) 
                                 </button>
                             )}
 
-                            <button
-                                type="button"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    navigate(`./${assignment.id}/plagiarism-check`, {
-                                        state: {
-                                            assignmentId: assignment.id,
-                                            assignmentTitle: assignment.title,
-                                            courseCode: assignment.courseCode,
-                                            submissionURL: assignment.submissionURL ?? null,
-                                        }
-                                    });
-                                }}
-                                className="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold border border-violet-200 text-violet-600 rounded-lg hover:bg-violet-50 transition"
-                            >
-                                <ShieldCheck size={12}/>
-                                Check for Plagiarism
-                            </button>
+
                         </div>
 
                         {assignment.status === "pending" && (

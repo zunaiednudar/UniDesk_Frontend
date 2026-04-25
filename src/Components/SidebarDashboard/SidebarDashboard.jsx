@@ -9,7 +9,8 @@ import {
     PanelRight,
     LayoutDashboard,
     LibraryBig,
-    UserStar
+    UserStar,
+    ShieldCheck
 } from "lucide-react";
 import {AuthContext} from "../../Providers/AuthProvider/AuthProvider.jsx";
 import DefaultProfile from "../../assets/default-profile.png";
@@ -106,6 +107,15 @@ const SidebarDashboard = ({ menuItems, isSidebarOpen, setIsSidebarOpen, toggleSi
                             {userData && (
                                 <NavLink to={`/dashboard/${role}/${userData._id}/repository`} className={({ isActive }) => isActive ? activeClass : normalClass}>
                                     <LibraryBig className="w-5 h-5" />
+                                </NavLink>
+                            )}
+
+                            {role !== 'admin' && (
+                                <NavLink
+                                    to={`/dashboard/${role}/plagiarism-check`}
+                                    className={({ isActive }) => (isActive ? activeClass : normalClass)}
+                                >
+                                    <ShieldCheck className="w-5 h-5" />
                                 </NavLink>
                             )}
                         </div>
