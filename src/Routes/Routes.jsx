@@ -40,6 +40,7 @@ import FacultyDetails from "../Components/FacultyDetails/FacultyDetails.jsx";
 import ChatPage from "../Pages/ChatPage.jsx/ChatPage.jsx";
 import ConversationPage from "../Pages/ConversationPage/ConversationPage.jsx";
 import { Activity } from "lucide-react";
+import PlagiarismCheck from "../Pages/PlagiarismCheck/PlagiarismCheck.jsx";
 
 export const router = createBrowserRouter([
     {
@@ -139,6 +140,10 @@ export const router = createBrowserRouter([
             {
                 path: "chat/:id",
                 Component: ConversationPage
+            },
+            {
+                path: "assessments/:id/plagiarism-check",
+                Component: PlagiarismCheck
             }
         ]
     },
