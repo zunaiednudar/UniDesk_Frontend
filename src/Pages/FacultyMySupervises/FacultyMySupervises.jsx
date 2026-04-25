@@ -30,13 +30,21 @@ const FacultyMySupervises = () => {
 
     const detailsModalRef = useRef(null);
     const confirmRemoveModalRef = useRef(null);
+    const contactModalRef = useRef(null);
 
     const [selectedSupervisee, setSelectedSupervisee] = useState(null);
     const [manageActions, setManageActions] = useState(false);
     const [superviseeStatus, setSuperviseeStatus] = useState("active");
     const [loadingStatusUpdate, setLoadingStatusUpdate] = useState(false);
     const [loadingRemoveSupervisee, setLoadingRemoveSupervisee] = useState(false);
-    const [totalCompletedSupervises, setTotalCompletedSupervises] = useState(0)
+    const [totalCompletedSupervises, setTotalCompletedSupervises] = useState(0);
+
+    const [selectedStudents, setSelectedStudents] = useState([]);
+    const [contactRelationshipType, setContactRelationshipType] = useState("");
+    const [contactTarget, setContactTarget] = useState("");
+    const [contactMessage, setContactMessage] = useState("");
+    const [loadingContactRequest, setLoadingContactRequest] = useState(false);
+
 
     // Open details modal function
 
@@ -211,9 +219,108 @@ const FacultyMySupervises = () => {
             fetchSupervises();
     }, [userData?._id, page, search, relationshipType]);
 
+    // Supervises Contact functionality related
+
+    const handleToggleStudentSelection = (studentId) => {
+        setSelectedStudents((prev) =>
+            prev.includes(studentId)
+                ? prev.filter((id) => id !== studentId)
+                : [...prev, studentId]
+        );
+    };
+
+    // Selection clear function
+
+    const handleClearSelectedStudents = () => {
+        setSelectedStudents([]);
+    };
+
+    // Contact modal related functions
+
+    const handleOpenContactModal = () => {
+        setContactMessage("");
+
+        if (selectedStudents.length > 0)
+            setContactTarget("selected");
+        else
+            setContactTarget("");
+
+        contactModalRef.current?.showModal();
+    };
+
+    const handleCloseContactModal = () => {
+        contactModalRef.current?.close();
+
+        setTimeout(() => {
+            setContactTarget("");
+            setContactMessage("");
+        }, 200);
+    };
+
+    // Supervises contact function
+
+    const handleContactSupervises = async () => {
+        if (!userData?._id)
+            return;
+
+        try {
+            setLoadingContactRequest(true);
+
+            let payload = {
+                message: contactMessage.trim() || undefined
+            };
+
+            if (selectedStudents.length > 0) {
+                payload.students = selectedStudents;
+            } else {
+                if (!contactTarget) {
+                    toast.error("Select a target group");
+                    return;
+                }
+
+                payload.students = activeSupervises
+                    .filter((item) => item.relationshipType === contactTarget)
+                    .map((item) => item.student._id);
+
+                payload.relationshipType = contactTarget;
+
+                if (payload.students.length === 0) {
+                    toast.error(`No active ${contactTarget} supervisee found`);
+                    return;
+                }
+            }
+
+            const res = await axiosSecure.post(`/supervisor/${userData._id}/contact`, payload);
+
+            if (!res?.data?.success) {
+                toast.error(res?.data?.message || "Failed to send notification");
+                return;
+            }
+
+            toast.success(`Notification sent to ${res?.data?.notifiedCount || payload.students.length} supervisee${(res?.data?.notifiedCount || payload.students.length) > 1 ? "s" : ""}`
+            );
+
+            handleCloseContactModal();
+            handleClearSelectedStudents();
+        } catch (error) {
+            toast.error(error?.response?.data?.message || "Failed to send notification");
+        } finally {
+            setLoadingContactRequest(false);
+        }
+    };
+
+    useEffect(() => {
+        setSelectedStudents((prev) =>
+            prev.filter((id) =>
+                activeSupervises.some((item) => item?.student?._id === id)
+            )
+        );
+    }, [activeSupervises]);
+
+
     // Supervisee inbox redirecting function
 
-    const handleRedirectChatbox=async()=>{
+    const handleRedirectChatbox = async () => {
         handleCloseDetailsModal();
 
         try {
@@ -290,6 +397,32 @@ const FacultyMySupervises = () => {
                             <span className="text-xs text-gray-400 font-medium bg-gray-100 px-2 py-0.5 rounded-full">{activeSupervises.length}</span>
                         </div>
                         <hr className='border-gray-200' />
+                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                            <div className="text-sm text-gray-500">
+                                {selectedStudents.length > 0
+                                    ? `${selectedStudents.length} supervisee${selectedStudents.length > 1 ? "s" : ""} selected`
+                                    : "Select active supervisees or use bulk contact"}
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                                {selectedStudents.length > 0 && (
+                                    <button
+                                        onClick={handleClearSelectedStudents}
+                                        className="btn btn-soft btn-sm"
+                                    >
+                                        Clear
+                                    </button>
+                                )}
+
+                                <button
+                                    onClick={handleOpenContactModal}
+                                    className="btn btn-sm bg-[#1E40AF] text-white hover:bg-blue-600 border-none"
+                                >
+                                    Contact Supervises
+                                </button>
+                            </div>
+                        </div>
+
                         <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5'>
                             {
                                 loadingSupervises ? (
@@ -323,10 +456,16 @@ const FacultyMySupervises = () => {
                                                                 Project
                                                             </span>
                                                     }
-                                                    <span className="badge bg-green-100 border-green-200 text-xs text-green-600 font-bold rounded-xl">
-                                                        <div className='bg-green-600 w-2 h-2 rounded-full'></div>
-                                                        Active
-                                                    </span>
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={selectedStudents.includes(supervisee?.student?._id)}
+                                                        onChange={(e) => {
+                                                            e.stopPropagation();
+                                                            handleToggleStudentSelection(supervisee?.student?._id);
+                                                        }}
+                                                        onClick={(e) => e.stopPropagation()}
+                                                        className="checkbox checkbox-sm border-white bg-white checked:border-info checked:bg-info checked:text-white"
+                                                    />
                                                 </div>
 
                                                 {/* Supervisee Topic */}
@@ -686,6 +825,91 @@ const FacultyMySupervises = () => {
                     </div>
                 </div>
             </dialog>
+
+            {/* Contact Modal */}
+
+            <dialog ref={contactModalRef} className="modal modal-bottom sm:modal-middle">
+                <div className="modal-box max-w-lg">
+                    <div className="flex items-center justify-between mb-4">
+                        <p className="text-lg font-bold graphik">Contact Supervisees</p>
+                        <button
+                            className="btn btn-sm btn-circle btn-ghost"
+                            onClick={handleCloseContactModal}
+                        >
+                            ✕
+                        </button>
+                    </div>
+
+                    <div className="flex flex-col gap-4">
+                        <div className="flex flex-col gap-1">
+                            <label className="text-sm font-semibold text-gray-700">
+                                Send To
+                            </label>
+
+                            <select
+                                value={contactTarget}
+                                onChange={(e) => setContactTarget(e.target.value)}
+                                disabled={selectedStudents.length > 0}
+                                className="select select-bordered w-full outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                                <option value="" disabled>Select target</option>
+                                {
+                                    selectedStudents.length > 0 && (
+                                        <option value="selected">Selected supervises</option>
+                                    )
+                                }
+                                <option value="thesis">Thesis supervises</option>
+                                <option value="project">Project supervises</option>
+                            </select>
+                        </div>
+
+                        <p className="text-sm text-gray-500">
+                            {selectedStudents.length > 0
+                                ? `${selectedStudents.length} selected supervisee${selectedStudents.length > 1 ? "s" : ""} will receive the notification`
+                                : contactTarget === "thesis"
+                                    ? "All active thesis supervisees will receive the notification"
+                                    : contactTarget === "project"
+                                        ? "All active project supervisees will receive the notification"
+                                        : "Choose who should receive the notification"}
+                        </p>
+
+                        <div className="flex flex-col gap-1">
+                            <label className="text-sm font-semibold text-gray-700">
+                                Message
+                            </label>
+                            <textarea
+                                value={contactMessage}
+                                onChange={(e) => setContactMessage(e.target.value)}
+                                className="textarea textarea-bordered w-full min-h-28 outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                                placeholder="Please contact me regarding your progress"
+                            />
+                        </div>
+
+                        <div className="flex justify-end gap-2">
+                            <button
+                                type="button"
+                                className="btn btn-soft"
+                                onClick={handleCloseContactModal}
+                            >
+                                Cancel
+                            </button>
+
+                            <button
+                                onClick={handleContactSupervises}
+                                disabled={loadingContactRequest}
+                                className="btn bg-[#1E40AF] text-white hover:bg-blue-600 border-none w-25"
+                            >
+                                {
+                                    loadingContactRequest
+                                        ? <span className="loading loading-dots loading-md"></span>
+                                        : "Send"
+                                }
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </dialog>
+
         </>
     );
 };

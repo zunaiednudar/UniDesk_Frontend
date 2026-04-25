@@ -9,7 +9,8 @@ import {
     PanelRight,
     LayoutDashboard,
     LibraryBig,
-    UserStar
+    UserStar,
+    ShieldCheck
 } from "lucide-react";
 import {AuthContext} from "../../Providers/AuthProvider/AuthProvider.jsx";
 import DefaultProfile from "../../assets/default-profile.png";
@@ -108,10 +109,18 @@ const SidebarDashboard = ({ menuItems, isSidebarOpen, setIsSidebarOpen, toggleSi
                                     <LibraryBig className="w-5 h-5" />
                                 </NavLink>
                             )}
+
+                            {role !== 'admin' && (
+                                <NavLink
+                                    to={`/dashboard/${role}/plagiarism-check`}
+                                    className={({ isActive }) => (isActive ? activeClass : normalClass)}
+                                >
+                                    <ShieldCheck className="w-5 h-5" />
+                                </NavLink>
+                            )}
                         </div>
 
                         <div className="flex flex-col items-center">
-                            <button className={iconBtnClass}><Moon className="w-5 h-5" /></button>
                             <div className="dropdown dropdown-top">
                                 <button tabIndex={0} className={`${iconBtnClass} ${isProfilePage ? 'bg-gray-300' : 'hover:bg-gray-200'}`}>
                                     {role === "admin" ? (

@@ -149,6 +149,7 @@ const AssignmentRow = ({assignment, onSubmitted, onUnsubmitted, onRecheckSent}) 
     const [unsubmitting, setUnsubmitting] = useState(false);
     const [recheckSending, setRecheckSending] = useState(false);
     const [recheckMessage, setRecheckMessage] = useState('');
+    const navigate = useNavigate();
 
     const fileInputRef = useRef(null);
     const [fileName, setFileName] = useState('');
@@ -179,7 +180,7 @@ const AssignmentRow = ({assignment, onSubmitted, onUnsubmitted, onRecheckSent}) 
         const data = {
             submissionURL: fileData.url,
             cloudinaryId: fileData.public_id,
-            resourceType: fileData.resource_type
+            resourceType: fileData.resource_type,
         };
 
         try {
@@ -471,9 +472,10 @@ const AssignmentRow = ({assignment, onSubmitted, onUnsubmitted, onRecheckSent}) 
                                     {unsubmitting ? 'Removing…' : 'Unsubmit'}
                                 </button>
                             )}
+
+
                         </div>
 
-                        {/* Submit */}
                         {assignment.status === "pending" && (
                             <button type="submit" className="btn btn-primary btn-sm ml-auto" disabled={!fileName}>
                                 Submit

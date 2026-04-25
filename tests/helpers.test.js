@@ -1,46 +1,5 @@
-/**
- * Unit tests for pure helper functions used across the UniDesk frontend.
- * All functions are extracted from their components and tested in isolation.
- *
- * Covered:
- *  1.  getInitials                (AskMentor)
- *  2.  to12hr                     (AskMentor / BookingModal)
- *  3.  rangeOverlapsBusy          (AskMentor / BookingModal)
- *  4.  isInsideFreeSlot           (BookingModal)
- *  5.  getDueDateClasses          (MyActivity / MyAssessments)
- *  6.  getCheckboxClasses         (MyActivity)
- *  7.  fileIconMap                (CourseFilesDrawer)
- *  8.  filterUsers                (ManageUsers)
- *  9.  sortUsers                  (ManageUsers)
- * 10.  filterFaculties            (ManageMentorship)
- * 11.  paginateList               (ManageUsers / ManageMentorship / Overview)
- * 12.  totalPages                 (all paginated views)
- * 13.  getStatusBadgeClass        (FacultyMyAppointments)
- * 14.  buildCourseCode            (FacultyMyCourses)
- * 15.  validateSessionFormat      (FacultyMyCourses)
- * 16.  deriveAssignmentStatus     (MyAssessments)
- * 17.  gradeColor                 (MyAssessments)
- * 18.  getWeekRange               (MyAssessments)
- * 19.  filterProjects             (MyProjects)
- * 20.  getStatusBadgeClass        (MyProjects — status/priority)
- * 21.  statsFromCourses           (Overview — admin courses)
- * 22.  filterCourses              (Overview — admin)
- * 23.  isToday                    (Notifications)
- * 24.  onlineUsers Set helpers    (ChatPage)
- * 25.  unreadCountLogic           (ChatPage newMessage handler)
- * 26.  formatName stub            (shared utility)
- * 27.  buildFileName              (CourseFilesDrawer download)
- * 28.  statsInfoComputation       (FacultyMySchedule)
- * 29.  scheduleDayIndexMap        (FacultyMySchedule classEvents)
- * 30.  appointmentStatusConfig    (MyActivity / AskMentor)
- */
-
-// ─── Shared stubs ─────────────────────────────────────────────────────────────
-
 const formatName = (name) =>
     name ? name.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : '';
-
-// ─── 1. getInitials (AskMentor) ───────────────────────────────────────────────
 
 const getInitials = (name = '') =>
     name.split(' ').filter(Boolean).map(w => w[0]).join('').toUpperCase().slice(0, 2);
@@ -71,7 +30,6 @@ describe('getInitials (AskMentor)', () => {
     });
 });
 
-// ─── 2. to12hr (AskMentor / BookingModal) ─────────────────────────────────────
 
 const to12hr = (time24) => {
     if (!time24) return '';
@@ -116,7 +74,6 @@ describe('to12hr (AskMentor)', () => {
     });
 });
 
-// ─── 3. rangeOverlapsBusy (AskMentor / BookingModal) ──────────────────────────
 
 const rangeOverlapsBusy = (schedule, dayName, from, to) => {
     if (!schedule || !from || !to) return false;
@@ -192,7 +149,6 @@ describe('rangeOverlapsBusy (AskMentor)', () => {
     });
 });
 
-// ─── 4. isInsideFreeSlot (BookingModal) ───────────────────────────────────────
 
 const isInsideFreeSlot = (freeSlotsForDay, from, to) => {
     if (!from || !to || freeSlotsForDay.length === 0) return false;
@@ -238,7 +194,6 @@ describe('isInsideFreeSlot (BookingModal)', () => {
     });
 });
 
-// ─── 5. getDueDateClasses (MyActivity / MyAssessments) ────────────────────────
 
 const getDueDateClasses = (dateStr, isCompleted) => {
     if (isCompleted) return 'text-gray-400';
@@ -280,7 +235,6 @@ describe('getDueDateClasses (MyActivity)', () => {
     });
 });
 
-// ─── 6. getCheckboxClasses (MyActivity) ───────────────────────────────────────
 
 const getCheckboxClasses = (status) => {
     switch (status) {
@@ -313,7 +267,6 @@ describe('getCheckboxClasses (MyActivity)', () => {
     });
 });
 
-// ─── 7. fileIconMap (CourseFilesDrawer) ───────────────────────────────────────
 
 const fileIconMap = (url = '') => {
     const ext = url.split('?')[0].split('.').pop().toLowerCase();
@@ -359,7 +312,6 @@ describe('fileIconMap (CourseFilesDrawer)', () => {
     });
 });
 
-// ─── 8. filterUsers (ManageUsers) ─────────────────────────────────────────────
 
 const filterUsers = (userList, { searchQuery = '', roleFilter = 'all', statusFilter = 'all' }) => {
     const q = searchQuery.toLowerCase();
@@ -442,7 +394,6 @@ describe('filterUsers (ManageUsers)', () => {
     });
 });
 
-// ─── 9. sortUsers (ManageUsers) ───────────────────────────────────────────────
 
 const sortUsers = (list, sortField, sortDir) =>
     [...list].sort((a, b) => {
@@ -492,7 +443,6 @@ describe('sortUsers (ManageUsers)', () => {
     });
 });
 
-// ─── 10. filterFaculties (ManageMentorship) ───────────────────────────────────
 
 const filterFaculties = (faculties, { searchQuery = '', supervisorFilter = 'all' }) => {
     const q = searchQuery.toLowerCase();
@@ -550,7 +500,6 @@ describe('filterFaculties (ManageMentorship)', () => {
     });
 });
 
-// ─── 11. paginateList (all paginated views) ───────────────────────────────────
 
 const paginateList = (list, currentPage, itemsPerPage) =>
     list.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
@@ -587,7 +536,6 @@ describe('paginateList', () => {
     });
 });
 
-// ─── 12. totalPages ───────────────────────────────────────────────────────────
 
 const computeTotalPages = (list, itemsPerPage) =>
     Math.max(1, Math.ceil(list.length / itemsPerPage));
@@ -610,7 +558,6 @@ describe('totalPages', () => {
     });
 });
 
-// ─── 13. getStatusBadgeClass (FacultyMyAppointments) ─────────────────────────
 
 const getStatusBadgeClass = (status) => {
     if (status === 'pending')   return 'bg-amber-100 text-amber-700';
@@ -647,7 +594,6 @@ describe('getStatusBadgeClass (FacultyMyAppointments)', () => {
     });
 });
 
-// ─── 14. buildCourseCode (FacultyMyCourses) ───────────────────────────────────
 
 const buildCourseCode = (subject, year, semester, serial) => {
     if (!subject || !year || !semester || !serial) return '';
@@ -672,7 +618,6 @@ describe('buildCourseCode (FacultyMyCourses)', () => {
     });
 });
 
-// ─── 15. validateSessionFormat (FacultyMyCourses) ─────────────────────────────
 
 const validateSession = (session) => /^\d{4}-\d{4}$/.test(session);
 
@@ -698,7 +643,6 @@ describe('validateSessionFormat (FacultyMyCourses)', () => {
     });
 });
 
-// ─── 16. deriveAssignmentStatus (MyAssessments) ───────────────────────────────
 
 const deriveStatus = (a) => {
     const submission = a.submission;
@@ -729,7 +673,6 @@ describe('deriveAssignmentStatus (MyAssessments)', () => {
     });
 });
 
-// ─── 17. gradeColor (MyAssessments) ───────────────────────────────────────────
 
 const gradeColor = (marks, total) => {
     if (!total) return 'text-gray-900';
@@ -761,7 +704,6 @@ describe('gradeColor (MyAssessments)', () => {
     });
 });
 
-// ─── 18. getWeekRange (MyAssessments) ─────────────────────────────────────────
 
 const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
@@ -802,7 +744,6 @@ describe('getWeekRange (MyAssessments)', () => {
     });
 });
 
-// ─── 19. filterProjects (MyProjects) ──────────────────────────────────────────
 
 const filterProjects = (projects, searchQuery, statusFilter) =>
     projects.filter(project => {
@@ -858,7 +799,6 @@ describe('filterProjects (MyProjects)', () => {
     });
 });
 
-// ─── 20. getStatusBadgeClass / getPriorityBadgeClass (MyProjects) ─────────────
 
 const getProjectStatusBadgeClass = (status) => {
     const classes = {
@@ -913,7 +853,6 @@ describe('project badge helpers (MyProjects)', () => {
     });
 });
 
-// ─── 21. statsFromCourses (Overview — admin) ──────────────────────────────────
 
 const computeCourseStats = (courses) => ({
     totalCourses:    courses.length,
@@ -943,7 +882,6 @@ describe('statsFromCourses (Overview)', () => {
     });
 });
 
-// ─── 22. filterCourses (Overview — admin) ─────────────────────────────────────
 
 const filterCourses = (courses, searchQuery, statusFilter) => {
     const q = searchQuery.toLowerCase();
@@ -998,7 +936,6 @@ describe('filterCourses (Overview)', () => {
     });
 });
 
-// ─── 23. isToday (Notifications) ──────────────────────────────────────────────
 
 const isToday = (dateString) => {
     const created = new Date(dateString);
@@ -1026,7 +963,6 @@ describe('isToday (Notifications)', () => {
     });
 });
 
-// ─── 24. onlineUsers Set helpers (ChatPage) ───────────────────────────────────
 
 describe('onlineUsers Set helpers (ChatPage)', () => {
     test('adds userId to Set on userOnline event', () => {
@@ -1065,7 +1001,6 @@ describe('onlineUsers Set helpers (ChatPage)', () => {
     });
 });
 
-// ─── 25. unreadCountLogic (ChatPage newMessage handler) ───────────────────────
 
 describe('unreadCountLogic (ChatPage)', () => {
     const userId = 'me';
@@ -1138,7 +1073,6 @@ describe('unreadCountLogic (ChatPage)', () => {
     });
 });
 
-// ─── 26. formatName (shared utility) ──────────────────────────────────────────
 
 describe('formatName (shared utility)', () => {
     test('capitalises first letter of each word', () => {
@@ -1159,7 +1093,6 @@ describe('formatName (shared utility)', () => {
     });
 });
 
-// ─── 27. buildFileName (CourseFilesDrawer download) ───────────────────────────
 
 const buildFileName = (url, title) => {
     const ext = url.split('?')[0].split('.').pop().toLowerCase();
@@ -1193,7 +1126,6 @@ describe('buildFileName (CourseFilesDrawer)', () => {
     });
 });
 
-// ─── 28. statsInfoComputation (FacultyMySchedule) ─────────────────────────────
 
 const computeScheduleStats = (classEvents, appointmentEvents) => {
     const busyDaysSet  = new Set();
@@ -1216,12 +1148,12 @@ const computeScheduleStats = (classEvents, appointmentEvents) => {
 
 describe('statsInfoComputation (FacultyMySchedule)', () => {
     const classes = [
-        { start: new Date('2026-04-13T09:00:00'), end: new Date('2026-04-13T10:00:00') }, // Monday
-        { start: new Date('2026-04-14T10:00:00'), end: new Date('2026-04-14T11:00:00') }, // Tuesday
+        { start: new Date('2026-04-13T09:00:00'), end: new Date('2026-04-13T10:00:00') },
+        { start: new Date('2026-04-14T10:00:00'), end: new Date('2026-04-14T11:00:00') },
     ];
 
     const appointments = [
-        { start: new Date('2026-04-13T11:00:00'), end: new Date('2026-04-13T11:30:00') }, // Monday
+        { start: new Date('2026-04-13T11:00:00'), end: new Date('2026-04-13T11:30:00') },
     ];
 
     test('counts classes and appointments separately', () => {
@@ -1232,12 +1164,11 @@ describe('statsInfoComputation (FacultyMySchedule)', () => {
 
     test('counts unique busy days (Monday shared by class + appointment)', () => {
         const stats = computeScheduleStats(classes, appointments);
-        expect(stats.busyDays).toBe(2); // Monday + Tuesday
+        expect(stats.busyDays).toBe(2);
     });
 
     test('computes totalHours correctly', () => {
         const stats = computeScheduleStats(classes, appointments);
-        // 60 + 60 + 30 = 150 min = 2.5 h
         expect(stats.totalHours).toBe('2.5');
     });
 
@@ -1249,7 +1180,6 @@ describe('statsInfoComputation (FacultyMySchedule)', () => {
     });
 });
 
-// ─── 29. scheduleDayIndexMap (FacultyMySchedule classEvents) ──────────────────
 
 describe('scheduleDayIndexMap (FacultyMySchedule)', () => {
     const dayIndexMap = {
@@ -1278,7 +1208,6 @@ describe('scheduleDayIndexMap (FacultyMySchedule)', () => {
     });
 });
 
-// ─── 30. appointmentStatusConfig completeness (MyActivity / AskMentor) ────────
 
 describe('appointmentStatusConfig completeness (MyActivity / AskMentor)', () => {
     const appointmentStatusConfig = {
