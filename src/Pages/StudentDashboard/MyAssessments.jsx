@@ -3,7 +3,7 @@ import {useNavigate} from 'react-router';
 import {
     ClipboardCheck, Search, Upload, Download, Calendar,
     CheckCircle2, Clock, AlertCircle, Star, MessageSquare, ChevronDown, ChevronUp,
-    GraduationCap, BookOpen, Briefcase, X, Trash2, ScanEye
+    GraduationCap, BookOpen, Briefcase, X, Trash2, ScanEye, ShieldCheck
 } from 'lucide-react';
 import axiosSecure from "../../utils/axiosSecure.js";
 import formatName from "../../utils/formatName.js";
@@ -149,6 +149,7 @@ const AssignmentRow = ({assignment, onSubmitted, onUnsubmitted, onRecheckSent}) 
     const [unsubmitting, setUnsubmitting] = useState(false);
     const [recheckSending, setRecheckSending] = useState(false);
     const [recheckMessage, setRecheckMessage] = useState('');
+    const navigate = useNavigate();
 
     const fileInputRef = useRef(null);
     const [fileName, setFileName] = useState('');
@@ -471,6 +472,25 @@ const AssignmentRow = ({assignment, onSubmitted, onUnsubmitted, onRecheckSent}) 
                                     {unsubmitting ? 'Removing…' : 'Unsubmit'}
                                 </button>
                             )}
+
+                            <button
+                                type="button"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate(`./${assignment.id}/plagiarism-check`, {
+                                        state: {
+                                            assignmentId: assignment.id,
+                                            assignmentTitle: assignment.title,
+                                            courseCode: assignment.courseCode,
+                                            submissionURL: assignment.submissionURL ?? null,
+                                        }
+                                    });
+                                }}
+                                className="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold border border-violet-200 text-violet-600 rounded-lg hover:bg-violet-50 transition"
+                            >
+                                <ShieldCheck size={12}/>
+                                Check for Plagiarism
+                            </button>
                         </div>
 
                         {/* Submit */}
