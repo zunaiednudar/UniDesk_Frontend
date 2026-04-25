@@ -180,7 +180,7 @@ const AssignmentRow = ({assignment, onSubmitted, onUnsubmitted, onRecheckSent}) 
         const data = {
             submissionURL: fileData.url,
             cloudinaryId: fileData.public_id,
-            resourceType: fileData.resource_type
+            resourceType: fileData.resource_type,
         };
 
         try {
@@ -493,7 +493,6 @@ const AssignmentRow = ({assignment, onSubmitted, onUnsubmitted, onRecheckSent}) 
                             </button>
                         </div>
 
-                        {/* Submit */}
                         {assignment.status === "pending" && (
                             <button type="submit" className="btn btn-primary btn-sm ml-auto" disabled={!fileName}>
                                 Submit

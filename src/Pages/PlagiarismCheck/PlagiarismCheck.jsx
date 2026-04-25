@@ -98,8 +98,7 @@ const InternalPairRow = ({ pair }) => {
 
 // Repository file row
 
-const RepoFileRow = ({ fileName, matches, highestScore, topVerdict }) => {
-    const [expanded, setExpanded] = useState(false);
+const RepoFileRow = ({ fileName, highestScore, topVerdict }) => {
     const risk  = topVerdict?.risk ?? 'LOW';
     const cfg   = riskCfg[risk];
     const Icon  = cfg.icon;
@@ -120,32 +119,8 @@ const RepoFileRow = ({ fileName, matches, highestScore, topVerdict }) => {
                         </div>
                     </div>
                     <ScoreBar score={score} risk={risk} />
-                    {matches.length > 0 && (
-                        <button
-                            onClick={() => setExpanded(e => !e)}
-                            className="text-[11px] text-violet-500 font-semibold hover:underline mt-1"
-                        >
-                            {expanded ? 'Hide' : 'Show'} {matches.length} match{matches.length !== 1 ? 'es' : ''}
-                        </button>
-                    )}
                 </div>
             </div>
-
-            {expanded && matches.length > 0 && (
-                <div className="mt-3 ml-7 space-y-2">
-                    {matches.map((m, i) => (
-                        <div key={i} className="bg-white border border-gray-100 rounded-xl px-3 py-2.5 space-y-1.5">
-                            <div className="flex items-center justify-between gap-2">
-                                <p className="text-xs font-semibold text-gray-700 truncate">{m.repoFileName}</p>
-                                <span className={`text-xs font-bold shrink-0 ${scoreColor(m.verdict?.risk)}`}>
-                                    {pct(m.combined)}%
-                                </span>
-                            </div>
-                            <TermChips terms={[...(m.topPhrases ?? []), ...(m.topWords ?? [])].slice(0, 5)} />
-                        </div>
-                    ))}
-                </div>
-            )}
         </div>
     );
 };
@@ -222,6 +197,7 @@ const PlagiarismCheck = () => {
     const [checking, setChecking] = useState(false);
     const [result, setResult]     = useState(null);
     const [error, setError]       = useState(null);
+    const [saveToRepo, setSaveToRepo] = useState(false);
 
     const addFiles = (incoming) => {
         setFiles(prev => {
@@ -246,6 +222,7 @@ const PlagiarismCheck = () => {
         try {
             const formData = new FormData();
             for (const f of files) formData.append('files', f);
+            formData.append('storeInRepository', saveToRepo ? 'true' : 'false');
             const res = await axiosPlagiarism.post('/check', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
@@ -294,7 +271,7 @@ const PlagiarismCheck = () => {
                     </div>
 
                     {/* Run button */}
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-col items-end gap-2">
                         <input
                             ref={inputRef}
                             type="file"
@@ -306,13 +283,22 @@ const PlagiarismCheck = () => {
                         <button
                             onClick={handleCheck}
                             disabled={checking || files.length < 2}
-                            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-150"
+                            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-violet-600 text-sm font-semibold text-white hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-150"
                         >
                             {checking
                                 ? <><Loader2 size={15} className="animate-spin" strokeWidth={1.75} /> Analysing…</>
                                 : <><Zap size={15} strokeWidth={1.75} /> Run Check</>
                             }
                         </button>
+                        <label className="flex items-center gap-2 cursor-pointer select-none">
+                            <input
+                                type="checkbox"
+                                checked={saveToRepo}
+                                onChange={e => setSaveToRepo(e.target.checked)}
+                                className="w-3.5 h-3.5 rounded border-gray-300 accent-violet-600 cursor-pointer"
+                            />
+                            <span className="text-xs text-gray-500 font-medium">Save to repository</span>
+                        </label>
                     </div>
                 </div>
             </div>
@@ -422,7 +408,6 @@ const PlagiarismCheck = () => {
                                     <RepoFileRow
                                         key={i}
                                         fileName={r.fileName}
-                                        matches={r.matches}
                                         highestScore={r.highestScore}
                                         topVerdict={r.topVerdict}
                                     />
