@@ -1,43 +1,3 @@
-/**
- * Function unit tests for UniDesk async functions.
- *
- * Each function is extracted in its pure logic form and tested with
- * a mocked axiosSecure so no real HTTP calls are made.
- *
- * Covered:
- *  1.  fetchAppointments            (AskMentor / Student)
- *  2.  fetchInstructors             (AskMentor)
- *  3.  fetchSupervisors             (AskMentor)
- *  4.  submitBooking / payload      (BookingModal)
- *  5.  cancelAppointment            (CancelModal — AskMentor)
- *  6.  deleteUser                   (ManageUsers / UserItem)
- *  7.  approveAppointment           (FacultyMyAppointments)
- *  8.  facultyCancelAppointment     (FacultyMyAppointments)
- *  9.  completeAppointment          (FacultyMyAppointments)
- * 10.  updateAppointmentInList      (FacultyMyAppointments)
- * 11.  updateStatsAfterStatusChange (FacultyMyAppointments)
- * 12.  canJoinAppointment           (FacultyMyAppointments)
- * 13.  cleanSchedule / hasAnyEntry  (FacultyMySchedule)
- * 14.  fetchSchedule                (FacultyMySchedule)
- * 15.  handleChatClick              (AskMentor)
- * 16.  updateSuperviseeInLists      (FacultyMySupervises)
- * 17.  handleUpdateSuperviseeStatus (FacultyMySupervises)
- * 18.  handleRemoveSupervisee       (FacultyMySupervises)
- * 19.  courseCodeBuilder            (FacultyMyCourses)
- * 20.  sessionValidation            (FacultyMyCourses handleCourseCreate)
- * 21.  handleJoinCourse             (FacultyMyCourses)
- * 22.  handleJoinCourse             (MyCourses / student side)
- * 23.  fetchNotifications           (Notifications)
- * 24.  markRead / markAllRead       (Notifications)
- * 25.  handleProfileUpdate payload  (StudentProfile)
- * 26.  handlePasswordReset          (StudentProfile / Login)
- * 27.  fetchConversationList        (ChatPage)
- * 28.  handleItemClick routing      (ChatPage)
- * 29.  handleDelete (admin)         (ManageUsers — optimistic list update)
- * 30.  deriveAssignmentStatus       (MyAssessments)
- * 31.  handleRedirectChatbox        (FacultyMySupervises)
- */
-
 const axiosSecure = {
     get:    jest.fn(),
     post:   jest.fn(),
@@ -52,7 +12,6 @@ const formatName = (name) =>
 
 beforeEach(() => { jest.clearAllMocks(); });
 
-// ─── 1. fetchAppointments (AskMentor / Student) ──────────────────────────────
 
 const fetchAppointments = async (userId) => {
     const res = await axiosSecure.get(`/appointment/student/${userId}`);
@@ -156,7 +115,6 @@ describe('fetchAppointments (AskMentor)', () => {
     });
 });
 
-// ─── 2. fetchInstructors (AskMentor) ─────────────────────────────────────────
 
 const fetchInstructors = async () => {
     const coursesRes = await axiosSecure.get('/courses/my-courses');
@@ -274,7 +232,6 @@ describe('fetchInstructors (AskMentor)', () => {
     });
 });
 
-// ─── 3. fetchSupervisors (AskMentor) ─────────────────────────────────────────
 
 const fetchSupervisors = async (userId) => {
     const res = await axiosSecure.get(`/supervisor/student/${userId}`);
@@ -350,7 +307,6 @@ describe('fetchSupervisors (AskMentor)', () => {
     });
 });
 
-// ─── 4. submitBooking / payload (BookingModal) ────────────────────────────────
 
 const buildBookingPayload = (instructor, form) => ({
     facultyID:   instructor.id,
@@ -405,7 +361,6 @@ describe('submitBooking (BookingModal handleSubmit)', () => {
     });
 });
 
-// ─── 5. cancelAppointment (CancelModal — AskMentor) ──────────────────────────
 
 const cancelAppointment = async (appointmentId, reason) => {
     if (!reason.trim()) throw new Error('Please provide a reason.');
@@ -437,7 +392,6 @@ describe('cancelAppointment (CancelModal)', () => {
     });
 });
 
-// ─── 6. deleteUser (ManageUsers / UserItem) ───────────────────────────────────
 
 const deleteUser = async (email) => {
     const res = await axiosSecure.delete(`/admin/users/${email}`);
@@ -478,7 +432,6 @@ describe('deleteUser (ManageUsers handleDelete)', () => {
     });
 });
 
-// ─── 7. approveAppointment (FacultyMyAppointments) ───────────────────────────
 
 const approveAppointment = async (appointmentId) => {
     const res = await axiosSecure.patch(`/appointment/${appointmentId}`, { status: 'approved' });
@@ -507,7 +460,6 @@ describe('approveAppointment (FacultyMyAppointments)', () => {
     });
 });
 
-// ─── 8. facultyCancelAppointment (FacultyMyAppointments) ─────────────────────
 
 const facultyCancelAppointment = async (appointmentId, reason) => {
     if (!reason.trim()) throw new Error('Cancellation reason is required');
@@ -541,7 +493,6 @@ describe('facultyCancelAppointment (FacultyMyAppointments)', () => {
     });
 });
 
-// ─── 9. completeAppointment (FacultyMyAppointments) ──────────────────────────
 
 const completeAppointment = async (appointmentId) => {
     const res = await axiosSecure.patch(`/appointment/${appointmentId}`, { status: 'completed' });
@@ -568,7 +519,6 @@ describe('completeAppointment (FacultyMyAppointments)', () => {
     });
 });
 
-// ─── 10. updateAppointmentInList (FacultyMyAppointments) ──────────────────────
 
 const updateAppointmentInList = (appointments, updatedAppointment) =>
     appointments.map(appointment =>
@@ -610,7 +560,6 @@ describe('updateAppointmentInList (FacultyMyAppointments)', () => {
     });
 });
 
-// ─── 11. updateStatsAfterStatusChange (FacultyMyAppointments) ─────────────────
 
 const updateStatsAfterStatusChange = (stats, previousStatus, nextStatus) => {
     if (previousStatus === nextStatus) return { ...stats };
@@ -659,7 +608,6 @@ describe('updateStatsAfterStatusChange (FacultyMyAppointments)', () => {
     });
 });
 
-// ─── 12. canJoinAppointment (FacultyMyAppointments) ───────────────────────────
 
 const canJoinAppointment = (appointment, currentTime) => {
     if (appointment?.status !== 'approved' || appointment?.mode !== 'online' || !appointment?.meetLink)
@@ -723,7 +671,6 @@ describe('canJoinAppointment (FacultyMyAppointments)', () => {
     });
 });
 
-// ─── 13. cleanSchedule / hasAnyEntry (FacultyMySchedule) ──────────────────────
 
 const cleanSchedule = (weeklySchedule) =>
     weeklySchedule.map(dayItem => ({
@@ -801,7 +748,6 @@ describe('hasAnyEntry (FacultyMySchedule)', () => {
     });
 });
 
-// ─── 14. fetchSchedule (FacultyMySchedule) ────────────────────────────────────
 
 const fetchSchedule = async (userId) => {
     const res = await axiosSecure.get(`/schedule/${userId}`);
@@ -829,7 +775,6 @@ describe('fetchSchedule (FacultyMySchedule)', () => {
     });
 });
 
-// ─── 15. handleChatClick — conversation routing (AskMentor) ───────────────────
 
 const handleChatClick = async (person, userId, dashboardRole = 'student') => {
     const receiver = {
@@ -898,7 +843,6 @@ describe('handleChatClick (AskMentor)', () => {
     });
 });
 
-// ─── 16. updateSuperviseeInLists (FacultyMySupervises) ────────────────────────
 
 const updateSuperviseeInLists = (activeSupervises, completedSupervises, updatedSupervisee) => {
     const matchFn = (item) =>
@@ -945,14 +889,12 @@ describe('updateSuperviseeInLists (FacultyMySupervises)', () => {
 
     test('matches by both studentId AND relationshipType (different rel types not confused)', () => {
         const s1Project = { student: { _id: 'st1' }, relationshipType: 'project', status: 'active' };
-        const updated = { ...s1, status: 'completed' }; // thesis only
+        const updated = { ...s1, status: 'completed' };
         const { newActive } = updateSuperviseeInLists([s1, s1Project], [], updated);
-        // s1Project should survive because its relationshipType is different
         expect(newActive.find(i => i.relationshipType === 'project')).toBeDefined();
     });
 });
 
-// ─── 17. handleUpdateSuperviseeStatus (FacultyMySupervises) ───────────────────
 
 const updateSuperviseeStatus = async (facultyId, studentId, relationshipType, status) => {
     const payload = { studentID: studentId, relationshipType, status };
@@ -984,7 +926,6 @@ describe('handleUpdateSuperviseeStatus (FacultyMySupervises)', () => {
     });
 });
 
-// ─── 18. handleRemoveSupervisee (FacultyMySupervises) ─────────────────────────
 
 const removeSupervisee = async (facultyId, studentId, relationshipType) => {
     const res = await axiosSecure.delete(`/supervisor/${facultyId}`, {
@@ -1026,7 +967,6 @@ describe('handleRemoveSupervisee (FacultyMySupervises)', () => {
     });
 });
 
-// ─── 19. courseCodeBuilder (FacultyMyCourses) ─────────────────────────────────
 
 const buildCourseCode = (subject, year, semester, serial) => {
     if (!subject || !year || !semester || !serial) return '';
@@ -1052,7 +992,6 @@ describe('courseCodeBuilder (FacultyMyCourses)', () => {
     });
 });
 
-// ─── 20. sessionValidation (FacultyMyCourses handleCourseCreate) ──────────────
 
 const validateSession = (session) => /^\d{4}-\d{4}$/.test(session);
 
@@ -1071,7 +1010,6 @@ describe('sessionValidation (FacultyMyCourses)', () => {
     });
 });
 
-// ─── 21. handleJoinCourse — faculty (FacultyMyCourses) ────────────────────────
 
 const facultyJoinCourse = async (invitationCode) => {
     const code = invitationCode.trim();
@@ -1108,7 +1046,6 @@ describe('handleJoinCourse — faculty (FacultyMyCourses)', () => {
     });
 });
 
-// ─── 22. handleJoinCourse — student (MyCourses) ───────────────────────────────
 
 const studentJoinCourse = async (invitationCode) => {
     if (!invitationCode.trim()) throw new Error('Please enter an invitation code.');
@@ -1133,7 +1070,6 @@ describe('handleJoinCourse — student (MyCourses)', () => {
     });
 });
 
-// ─── 23. fetchNotifications (Notifications) ───────────────────────────────────
 
 const isToday = (dateString) => {
     const created = new Date(dateString);
@@ -1203,7 +1139,6 @@ describe('fetchNotifications (Notifications)', () => {
     });
 });
 
-// ─── 24. markRead / markAllRead (Notifications) ───────────────────────────────
 
 const markRead = async (notifId) => {
     await axiosSecure.patch(`/notifications/${notifId}`);
@@ -1246,7 +1181,6 @@ describe('markRead / markAllRead (Notifications)', () => {
     });
 });
 
-// ─── 25. handleProfileUpdate payload (StudentProfile) ─────────────────────────
 
 const buildProfileUpdatePayload = ({ name, photoURL, photoId, role, room }) => {
     const payload = { name, photoURL, photoId };
@@ -1280,7 +1214,6 @@ describe('handleProfileUpdate payload (StudentProfile)', () => {
     });
 });
 
-// ─── 26. handlePasswordReset (StudentProfile / Login) ─────────────────────────
 
 const handlePasswordReset = async (passwordResetFn, email) => {
     await passwordResetFn(email);
@@ -1305,7 +1238,6 @@ describe('handlePasswordReset (StudentProfile / Login)', () => {
     });
 });
 
-// ─── 27. fetchConversationList (ChatPage) ─────────────────────────────────────
 
 const fetchConversationList = async (userId, searchTerm = '') => {
     const res = await axiosSecure.get(`/conversation/user/${userId}`, {
@@ -1345,7 +1277,6 @@ describe('fetchConversationList (ChatPage)', () => {
     });
 });
 
-// ─── 28. handleItemClick routing (ChatPage) ───────────────────────────────────
 
 const buildChatNavigationTarget = (item, dashboardPath) => {
     if (item.conversationID)
@@ -1380,8 +1311,6 @@ describe('handleItemClick routing (ChatPage)', () => {
     });
 });
 
-// ─── 29. deriveAssignmentStatus (MyAssessments) ───────────────────────────────
-
 const deriveStatus = (a) => {
     const submission = a.submission;
     const dueDate    = a.assignment.dueDate;
@@ -1410,8 +1339,6 @@ describe('deriveAssignmentStatus (MyAssessments)', () => {
         expect(deriveStatus({ submission: { isGraded: false }, assignment: { dueDate: past } })).toBe('submitted');
     });
 });
-
-// ─── 30. handleRedirectChatbox (FacultyMySupervises) ──────────────────────────
 
 const redirectToSuperviseeChat = async (supervisee, facultyId) => {
     try {

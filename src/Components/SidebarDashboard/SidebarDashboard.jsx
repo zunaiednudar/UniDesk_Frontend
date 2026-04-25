@@ -111,7 +111,6 @@ const SidebarDashboard = ({ menuItems, isSidebarOpen, setIsSidebarOpen, toggleSi
                         </div>
 
                         <div className="flex flex-col items-center">
-                            <button className={iconBtnClass}><Moon className="w-5 h-5" /></button>
                             <div className="dropdown dropdown-top">
                                 <button tabIndex={0} className={`${iconBtnClass} ${isProfilePage ? 'bg-gray-300' : 'hover:bg-gray-200'}`}>
                                     {role === "admin" ? (

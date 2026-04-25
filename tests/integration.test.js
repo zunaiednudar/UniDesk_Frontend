@@ -1,29 +1,3 @@
-/**
- * Integration tests for UniDesk frontend flows.
- *
- * These tests simulate multi-step user journeys spanning several functions
- * working together — mirroring what happens when a user interacts with a full page.
- *
- * Covered flows:
- *  1.  Appointment booking validation pipeline          (BookingModal)
- *  2.  ManageUsers: filter → sort → paginate pipeline
- *  3.  ManageMentorship: faculty enrichment pipeline
- *  4.  CourseFilesDrawer: file download filename logic
- *  5.  Overview (admin courses): filter → sort → paginate pipeline
- *  6.  ManageUsers: stats and chart-data derivation pipeline
- *  7.  FacultyMyAppointments: approve/complete/cancel → stat update chain
- *  8.  FacultyMySchedule: schedule clean → validate → submit flow
- *  9.  FacultyMySupervises: status update → list reconciliation pipeline
- * 10.  FacultyMyCourses: course code generation → session validation pipeline
- * 11.  MyAssessments: assignment status derivation → week-board bucketing
- * 12.  MyProjects: filter + status badge pipeline
- * 13.  ChatPage: newMessage → unread increment → read-reset pipeline
- * 14.  Notifications: fetch → partition today/history → markAllRead pipeline
- * 15.  AskMentor: fetchInstructors dedup → filter → chat routing pipeline
- */
-
-// ─── Shared helpers ───────────────────────────────────────────────────────────
-
 const to12hr = (time24) => {
     if (!time24) return '';
     const [h, m] = time24.split(':').map(Number);
@@ -152,9 +126,6 @@ const buildFileName = (url, title) => {
     return `${title.replace(/\s+/g, '_')}.${ext}`;
 };
 
-// ═════════════════════════════════════════════════════════════════════════════
-// 1. Appointment booking validation pipeline (BookingModal)
-// ═════════════════════════════════════════════════════════════════════════════
 
 describe('[Integration] Appointment booking validation pipeline', () => {
     const schedule = {
@@ -248,9 +219,6 @@ describe('[Integration] Appointment booking validation pipeline', () => {
     });
 });
 
-// ═════════════════════════════════════════════════════════════════════════════
-// 2. ManageUsers: filter → sort → paginate pipeline
-// ═════════════════════════════════════════════════════════════════════════════
 
 describe('[Integration] ManageUsers filter → sort → paginate pipeline', () => {
     const users = [
@@ -342,9 +310,6 @@ describe('[Integration] ManageUsers filter → sort → paginate pipeline', () =
     });
 });
 
-// ═════════════════════════════════════════════════════════════════════════════
-// 3. ManageMentorship: faculty enrichment pipeline
-// ═════════════════════════════════════════════════════════════════════════════
 
 describe('[Integration] ManageMentorship faculty enrichment pipeline', () => {
     const rawUsers = [
@@ -414,9 +379,6 @@ describe('[Integration] ManageMentorship faculty enrichment pipeline', () => {
     });
 });
 
-// ═════════════════════════════════════════════════════════════════════════════
-// 4. CourseFilesDrawer: file download filename logic
-// ═════════════════════════════════════════════════════════════════════════════
 
 describe('[Integration] CourseFilesDrawer download filename logic', () => {
     test('builds correct filename from a clean URL and title', () => {
@@ -445,9 +407,6 @@ describe('[Integration] CourseFilesDrawer download filename logic', () => {
     });
 });
 
-// ═════════════════════════════════════════════════════════════════════════════
-// 5. Overview (admin): filter → sort → paginate pipeline
-// ═════════════════════════════════════════════════════════════════════════════
 
 describe('[Integration] Overview admin courses filter → sort → paginate pipeline', () => {
     const courses = Array.from({ length: 12 }, (_, i) => ({
@@ -505,9 +464,6 @@ describe('[Integration] Overview admin courses filter → sort → paginate pipe
     });
 });
 
-// ═════════════════════════════════════════════════════════════════════════════
-// 6. ManageUsers: stats and chart-data derivation pipeline
-// ═════════════════════════════════════════════════════════════════════════════
 
 describe('[Integration] ManageUsers stats and chart-data derivation pipeline', () => {
     const thisYear = new Date().getFullYear();
@@ -538,15 +494,14 @@ describe('[Integration] ManageUsers stats and chart-data derivation pipeline', (
             return acc;
         }, Array(12).fill(0));
 
-        // Cumulative up to month 1 (Feb)
         let cumulative = 0;
         const result = [];
         for (let m = 0; m <= 1; m++) {
             cumulative += rawCount[m];
             result.push(cumulative);
         }
-        expect(result[0]).toBe(1); // Jan: 1
-        expect(result[1]).toBe(3); // Feb: 1+2
+        expect(result[0]).toBe(1);
+        expect(result[1]).toBe(3);
     });
 
     test('pie chart: pending + verified + suspended sums to total non-admin users', () => {
@@ -558,9 +513,6 @@ describe('[Integration] ManageUsers stats and chart-data derivation pipeline', (
     });
 });
 
-// ═════════════════════════════════════════════════════════════════════════════
-// 7. FacultyMyAppointments: approve → complete → cancel chain
-// ═════════════════════════════════════════════════════════════════════════════
 
 describe('[Integration] FacultyMyAppointments approve → complete → cancel stat update chain', () => {
     test('full chain: pending → approved → completed stats', () => {
@@ -586,7 +538,7 @@ describe('[Integration] FacultyMyAppointments approve → complete → cancel st
     test('stats do not go below zero on multiple cancellations', () => {
         let stats = { pending: 0, upcoming: 1, completed: 0 };
         stats = updateStatsAfterStatusChange(stats, 'approved', 'cancelled');
-        stats = updateStatsAfterStatusChange(stats, 'approved', 'cancelled'); // upcoming already 0
+        stats = updateStatsAfterStatusChange(stats, 'approved', 'cancelled');
         expect(stats.upcoming).toBe(0);
     });
 
@@ -596,9 +548,6 @@ describe('[Integration] FacultyMyAppointments approve → complete → cancel st
     });
 });
 
-// ═════════════════════════════════════════════════════════════════════════════
-// 8. FacultyMySchedule: clean → validate → would-submit flow
-// ═════════════════════════════════════════════════════════════════════════════
 
 describe('[Integration] FacultyMySchedule schedule clean → validate → submit flow', () => {
     test('fully valid schedule passes clean and hasAnyEntry check', () => {
@@ -653,9 +602,6 @@ describe('[Integration] FacultyMySchedule schedule clean → validate → submit
     });
 });
 
-// ═════════════════════════════════════════════════════════════════════════════
-// 9. FacultyMySupervises: status update → list reconciliation pipeline
-// ═════════════════════════════════════════════════════════════════════════════
 
 describe('[Integration] FacultyMySupervises status update → list reconciliation', () => {
     const s1 = { student: { _id: 'st1' }, relationshipType: 'thesis',  status: 'active',    topic: 'AI Research' };
@@ -713,9 +659,6 @@ describe('[Integration] FacultyMySupervises status update → list reconciliatio
     });
 });
 
-// ═════════════════════════════════════════════════════════════════════════════
-// 10. FacultyMyCourses: code generation → session validation pipeline
-// ═════════════════════════════════════════════════════════════════════════════
 
 describe('[Integration] FacultyMyCourses course code → session validation pipeline', () => {
     const buildCourseCode = (subject, year, semester, serial) => {
@@ -735,7 +678,6 @@ describe('[Integration] FacultyMyCourses course code → session validation pipe
     test('empty serial produces empty code → submit blocked', () => {
         const code = buildCourseCode('CSE', '3rd', '2nd', '');
         expect(code).toBe('');
-        // simulate: if (!courseCode) → blocked
         expect(code ? 'proceed' : 'blocked').toBe('blocked');
     });
 
@@ -762,9 +704,6 @@ describe('[Integration] FacultyMyCourses course code → session validation pipe
     });
 });
 
-// ═════════════════════════════════════════════════════════════════════════════
-// 11. MyAssessments: deriveStatus → week-board bucketing
-// ═════════════════════════════════════════════════════════════════════════════
 
 describe('[Integration] MyAssessments deriveStatus → week-board bucketing pipeline', () => {
     const future = new Date(Date.now() + 7  * 24 * 60 * 60 * 1000).toISOString();
@@ -802,9 +741,6 @@ describe('[Integration] MyAssessments deriveStatus → week-board bucketing pipe
     });
 });
 
-// ═════════════════════════════════════════════════════════════════════════════
-// 12. MyProjects: filter + badge class pipeline
-// ═════════════════════════════════════════════════════════════════════════════
 
 describe('[Integration] MyProjects filter + badge pipeline', () => {
     const projects = [
@@ -853,9 +789,6 @@ describe('[Integration] MyProjects filter + badge pipeline', () => {
     });
 });
 
-// ═════════════════════════════════════════════════════════════════════════════
-// 13. ChatPage: newMessage → unread increment → read-reset pipeline
-// ═════════════════════════════════════════════════════════════════════════════
 
 describe('[Integration] ChatPage newMessage → unread → read-reset pipeline', () => {
     const userId = 'me';
@@ -889,17 +822,14 @@ describe('[Integration] ChatPage newMessage → unread → read-reset pipeline',
     test('full pipeline: message received → unread increments → click resets to 0', () => {
         let items = [{ conversationID: 'c1', lastMessage: 'old', unreadCount: 0 }];
 
-        // Step 1: receive a new message on c1 from another user (not current conv)
         const msg = { conversation: 'c1', content: 'Hello!', sender: { _id: 'other' } };
         items = handleNewMessage(items, msg, '/dashboard/student/chat/c2');
         expect(items[0].unreadCount).toBe(1);
         expect(items[0].lastMessage).toBe('Hello!');
 
-        // Step 2: receive another message
         items = handleNewMessage(items, { ...msg, content: 'You there?' }, '/dashboard/student/chat/c2');
         expect(items[0].unreadCount).toBe(2);
 
-        // Step 3: user clicks the conversation → unreadCount resets
         items = resetUnread(items, 'c1');
         expect(items[0].unreadCount).toBe(0);
     });
@@ -920,9 +850,6 @@ describe('[Integration] ChatPage newMessage → unread → read-reset pipeline',
     });
 });
 
-// ═════════════════════════════════════════════════════════════════════════════
-// 14. Notifications: fetch → partition today/history → markAllRead pipeline
-// ═════════════════════════════════════════════════════════════════════════════
 
 describe('[Integration] Notifications fetch → partition → markAllRead pipeline', () => {
     const isToday = (dateStr) => {
@@ -978,9 +905,6 @@ describe('[Integration] Notifications fetch → partition → markAllRead pipeli
     });
 });
 
-// ═════════════════════════════════════════════════════════════════════════════
-// 15. AskMentor: fetchInstructors dedup → filter → chat routing pipeline
-// ═════════════════════════════════════════════════════════════════════════════
 
 describe('[Integration] AskMentor fetchInstructors → filter → chat routing pipeline', () => {
     const formatName = (name) =>
@@ -1051,11 +975,9 @@ describe('[Integration] AskMentor fetchInstructors → filter → chat routing p
 
     test('full pipeline: build → sort → route to chat', () => {
         const instructors = buildInstructorMap(courses);
-        // Top instructor is verified Dr Amin
         const topInstructor = instructors[0];
         expect(topInstructor.name).toBe('Dr Amin');
 
-        // Simulate clicking "Chat" on Dr Amin with no existing conversation
         const conversations = [];
         const existing = conversations.find(i => i?.user?._id === topInstructor.id);
         const path = existing?.conversationID
