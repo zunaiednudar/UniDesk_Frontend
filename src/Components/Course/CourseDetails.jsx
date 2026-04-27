@@ -604,7 +604,7 @@ const CourseDetails = () => {
                                             )}
                                         </div>
                                         <div className="min-w-0">
-                                            <span className="text-[11px] font-medium text-gray-600 truncate">{n.faculty?.name || '—'}</span>
+                                            <span className="text-[11px] font-medium text-gray-600 truncate">{formatName(n.faculty?.name) || '—'}</span>
                                             {n.faculty?.email && (
                                                 <span className="text-[10px] text-gray-400 ml-1.5">· {n.faculty.email}</span>
                                             )}
